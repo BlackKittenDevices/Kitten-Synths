@@ -1,0 +1,214 @@
+diff --git a/firmware/src/eng_muug.c b/firmware/src/eng_muug.c
+index 260eded..c9572ae 100644
+--- a/firmware/src/eng_muug.c
++++ b/firmware/src/eng_muug.c
+@@ -506,6 +506,55 @@ static void fmini_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
+     v->s[4] = sx;
+ }
+ 
++/* --------------------------------------------------------- the patch on the panel --- */
++/* The patch's 18 bytes (and its switch bits) as pages of four knobs: params.c PAGES with scope SC_MUUG, shown while the selected
++ * track plays MUUG (EDIT: the oscillator bank and the mixer; LFO: the modifiers). A value is read from the part's patch each
++ * frame and written back through muug_put (the SLOT becomes OWN, as the editor's). */
++static const char *const MG_RANGE[] = {"LO", "32'", "16'", "8'", "4'", "2'"};
++static const char *const MG_WAVE[] = {"TRI", "SHARK", "SAW", "SQR", "PLS W", "PLS N"};
++static const char *const MG_ON[] = {"OFF", "1", "2", "1 2", "3", "1 3", "2 3", "ALL"};
++static const char *const MG_NZ[] = {"OFF", "WHITE", "PINK"};
++typedef struct {
++    param_desc_t d;
++    uint8_t idx, shift, mask;      /* the byte of the patch, the bits of it */
++    uint8_t bias, noise;           /* shown = raw - bias; 1: the NOISE / PINK pair as OFF, WHITE, PINK */
++} mg_t;
++#define MG_E(l, n, nm, i, sh, mk) {{l, F_ENUM, 0, n, 0, nm, 0}, i, sh, mk, 0, 0}
++#define MG_P(l, i) {{l, F_PCT, 0, 127, 0, 0, 0}, i, 0, 127, 0, 0}
++#define MG_B(l, i) {{l, F_BIPCT, -64, 63, 0, 0, 0}, i, 0, 127, 64, 0}
++#define MG_S(l, i, sh) {{l, F_ONOFF, 0, 1, 0, 0, 0}, i, sh, 1, 0, 0}
++static const mg_t MG[] = {
++    MG_E("RNG 1", 5, MG_RANGE, FG_R1, 0, 127), MG_E("RNG 2", 5, MG_RANGE, FG_R2, 0, 127), MG_E("RNG 3", 5, MG_RANGE, FG_R3, 0, 127),
++    MG_E("OSC ON", 7, MG_ON, FG_SW1, 0, 7),                                                                         /* 3 */
++    MG_E("WAVE 1", 5, MG_WAVE, FG_W1, 0, 127), MG_E("WAVE 2", 5, MG_WAVE, FG_W2, 0, 127), MG_E("WAVE 3", 5, MG_WAVE, FG_W3, 0, 127),
++    MG_B("TUNE", FG_TUNE),                                                                                          /* 7 */
++    MG_B("FREQ 2", FG_F2), MG_B("FREQ 3", FG_F3), MG_P("KBD", FG_KBD),
++    {{"NOISE", F_ENUM, 0, 2, 0, MG_NZ, 0}, FG_SW1, 3, 3, 0, 1},                                                      /* 11 */
++    MG_P("OSC 1", FG_L1), MG_P("OSC 2", FG_L2), MG_P("OSC 3", FG_L3), MG_P("NOISE", FG_LN),                          /* 12..15 */
++    MG_P("SRC", FG_MMIX), MG_S(">OSC", FG_SW1, 5), MG_S(">FILT", FG_SW1, 6), MG_S("SQR", FG_SW2, 1),         /* 16..19 */
++};
++static int16_t mg_get(uint32_t tr, uint32_t id)
++{
++    const mg_t *m = &MG[id];
++    uint32_t v = ((uint32_t)fmini_patch[tr % NTRK][m->idx] >> m->shift) & m->mask;
++    if (m->noise)
++        v = v & 1u ? (v & 2u ? 2u : 1u) : 0u;
++    return (int16_t)((int32_t)v - m->bias);
++}
++static void mg_set(uint32_t tr, uint32_t id, int32_t val)
++{
++    const mg_t *m = &MG[id];
++    uint8_t p[FG_SIZE];
++    uint32_t v = (uint32_t)(val + m->bias);
++    tr %= NTRK;
++    memcpy(p, fmini_patch[tr], FG_SIZE);
++    if (m->noise)
++        v = v == 2u ? 3u : v;
++    p[m->idx] = (uint8_t)((p[m->idx] & ~(m->mask << m->shift)) | ((v & m->mask) << m->shift));
++    if (memcmp(p, fmini_patch[tr], FG_SIZE))
++        muug_put(tr, p);
++}
++
+ /* --------------------------------------------------------------- the engine --- */
+ static const engine_t ENG_MUUG = {
+     .name = "MUUG",
+diff --git a/firmware/src/params.c b/firmware/src/params.c
+index 0f43414..01bb71a 100644
+--- a/firmware/src/params.c
++++ b/firmware/src/params.c
+@@ -412,7 +412,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
+ /* ------------------------------------------------------------ pages --- */
+ enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE, FAM_ARP, FAM_SEQ, FAM_TRK,
+        FAM_COUNT };
+-enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG, SC_DRUM };
++enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG, SC_DRUM, SC_MUUG };   /* SC_MUUG: eng_muug.c MG, the patch */
+ enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
+        GR_SLCR, GR_INS };
+ 
+@@ -424,11 +424,13 @@ typedef struct {
+ 
+ static const page_t PAGES[] = {
+     {"ENV", FAM_ENV, SC_TRACK, GR_ADSR, {P_ATK, P_DEC, P_SUS, P_REL}},
++    {"FLT ENV", FAM_ENV, SC_ENGINE, GR_NONE, {P_E3, P_E4, P_E5, P_E2}},   /* MUUG only: the filter's contour (F.ATK F.DEC F.SUS CNTR) */
+     {"ENV DEST", FAM_ENV, SC_TRACK, GR_NONE, {P_ED_FLT, P_ED_PIT, P_ED_SHP, P_ESYNC}},   /* (P_ED_FX: the level trim, no
+                                                                        * page); 2.6: ESYNC, ENV's times as note values */
+     {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, P_LPHASE, P_LFADE}},
+     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {P_LSYNC, P_LTRIG, P_LPOL, 0xFF}},   /* 2.6 (Felucca 1.4): SYNC TRIG POL */
+     {"LFO DEST", FAM_LFO, SC_TRACK, GR_NONE, {P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP}},
++    {"MUUG MOD", FAM_LFO, SC_MUUG, GR_NONE, {16, 17, 18, 19}},   /* MUUG only: what the LFO / noise modulate (eng_muug.c MG) */
+     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
+     {"FILTER", FAM_FX, SC_TRACK, GR_NONE, {P_TFLT, 0xFF, 0xFF, 0xFF}},   /* the track's filter (drum track too) */
+     {"SLICER", FAM_FX, SC_TRACK, GR_SLCR, {P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH}},   /* drum track too */
+@@ -440,6 +442,10 @@ static const page_t PAGES[] = {
+     {"SEL 2", FAM_SCL, SC_TRACK, GR_SCALE, {P_TRANS, P_STRUM, P_VLEAD, 0xFF}},   /* (2.4: the chords played) */
+     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E3}},
+     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E4, P_E5, P_E6, P_E7}},
++    {"OSC RNG", FAM_EDIT, SC_MUUG, GR_NONE, {0, 1, 2, 3}},      /* MUUG only: the oscillator bank, the mixer (eng_muug.c MG) */
++    {"OSC WAV", FAM_EDIT, SC_MUUG, GR_NONE, {4, 5, 6, 7}},
++    {"OSC FRQ", FAM_EDIT, SC_MUUG, GR_NONE, {8, 9, 10, 11}},
++    {"MIXER", FAM_EDIT, SC_MUUG, GR_NONE, {12, 13, 14, 15}},
+     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E7}},   /* ANALOG only (2.6, Felucca 1.5): TYPE CUT
+                                                                           * RES KTR (page_shown) */
+     {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
+@@ -475,6 +481,8 @@ static const page_t PAGES[] = {
+  * shows "DRUM TRACK" */
+ static int page_for_drum(const page_t *pg)
+ {
++    if (pg->scope == SC_MUUG)
++        return 0;
+     if (pg->scope == SC_STEP)                       /* (2.4) the synth steps' roll: the drums have their grid. Reached */
+         return 0;                                   /* by ALGO from a synth track, it drew the drum steps as notes */
+     if (pg->scope == SC_GLOBAL)
+@@ -487,6 +495,8 @@ static int page_for_drum(const page_t *pg)
+ /* a page the buttons and SELECT reach on the selected track: EDIT > FILTER (TYPE) on ANALOG only */
+ static int page_shown(const page_t *pg)
+ {
++    if (pg->scope == SC_MUUG || (pg->fam == FAM_ENV && pg->scope == SC_ENGINE))   /* the MUUG pages: that engine only */
++        return !is_drum(TSEL) && TSEL->eng_req % NENGINES == ENGI_MUUG;
+     return pg->id[0] != P_FTYPE || (!is_drum(TSEL) && TSEL->eng_req % NENGINES == 0u);
+ }
+ 
+@@ -501,6 +511,12 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
+         *valp = 0;
+         return 0;
+     }
++    if (pg->scope == SC_MUUG) {                       /* the patch's values, read now (a shadow a knob: draw and edit) */
++        static int16_t mgv[4];
++        mgv[slot & 3u] = mg_get((uint32_t)(TSEL - trk), id);
++        *valp = &mgv[slot & 3u];
++        return &MG[id].d;
++    }
+     if (pg->scope == SC_GLOBAL) {
+         *valp = &song.g[id];
+         return &GP[id];
+diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
+index 298fbed..9455fd6 100644
+--- a/firmware/src/ui_draw.c
++++ b/firmware/src/ui_draw.c
+@@ -858,7 +858,7 @@ UI_SMALL static void draw_foot(void)
+         str_cpy(ti, "HOME", sizeof ti);
+     } else {                                           /* page title + number in its family: "ENV DEST 2/2" */
+         uint32_t n, k = page_pos(&n);
+-        const char *pt = pg->scope == SC_ENGINE ? e->page_title[pg->id[0] != P_E0] : 0;   /* EDIT: the engine's */
++        const char *pt = pg->scope == SC_ENGINE && pg->fam == FAM_EDIT ? e->page_title[pg->id[0] != P_E0] : 0;   /* EDIT: the engine's */
+         str_cpy(ti, pt ? pt : pg->title, 10);
+         if (n > 1) {
+             str_cpy(ti + str_len(ti), " ", 4);
+diff --git a/firmware/src/ui_input.c b/firmware/src/ui_input.c
+index 5989ee3..55a656f 100644
+--- a/firmware/src/ui_input.c
++++ b/firmware/src/ui_input.c
+@@ -558,6 +558,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
+     v = d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
+                                     : clamp(*vp + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
+     *vp = (int16_t)v;
++    if (pg->scope == SC_MUUG) {                           /* a patch value: into the part's patch (SLOT = OWN) */
++        mg_set((uint32_t)(TSEL - trk), id, v);
++        ui.force = 1;
++        return;
++    }
+     if (pg->scope != SC_GLOBAL && p_lockable(id))
+         ui.lock_par = (uint8_t)id;                        /* the SEQ layer's lock parameter: the last one touched */
+     if (pg->scope != SC_GLOBAL)
+diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
+index 0f7de7c..b6a30e5 100644
+--- a/tests/ui_pages_test.c
++++ b/tests/ui_pages_test.c
+@@ -1196,6 +1196,51 @@ int main(int argc, char **argv)
+         #undef PT
+     }
+ 
++    {   /* the MUUG patch on the panel: EDIT > OSC RNG / OSC WAV / OSC FRQ / MIXER, LFO > MUUG MOD, ENV > FLT ENV */
++        #define PT() (PAGES[ui.page].title)
++        #define SEL(n) do { encs[panel.enc[EN_SELECT]] = (n); frame(); } while (0)
++        #define KNOB(k, n) do { encs[panel.enc[EN_K1 + (k)]] = (n); frame(); } while (0)
++        uint32_t i, found;
++        song.playing = 0; song.sel = 0;
++        trk[0].eng_req = ENGI_MUUG; trk[0].p[P_E7] = 0; fmini_track_loaded(&trk[0]);
++        go_home(); ui.force = 1; frame();
++        tap(B_EDIT); SEL(-12);
++        for (i = 0, found = 0; i < 12u && !found; i++) { found = !strcmp(PT(), "OSC RNG"); if (!found) SEL(1); }
++        check(found, "MUUG: EDIT reaches OSC RNG");
++        KNOB(0, 1);
++        check(fmini_patch[0][FG_R1] == FMINI_FACTORY[0][FG_R1] + 1u && trk[0].p[P_E7] == (int16_t)FMINI_OWN,
++              "MUUG: OSC RNG knob 1 raises RNG 1, the SLOT shows OWN");
++        KNOB(3, 1);
++        check(fmini_patch[0][FG_SW1] != FMINI_FACTORY[0][FG_SW1] || ((FMINI_FACTORY[0][FG_SW1] & 7u) == 7u), "MUUG: OSC ON turned");
++        SEL(1);
++        check(!strcmp(PT(), "OSC WAV"), "MUUG: next page OSC WAV");
++        KNOB(1, 2);
++        check(fmini_patch[0][FG_W2] == FMINI_FACTORY[0][FG_W2] + 2u, "MUUG: WAVE 2 +2");
++        SEL(1);
++        KNOB(3, 2);
++        check((fmini_patch[0][FG_SW1] & (FS_NZ | FS_PINK)) == (FS_NZ | FS_PINK), "MUUG: OSC FRQ knob 4: NOISE to PINK (both bits)");
++        KNOB(3, -2);
++        check(!(fmini_patch[0][FG_SW1] & (FS_NZ | FS_PINK)), "... and back to OFF");
++        SEL(1);
++        KNOB(2, 5);
++        check(!strcmp(PT(), "MIXER") && fmini_patch[0][FG_L3] != FMINI_FACTORY[0][FG_L3], "MUUG: MIXER knob 3: OSC 3 level");
++        ui.force = 1; frame(); ppm("muug-mixer");
++        tap(B_LFO); SEL(9);
++        check(!strcmp(PT(), "MUUG MOD"), "MUUG: LFO > MUUG MOD is the last LFO page");
++        KNOB(1, 1);
++        check((fmini_patch[0][FG_SW1] & FS_MOSC) != (FMINI_FACTORY[0][FG_SW1] & FS_MOSC), "MUUG MOD knob 2: MOD > OSC switched");
++        ui.force = 1; frame(); ppm("muug-mod");
++        tap(B_ENV); SEL(-9); SEL(1);
++        check(!strcmp(PT(), "FLT ENV"), "MUUG: ENV > FLT ENV");
++        ui.force = 1; frame(); ppm("muug-fltenv");
++        trk[0].eng_req = 0; trk[0].p[P_E7] = 0;
++        go_home(); frame(); tap(B_EDIT); SEL(-12); SEL(9);
++        check(strcmp(PT(), "MIXER") != 0, "another engine: no MUUG pages");
++        #undef KNOB
++        #undef SEL
++        #undef PT
++    }
++
+     {   /* Felucca #39 / #102 (2.4): a knob turned as a layer lets go, or while PLAY is pressed in a layer, never
+          * edits the page under the layer */
+         int16_t r0, w0;
