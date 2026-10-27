@@ -1,0 +1,13 @@
+diff --git a/firmware/src/editor.c b/firmware/src/editor.c
+index 0f15d81..4606230 100644
+--- a/firmware/src/editor.c
++++ b/firmware/src/editor.c
+@@ -36,7 +36,7 @@ enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET,
+ /* v12 (SLOOP 2.7): LIVE = 77, editor_live.c: the LIVE page (transport, sections, mix keys, punch-in FX, REC, undo) */
+ #define ED_PROTO 12u                                   /* the protocol version INFO ends with */
+ 
+-static uint8_t ed_out[600];
++static uint8_t ed_out[1280];   /* (the MUUG preset names alone are 940 bytes: 100 x 12 + the two titles; 600 cut them: "short reply") */
+ static uint32_t ed_n;
+ 
+ UI_SMALL static void ed_begin(uint32_t cmd)
