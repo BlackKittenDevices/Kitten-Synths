@@ -6,7 +6,7 @@ name: build
 on:
   workflow_dispatch: {}
   push:
-    paths: ["muug.patch", "fix-*.patch", ".github/workflows/build.yml"]
+    paths: ["muug.patch", "fix-*.patch", "splashes y logos/**", ".github/workflows/build.yml"]
 
 env:
   SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
@@ -14,6 +14,8 @@ env:
 
 jobs:
   build:
+    env:
+      KITTEN_ART: ${{ github.workspace }}/splashes y logos          # the kitten pictures for the installer, the editor and the icons (tools/kitten_img.py)
     runs-on: ubuntu-22.04                                      # x86-64: the JieLi toolchain runs natively
     steps:
       - uses: actions/checkout@v4
