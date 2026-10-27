@@ -1,0 +1,73 @@
+# Kitten Synths: builds the installable firmware package (.fwsc) and the site (installer + web editor + simulator).
+# It takes SLOOP from its own repository at a pinned commit, applies muug.patch (Muug engine, the LITE 4th synth part,
+# the web editor with 5 tracks and MIDI IN), runs the tests and builds with JieLi's toolchain.
+# Run it by hand: Actions > build > Run workflow. The result is the artifact "kitten-synths".
+name: build
+on:
+  workflow_dispatch: {}
+  push:
+    paths: ["muug.patch", ".github/workflows/build.yml"]
+
+env:
+  SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
+  VERSION: 0.1-beta
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04                                      # x86-64: the JieLi toolchain runs natively
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SLOOP at the pinned commit
+        run: |
+          git clone https://github.com/isod89/sloop-fm1.git sloop
+          cd sloop && git checkout "$SLOOP_COMMIT"
+
+      - name: Kitten Synths patch
+        run: cd sloop && git apply --index ../muug.patch
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: pip install pillow fonttools
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq clang lld
+
+      - name: JieLi toolchain
+        run: cd sloop && sh tools/get_toolchain.sh
+
+      - name: JieLi SDK (three of its files are used)
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+
+      - name: Build the firmware
+        run: cd sloop && ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
+
+      - name: Size of the firmware
+        run: |
+          cd sloop && ls -l build/*.bin build/*.fwsc build/loader/*.bin 2>/dev/null | tee ../size.log
+          grep -i -E "ram|flash|size|bytes|free" ../build.log | tail -20 | tee -a ../size.log || true
+
+      - name: Tests (the host suite and the web editor)
+        continue-on-error: true
+        run: |
+          cd sloop
+          sh tests/run_tests.sh 2>&1 | tee ../tests.log
+          node web/test_web.mjs 2>&1 | tail -3 | tee -a ../tests.log
+
+      - name: Site (installer, web editor)
+        run: |
+          cd sloop
+          python3 web/make_site.py "build/felucca-$VERSION.fwsc" "$VERSION" ../kitten-synths/site
+          python3 tools/build_demo.py && cp -r build/demo ../kitten-synths/simulator
+          cp "build/felucca-$VERSION.fwsc" ../kitten-synths/
+          cp ../servir.py ../kitten-synths/servir.py
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kitten-synths
+          path: |
+            kitten-synths/
+            build.log
+            size.log
+            tests.log
