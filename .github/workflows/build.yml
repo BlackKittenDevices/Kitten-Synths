@@ -43,8 +43,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          cd sloop && ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
-
+                   cd sloop && bash ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
       - name: The end of the build log (if it failed)
         if: failure()
         run: tail -n 60 build.log || true
