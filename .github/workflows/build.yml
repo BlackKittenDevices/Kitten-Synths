@@ -39,11 +39,20 @@ jobs:
       - name: JieLi SDK (three of its files are used)
         run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
 
+      - name: Check the firmware unit first (the device compiles felucca.c with its own include order; this catches an order error in seconds)
+        run: |
+          cd sloop && mkdir -p build/gen
+          for g in "tables felucca_tables.h" "fm6_patches felucca_fm6.h" "samples felucca_samples.h" "drumkits felucca_drumkits.h" "font felucca_font.h" "icons felucca_icons.h" "logo sloop_logo.h"; do
+            set -- $g; python3 tools/gen_$1.py build/gen/$2 > /dev/null
+          done
+          clang -fsyntax-only -ffreestanding -m32 -Os -Wall -Wno-unused-function -fno-builtin -Ifirmware/hal -Ifirmware/src -Ibuild/gen -DFELUCCA_ID='"FM-1_928"' firmware/src/felucca.c
+
       - name: Build the firmware
         shell: bash
         run: |
           set -o pipefail
-                   cd sloop && bash ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
+          cd sloop && bash ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
+
       - name: The end of the build log (if it failed)
         if: failure()
         run: tail -n 60 build.log || true
