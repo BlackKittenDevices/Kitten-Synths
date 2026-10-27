@@ -108,10 +108,10 @@ index bc0d4c1..01a0eef 100644
      for (uint32_t i = 0; i < CTL * 2; i++) output[i] = clamp(block[i], -32768, 32767) / 32768.0f;
      return output;
 diff --git a/firmware/src/core.h b/firmware/src/core.h
-index b204f0e..1fb87e2 100644
+index b204f0e..6d77f84 100644
 --- a/firmware/src/core.h
 +++ b/firmware/src/core.h
-@@ -8,9 +8,24 @@
+@@ -8,9 +8,26 @@
  #include <stdint.h>
  #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
  #define NPOLY 8
@@ -130,6 +130,8 @@ index b204f0e..1fb87e2 100644
 +#define TRK_WIRE_N NTRK
 +static inline uint32_t trk_wire(uint32_t k) { return k < NTRK ? k : TRK_NOWIRE; }
 +static inline uint32_t trk_of_wire(uint32_t w) { return w < NTRK ? w : TRK_NOWIRE; }
++/* the colour slot of working track k (gfx.c TE_COL: 0..3 SLOOP's four, 4 the LITE part, 5 a second drum track) */
++static inline uint32_t te_slot(uint32_t k) { return k < NHEAVY ? k : k == TRK_DRUM ? 3u : k == NHEAVY ? 4u : 5u; }
 +#define TRK_UI_N 4u
 +static inline uint32_t trk_ui(uint32_t k) { return k < NHEAVY ? k : k == TRK_DRUM ? NHEAVY : TRK_NOWIRE; }
 +static inline uint32_t trk_of_ui(uint32_t w) { return w < NHEAVY ? w : w == NHEAVY ? TRK_DRUM : TRK_NOWIRE; }
@@ -139,7 +141,7 @@ index b204f0e..1fb87e2 100644
  enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
  #define NSTEP 64
  #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
-@@ -20,11 +35,17 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
+@@ -20,11 +37,17 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
  /* SLOOP 2.4: FM6 (eng_fm6.c) is engine 9 in every build; SLICE, when built, comes last (10). Projects and user
   * presets store the engine index as a byte, and no shipped SLOOP was built with SLICE, so its number is stored
   * nowhere: FM6 may take 9 and SLICE moves up (engines.c ENGINES[], params.c N_ENGNAME follow this order) */
@@ -158,7 +160,7 @@ index b204f0e..1fb87e2 100644
  #define ENGI_FM6 9u              /* the FM6 engine's index (eng_fm6.c, the stores: append-only) */
  #define UP_SLOTS 32u             /* user presets (upreset.c) */
  #define NELEM(a) (sizeof(a) / sizeof((a)[0]))
-@@ -34,7 +55,9 @@ enum {
+@@ -34,7 +57,9 @@ enum {
      F_INT, F_PCT, F_BIPCT, F_TIME, F_LFOHZ, F_CUTOFF, F_DB, F_SEMI, F_ENUM, F_BPM, F_NOTE,
      F_ONOFF, F_OCT, F_STEPS,
      F_SWING,                    /* 0..100: MPC swing, 50 % (straight) .. 75 % */
@@ -1653,10 +1655,10 @@ index a3f68a9..fe6b1d9 100644
  
  /* every factory sound as loud as the others: a level trim per preset, 1/2 dB, measured on a phrase
 diff --git a/firmware/src/gfx.c b/firmware/src/gfx.c
-index 298d8b5..ea9110b 100644
+index 298d8b5..3a0a941 100644
 --- a/firmware/src/gfx.c
 +++ b/firmware/src/gfx.c
-@@ -79,12 +79,19 @@ _Static_assert(sizeof(theme_t) == 40u, "theme layout (the editor's Theme page wr
+@@ -79,12 +79,15 @@ _Static_assert(sizeof(theme_t) == 40u, "theme layout (the editor's Theme page wr
  static theme_t theme;                            /* the theme there is (theme_valid: project.c theme_check passed) */
  static uint8_t theme_valid, theme_on;
  /* the tracks' colours: full, two thirds, one third (the built-in ones as they always were) */
@@ -1666,7 +1668,7 @@ index 298d8b5..ea9110b 100644
 -static uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
 -static uint16_t TE_MID[4] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18)};
 -static uint16_t TE_DIM[4] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8)};
-+/* Six colour slots: the four of SLOOP (tracks 1..3, the drum track), then the LITE part (4: a light grey) and the second drum
++/* (gfx.c is compiled before core.h: te_slot(), the slot of a working track, is in core.h) Six colour slots: the four of SLOOP (tracks 1..3, the drum track), then the LITE part (4: a light grey) and the second drum
 + * track (5: violet). A working track's slot is te_slot(): the slots 0..3 are the wire's tracks as they always were. */
 +#define NTE 6u
 +static const uint16_t TE_COL_DEF[NTE] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(176, 96, 255)};
@@ -1675,14 +1677,10 @@ index 298d8b5..ea9110b 100644
 +static uint16_t TE_COL[NTE] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(176, 96, 255)};
 +static uint16_t TE_MID[NTE] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18), RGB(142, 145, 150), RGB(117, 64, 170)};
 +static uint16_t TE_DIM[NTE] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8), RGB(72, 73, 76), RGB(58, 32, 86)};
-+static inline uint32_t te_slot(uint32_t k)       /* the colour slot of working track k */
-+{
-+    return k < NHEAVY ? k : k == TRK_DRUM ? 3u : k == NHEAVY ? 4u : 5u;
-+}
  static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
  {
      uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
-@@ -177,6 +184,12 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
+@@ -177,6 +180,12 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
          TE_MID[k] = cu ? rgb565_scale(theme.trk[k], 2u, 3u) : TE_MID_DEF[k];
          TE_DIM[k] = cu ? rgb565_scale(theme.trk[k], 1u, 3u) : TE_DIM_DEF[k];
      }
