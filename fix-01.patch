@@ -1,0 +1,63 @@
+diff --git a/firmware/src/eng_muug.c b/firmware/src/eng_muug.c
+index 0976ec8..260eded 100644
+--- a/firmware/src/eng_muug.c
++++ b/firmware/src/eng_muug.c
+@@ -399,8 +399,8 @@ static void fmini_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
+     fine = m->fine + ((int32_t)g[FG_TUNE] - 64) * 237 / 64;
+     {   /* the VCOs wander a few cents (temperature, the integrators): a slow random walk per oscillator, about +-2 cents */
+         int32_t d1 = v->s[5], d2 = v->s[6];
+-        d1 += ((int32_t)(noise32(&fmini_nst[tr]) >> 20) - 2048 >> 6) - (d1 >> 11);
+-        d2 += ((int32_t)(noise32(&fmini_nst[tr]) >> 20) - 2048 >> 6) - (d2 >> 11);
++        d1 += (((int32_t)(noise32(&fmini_nst[tr]) >> 20) - 2048) >> 6) - (d1 >> 11);
++        d2 += (((int32_t)(noise32(&fmini_nst[tr]) >> 20) - 2048) >> 6) - (d2 >> 11);
+         v->s[5] = d1;
+         v->s[6] = d2;
+         dr1 = d1 >> 8;
+diff --git a/firmware/src/slicer.c b/firmware/src/slicer.c
+index 9a29497..d8e3f2a 100644
+--- a/firmware/src/slicer.c
++++ b/firmware/src/slicer.c
+@@ -46,7 +46,11 @@ static const uint16_t SL_PAT[SL_NPAT] = {
+ };
+ static const uint8_t SL_DEN[6] = {2, 4, 8, 3, 6, 12};   /* P_SLRATE (N_SLDIV): a step = 1 / DEN beats */
+ 
+-static int16_t sl_buf[NTRK][SL_LEN] __attribute__((section(".pool")));
++/* One recording buffer (8 KB of the pool) for SLOOP's four tracks: 1..3 and the drum track. The LITE part has none: its SLICER
++ * is off (a part added on top must not eat the pool: the build keeps 8 KiB of it spare). */
++#define NSLBUF (NHEAVY + 1u)
++static inline uint32_t sl_slot(uint32_t k) { return k < NHEAVY ? k : NHEAVY; }   /* (k == TRK_DRUM: the last) */
++static int16_t sl_buf[NSLBUF][SL_LEN] __attribute__((section(".pool")));
+ typedef struct {
+     uint32_t pos, len;           /* clock units into the step, its length */
+     uint32_t base;               /* the step without swing (units) */
+@@ -154,7 +158,7 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
+ {
+     uint32_t k = (uint32_t)(t - trk), i = 0, bpm = (uint32_t)song.g[G_BPM];
+     sl_t *s = &sl[k];
+-    int act = b && (t->p[P_SLCR] != SL_OFF || s->gc || s->w);
++    int act = b && k != NHEAVY && (t->p[P_SLCR] != SL_OFF || s->gc || s->w);   /* (the LITE part: no buffer, no SLICER) */
+     while (i < n) {
+         uint32_t m, left;
+         while (s->pos >= s->len)
+@@ -162,7 +166,7 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
+         left = (s->len - s->pos + bpm - 1u) / bpm;  /* samples to the boundary */
+         m = left < n - i ? left : n - i;
+         if (act)
+-            sl_seg(t, s, sl_buf[k], b + i, m, left);
++            sl_seg(t, s, sl_buf[sl_slot(k)], b + i, m, left);
+         s->pos += m * bpm;
+         i += m;
+     }
+diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
+index 72212ae..c1addf6 100644
+--- a/firmware/src/ui_draw.c
++++ b/firmware/src/ui_draw.c
+@@ -571,7 +571,7 @@ UI_SMALL static void draw_tracks(void)
+     if (ui.force) {
+         lcd_fill(0, Y_GRAPH, 240, H_GRAPH, C_BLACK);
+         for (c = 0; c < TRK_UI_N; c++)
+-            ts.meter[w] = 0;
++            ts.meter[c] = 0;
+     }
+     for (w = 0; w < TRK_UI_N; w++) {                   /* (SLOOP's four columns, in its order; the LITE part is not drawn here yet) */
+         uint32_t c = trk_of_ui(w);

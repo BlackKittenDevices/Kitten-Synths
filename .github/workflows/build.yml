@@ -6,7 +6,7 @@ name: build
 on:
   workflow_dispatch: {}
   push:
-    paths: ["muug.patch", ".github/workflows/build.yml"]
+    paths: ["muug.patch", "fix-*.patch", ".github/workflows/build.yml"]
 
 env:
   SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
@@ -23,8 +23,10 @@ jobs:
           git clone https://github.com/isod89/sloop-fm1.git sloop
           cd sloop && git checkout "$SLOOP_COMMIT"
 
-      - name: Kitten Synths patch
-        run: cd sloop && git apply --index ../muug.patch
+      - name: Kitten Synths patches (muug.patch, then fix-*.patch in order)
+        run: |
+          cd sloop
+          for p in ../muug.patch ../fix-*.patch; do echo "applying $p"; git apply --index "$p"; done
 
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
