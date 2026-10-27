@@ -10,7 +10,7 @@ on:
 
 env:
   SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
-  VERSION: 0.1-beta
+  VERSION: 2.8-kitten                                         # one digit each, then a suffix (tools/build.py --release): the editor reads "2.8" as the SLOOP version
 
 jobs:
   build:
@@ -40,12 +40,19 @@ jobs:
         run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
 
       - name: Build the firmware
-        run: cd sloop && ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
+        shell: bash
+        run: |
+          set -o pipefail
+          cd sloop && ./build.sh --release "$VERSION" 2>&1 | tee ../build.log
+
+      - name: The end of the build log (if it failed)
+        if: failure()
+        run: tail -n 60 build.log || true
 
       - name: Size of the firmware
         run: |
-          cd sloop && ls -l build/*.bin build/*.fwsc build/loader/*.bin 2>/dev/null | tee ../size.log
-          grep -i -E "ram|flash|size|bytes|free" ../build.log | tail -20 | tee -a ../size.log || true
+          cd sloop && ls -l build/ build/loader/ | tee ../size.log
+          grep -i -E "ram|flash|size|bytes|free|overflow" ../build.log | tail -20 | tee -a ../size.log || true
 
       - name: Tests (the host suite and the web editor)
         continue-on-error: true
