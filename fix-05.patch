@@ -1,0 +1,35 @@
+diff --git a/firmware/src/editor_muug.c b/firmware/src/editor_muug.c
+index c3ef695..84ff543 100644
+--- a/firmware/src/editor_muug.c
++++ b/firmware/src/editor_muug.c
+@@ -1,8 +1,8 @@
+ /* SPDX-License-Identifier: GPL-3.0-only
+  * Editor protocol, MUUG patches (cmds 78 and 79; the protocol version stays 12: the editor offers the MUUG panel when the
+- * engine list has MUUG). A patch travels as its FG_SIZE bytes, every byte 7-bit (no pack7). Only the part's own patch,
++ * engine list has MUUG). A patch travels as its FG_NUM bytes (18; FG_SIZE is the padded store), every byte 7-bit (no pack7). Only the part's own patch,
+  * in RAM (the drum track has none): the project keeps SLOT, not the patch.
+- *   MUUG_GET  track          -> track, rc, FG_SIZE bytes   (rc 1: bad track)
++ *   MUUG_GET  track          -> track, rc, FG_NUM bytes   (rc 1: bad track)
+  *   MUUG_PUT  track, bytes   -> track, rc                  (every value into its range; SLOT becomes OWN) */
+ #ifndef UI_SMALL
+ #define UI_SMALL
+@@ -16,13 +16,16 @@ UI_SMALL static int ed_muug_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
+     case ED_MUUG_GET:
+         rc = n != 1u || a[0] >= NHEAVY ? 1u : 0u;
+         ed_b(n ? a[0] : 127u); ed_b(rc);
+-        for (i = 0; !rc && i < FG_SIZE; i++)
++        for (i = 0; !rc && i < FG_NUM; i++)
+             ed_b(fmini_patch[a[0]][i] & 127u);
+         return 1;
+     case ED_MUUG_PUT:
+-        rc = n != 1u + FG_SIZE || a[0] >= NHEAVY ? 1u : 0u;
++        rc = n != 1u + FG_NUM || a[0] >= NHEAVY ? 1u : 0u;
+         if (!rc) {
+-            muug_put(a[0], a + 1);
++            uint8_t pt[FG_SIZE];
++            memcpy(pt, fmini_patch[a[0]], FG_SIZE);          /* (the padding stays as it is) */
++            memcpy(pt, a + 1, FG_NUM);
++            muug_put(a[0], pt);
+             ui.force = 1;
+         }
+         ed_b(n ? a[0] : 127u); ed_b(rc);
