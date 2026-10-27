@@ -1,0 +1,238 @@
+diff --git a/firmware/src/ui_input.c b/firmware/src/ui_input.c
+index aa3cbd2..5989ee3 100644
+--- a/firmware/src/ui_input.c
++++ b/firmware/src/ui_input.c
+@@ -128,17 +128,18 @@ UI_SMALL static uint32_t keys_lit(void)
+         if (lights_notes)                          /* NOTES: the scale goes dim (keys_notes_dim), what sounds lit */
+             return (blink ? scale_keys(1) : 0u) | keys_sounding(t) | fm1_in.notes;
+         return scale_keys(0) & ~(blink ? 0u : scale_keys(1));
+-    case LY_MIX:                                   /* tracks heard: 1..4; soloed: 5..8; a fill: 9, armed / on: 10; tap: the beat */
+-        for (i = 0; i < 4u; i++) {
+-            if (!trk_silent(&trk[trk_of_ui(i)]))
++    case LY_MIX:                                   /* tracks heard: 1..5 (screen order: LITE before the drums); soloed: 6..10; a fill: 11,
++                                                    * armed / on: 12; tap: the beat */
++        for (i = 0; i < NTRK; i++) {
++            if (!trk_silent(&trk[i]))
+                 m |= 1u << key_of_white(i);
+-            if ((song.solo >> trk_of_ui(i)) & 1u)
+-                m |= 1u << key_of_white(4u + i);
++            if ((song.solo >> i) & 1u)
++                m |= 1u << key_of_white(NTRK + i);
+         }
+         if (fill_now)
+-            m |= 1u << key_of_white(8);
++            m |= 1u << key_of_white(10);
+         if (fill_arm || fill_bar_on)
+-            m |= 1u << key_of_white(9);
++            m |= 1u << key_of_white(11);
+         if (play_led())
+             m |= 1u << key_of_white(15);
+         return m;
+diff --git a/firmware/src/ui_layers.c b/firmware/src/ui_layers.c
+index 710a903..997c38f 100644
+--- a/firmware/src/ui_layers.c
++++ b/firmware/src/ui_layers.c
+@@ -334,7 +334,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+             ui.step_held &= (uint16_t)~(1u << w);
+             if (layer == LY_STEP)
+                 step_up((uint32_t)w);
+-            if (layer == LY_MIX && w == 8)
++            if (layer == LY_MIX && w == 10)
+                 fill_held = 0;                              /* GLO + key 9 let go: the fill ends */
+         }
+         return;
+@@ -427,14 +427,14 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+     case LY_MIX:
+         if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
+             ml_toggle();
+-        } else if (w >= 0 && w < 4) {                      /* (the keys are the wire's four tracks) */
+-            uint32_t k = trk_of_ui((uint32_t)w);
++        } else if (w >= 0 && w < (int)NTRK) {              /* mute 1..5: the tracks as the screen has them (LITE before the drums) */
++            uint32_t k = (uint32_t)w;
+             trk[k].p[P_MUTE] = (int16_t)!trk[k].p[P_MUTE];
+-        } else if (w >= 4 && w < 8) {
+-            song.solo ^= (uint8_t)(1u << trk_of_ui((uint32_t)(w - 4)));
+-        } else if (w == 8) {
++        } else if (w >= (int)NTRK && w < (int)(2u * NTRK)) {   /* solo 1..5 */
++            song.solo ^= (uint8_t)(1u << (uint32_t)(w - (int)NTRK));
++        } else if (w == 10) {
+             fill_held = 1;                                  /* FILL while held */
+-        } else if (w == 9) {
++        } else if (w == 11) {
+             fill_arm = (uint8_t)!fill_arm;                  /* FILL NEXT BAR (again: cancelled) */
+             ui_message(fill_arm ? "FILL: NEXT BAR" : "FILL BAR OFF");
+         } else if (w == 15) {
+@@ -475,6 +475,10 @@ UI_SMALL static void chain_sub(char *sub, uint32_t n)
+ }
+ 
+ /* KNOB 1..4 while a layer is held: what the layer gives them (the page does not see them) */
++/* GLO: the four knobs are the levels of tracks 1..3 and, on the fourth, the drums (as SLOOP) - or the LITE part while it is the
++ * selected track (the screen order has five tracks, the panel four knobs) */
++static inline uint32_t mix_knob_trk(uint32_t k) { return k < 3u ? k : song.sel == NHEAVY ? NHEAVY : TRK_DRUM; }
++
+ UI_SMALL static void layer_knobs(uint32_t layer)
+ {
+     uint32_t k;
+@@ -560,7 +564,8 @@ UI_SMALL static void layer_knobs(uint32_t layer)
+             }
+             break;
+         case LY_MIX: {
+-            int16_t *lv = k == TRK_DRUM ? &song.g[G_DRLVL] : &trk[k].p[P_LEVEL];
++            uint32_t tk = mix_knob_trk(k);                  /* (knob 4: the drums, or the LITE part while it is the selected track) */
++            int16_t *lv = tk == TRK_DRUM ? &song.g[G_DRLVL] : &trk[tk].p[P_LEVEL];
+             *lv = (int16_t)clamp(*lv + accel(EN_K1 + k, s, 127), 0, 127);
+             break;
+         }
+@@ -954,37 +959,38 @@ UI_SMALL static void layer_screen_draw(void)
+         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
+         break;
+     }
+-    case LY_MIX: {                                      /* mute 1..4, solo 1..4, fill / fill bar, tap */
++    case LY_MIX: {                                      /* mute 1..5, solo 1..5, fill / fill bar, tap */
+         col = C_WHITE;
+         str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
+-        for (i = 0; i < 4u; i++) {
+-            int m = trk[trk_of_ui(i)].p[P_MUTE] != 0, so = (song.solo >> trk_of_ui(i)) & 1u;
++        for (i = 0; i < NTRK; i++) {                     /* mute 1..5, solo 1..5: the screen's order (LITE before the drums) */
++            int m = trk[i].p[P_MUTE] != 0, so = (song.solo >> i) & 1u;
+             str_cpy(tl[i].lab, "mute 1", 8);
+             tl[i].lab[5] = (char)('1' + i);
+-            tl[i].bg = m ? TE_G2 : TE_COL[i];
++            tl[i].bg = m ? TE_G2 : TE_COL[te_slot(i)];
+             tl[i].fg = m ? TE_G3 : C_BLACK;
+-            str_cpy(tl[4 + i].lab, "solo 1", 8);
+-            tl[4 + i].lab[5] = (char)('1' + i);
+-            tl[4 + i].bg = so ? C_WHITE : TE_G1;
+-            tl[4 + i].fg = so ? C_BLACK : TE_G3;
+-            tl[4 + i].top = TE_DIM[i];
++            str_cpy(tl[NTRK + i].lab, "solo 1", 8);
++            tl[NTRK + i].lab[5] = (char)('1' + i);
++            tl[NTRK + i].bg = so ? C_WHITE : TE_G1;
++            tl[NTRK + i].fg = so ? C_BLACK : TE_G3;
++            tl[NTRK + i].top = TE_DIM[te_slot(i)];
+         }
+-        str_cpy(tl[8].lab, "fill", 8);                  /* key 9: held = a fill; key 10: the next bar is one */
+-        tl[8].bg = fill_now ? C_WHITE : TE_G1;
+-        tl[8].fg = fill_now ? C_BLACK : TE_G4;
+-        str_cpy(tl[9].lab, "bar", 8);
+-        tl[9].bg = fill_bar_on ? C_WHITE : TE_G1;
+-        tl[9].fg = fill_bar_on ? C_BLACK : TE_G4;
+-        tl[9].top = fill_arm ? C_WHITE : 0;
++        str_cpy(tl[10].lab, "fill", 8);                 /* key 11: held = a fill; key 12: the next bar is one */
++        tl[10].bg = fill_now ? C_WHITE : TE_G1;
++        tl[10].fg = fill_now ? C_BLACK : TE_G4;
++        str_cpy(tl[11].lab, "bar", 8);
++        tl[11].bg = fill_bar_on ? C_WHITE : TE_G1;
++        tl[11].fg = fill_bar_on ? C_BLACK : TE_G4;
++        tl[11].top = fill_arm ? C_WHITE : 0;
+         fmt_int(tl[15].lab, song.g[G_BPM]);
+         tl[15].bg = song.playing && clk_pos < BEAT_U / 4u ? C_WHITE : TE_G2;
+         tl[15].fg = tl[15].bg == C_WHITE ? C_BLACK : C_WHITE;
+         str_cpy(tl[14].lab, "tap>", 8);
+         tl[14].bg = C_BLACK;
+         for (i = 0; i < 4u; i++) {
+-            uint32_t lv = trk_level(trk_of_ui(i));
++            uint32_t lv = trk_level(mix_knob_trk(i));
+             static const char *const L[4] = {"1", "2", "3", "4"};
+-            lab[i] = L[i];
++            static const char *const LL[4] = {"1", "2", "3", "LITE"};
++            lab[i] = i == 3u && mix_knob_trk(3) == NHEAVY ? LL[3] : L[i];
+             fmt_int(v[i], (int32_t)lv * 100 / 127);
+             ratio[i] = (int32_t)lv * 1000 / 127;
+         }
+diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
+index c9514d7..0f7de7c 100644
+--- a/tests/ui_pages_test.c
++++ b/tests/ui_pages_test.c
+@@ -379,24 +379,28 @@ int main(int argc, char **argv)
+     release(B_SCL);
+     press(B_GLO); frames(10);
+     key(0); check(trk[0].p[P_MUTE] == 1, "GLO + key 1: track 1 muted");
+-    key(9); check(song.solo == 2u, "GLO + key 6: track 2 soloed");
++    key(key_of_white(6)); check(song.solo == 2u, "GLO + key 7: track 2 soloed");
+     ppm("layer-mix");
+     for (i = 0; i < 4u; i++) { fm1_in.notes = 1u << 26; frame(); fm1_in.notes = 0; frames(36); }   /* ~0.6 s apart */
+     check(song.g[G_BPM] >= 95 && song.g[G_BPM] <= 105, "GLO + the last key, tapped at ~0.6 s: ~100 BPM");
+-    key(0); key(9);
++    key(0); key(key_of_white(6));
+     check(!trk[0].p[P_MUTE] && !song.solo, "again: unmuted, no solo");
+-    key(key_of_white(3)); check(trk[TRK_DRUM].p[P_MUTE] == 1 && !trk[NHEAVY].p[P_MUTE], "GLO + key 4: the DRUM track muted (not the LITE part)");
+-    key(key_of_white(7)); check(song.solo == (1u << TRK_DRUM), "GLO + key 8: the drum track soloed");
+-    key(key_of_white(3)); key(key_of_white(7));
++    key(key_of_white(3)); check(trk[NHEAVY].p[P_MUTE] == 1 && !trk[TRK_DRUM].p[P_MUTE], "GLO + key 4: the LITE part muted (the screen's order)");
++    key(key_of_white(8)); check(song.solo == (1u << NHEAVY), "GLO + key 9: the LITE part soloed");
++    key(key_of_white(3)); key(key_of_white(8));
++    check(!trk[NHEAVY].p[P_MUTE] && !song.solo, "again: the LITE part unmuted, no solo");
++    key(key_of_white(4)); check(trk[TRK_DRUM].p[P_MUTE] == 1 && !trk[NHEAVY].p[P_MUTE], "GLO + key 5: the DRUM track muted");
++    key(key_of_white(9)); check(song.solo == (1u << TRK_DRUM), "GLO + key 10: the drum track soloed");
++    key(key_of_white(4)); key(key_of_white(9));
+     check(!trk[TRK_DRUM].p[P_MUTE] && !song.solo, "again: the drum track unmuted, no solo");
+-    /* (2.4) key 9 held: a fill; key 10: the next bar is one (again: cancelled) */
+-    fm1_in.notes = 1u << key_of_white(8); frame(); frame();
+-    check(fill_held == 1u && fill_now == 1u && (keys_lit() & (1u << key_of_white(8))) != 0, "GLO + key 9 held: FILL (the key lit)");
++    /* key 11 held: a fill; key 12: the next bar is one (again: cancelled) */
++    fm1_in.notes = 1u << key_of_white(10); frame(); frame();
++    check(fill_held == 1u && fill_now == 1u && (keys_lit() & (1u << key_of_white(10))) != 0, "GLO + key 11 held: FILL (the key lit)");
+     ui.force = 1; frame(); ppm("layer-mix-fill");
+     fm1_in.notes = 0; frame(); frame();
+-    check(fill_held == 0u && fill_now == 0u, "key 9 let go: the fill ends");
+-    key(key_of_white(9)); check(fill_arm == 1u && (keys_lit() & (1u << key_of_white(9))) != 0, "GLO + key 10: FILL NEXT BAR armed (the key lit)");
+-    key(key_of_white(9)); check(fill_arm == 0u, "GLO + key 10 again: cancelled");
++    check(fill_held == 0u && fill_now == 0u, "key 11 let go: the fill ends");
++    key(key_of_white(11)); check(fill_arm == 1u && (keys_lit() & (1u << key_of_white(11))) != 0, "GLO + key 12: FILL NEXT BAR armed (the key lit)");
++    key(key_of_white(11)); check(fill_arm == 0u, "GLO + key 12 again: cancelled");
+     release(B_GLO);
+     fm1_in.notes = 1u << key_of_white(8); frame();     /* (no layer: a plain key, no fill) */
+     check(fill_held == 0u, "key 9 without GLO: no fill");
+@@ -683,6 +687,8 @@ int main(int argc, char **argv)
+                 ui.layer = (uint8_t)L[k].ly;
+                 if (L[k].lit)
+                     ok = (keys_lit() >> 7 & 1u) != 0;
++                else if (L[k].ly == LY_MIX)                /* (the tiles' own keys light too: C4 is the drums' mute key) */
++                    ok = (keys_notes_dim() >> 7 & 1u) != 0;
+                 else
+                     ok = (keys_notes_dim() >> 7 & 1u) != 0 && (keys_lit() >> 7 & 1u) == 0;
+                 snprintf(what, sizeof what, "NOTES on, %s layer: the sounding C4 %s", L[k].name, L[k].lit ? "lit" : "glows under the tiles");
+@@ -1856,13 +1862,13 @@ int main(int argc, char **argv)
+         ok = trk[0].p[P_MUTE] && (lv_out[9] & 1u);
+         live(2, LY_MIX, 0, 1); live(2, LY_MIX, 0, 0);
+         ok &= !trk[0].p[P_MUTE];
+-        live(2, LY_MIX, 5, 1); live(2, LY_MIX, 5, 0);
++        live(2, LY_MIX, 6, 1); live(2, LY_MIX, 6, 0);
+         ok &= song.solo == 2u;
+-        live(2, LY_MIX, 5, 1); live(2, LY_MIX, 5, 0);
++        live(2, LY_MIX, 6, 1); live(2, LY_MIX, 6, 0);
+         ok &= !song.solo;
+-        live(2, LY_MIX, 8, 1); ok &= fill_held == 1u; live(2, LY_MIX, 8, 0); ok &= !fill_held;
+-        live(2, LY_MIX, 9, 1); ok &= fill_arm == 1u && (lv_out[1] & 32u) != 0u;
+-        live(2, LY_MIX, 9, 1); ok &= !fill_arm;
++        live(2, LY_MIX, 10, 1); ok &= fill_held == 1u; live(2, LY_MIX, 10, 0); ok &= !fill_held;
++        live(2, LY_MIX, 11, 1); ok &= fill_arm == 1u && (lv_out[1] & 32u) != 0u;
++        live(2, LY_MIX, 11, 1); ok &= !fill_arm;
+         check(ok, "LIVE: GLO keys: mute, solo, fill while held, fill next bar (as GLO + key)");
+         live(2, LY_SONG, 1, 1); live(2, LY_SONG, 1, 0);
+         ok = live_req == 1 && chain_n == 0u && lv_out[6] == 2u;
+diff --git a/web/editor.html b/web/editor.html
+index 02ba60a..3f7664f 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -1263,7 +1263,7 @@ const LIVE = { STATE: 0, PLAY: 1, KEY: 2, FX: 3, REC: 4, UNDO: 5, LY_KEY: 5, LY_
+     "LOOP 8T", "MONO", "FADE OUT"],
+   /* the GLO keys (ui_layers.c layer_key): 1..4 mute, 5..8 solo, 9 fill while held, 10 fill next bar, 16 tap tempo;
+      the SAVE keys: 1..4 play A..D, 5..8 store into A..D, 13 loop / song, 14 SONG REC */
+-  MUTE: 0, SOLO: 4, FILL: 8, FILL_BAR: 9, TAP: 15, SEC: 0, STORE: 4, SONG: 12, SONG_REC: 13 };
++  MUTE: 0, SOLO: 5, FILL: 10, FILL_BAR: 11, TAP: 15, SEC: 0, STORE: 4, SONG: 12, SONG_REC: 13 };
+ /* ---- LIVE pro (editor only: the 2.7 firmware as it is, every value through TRACK_MIX / TRACK_PARAM / SET).
+    Scenes: what a track and the master sound like, kept in the browser, recalled at once or morphed over bars, or mixed
+    with the A / B crossfader. Ids: core.h P_* and G_* (2.7: P_E0 = 63). cont: values that glide in a morph; the others
+@@ -3873,8 +3873,8 @@ function makeMockDevice(opt = {}) {
+       else if (!play && st.playing) { st.playing = false; L.next = -1; L.fillBar = false; if (st.rec) st.rec = 0; }
+     } else if (op === LIVE.KEY && a.length >= 4 && x === LIVE.LY_MIX && y < 16) {
+       if (!z) { if (y === LIVE.FILL) L.fillHeld = false; return; }
+-      if (y < 4) st.tracks[y].p[40] = st.tracks[y].p[40] ? 0 : 1;
+-      else if (y < 8) st.solo ^= 1 << (y - 4);
++      if (y < 5) st.tracks[y].p[40] = st.tracks[y].p[40] ? 0 : 1;
++      else if (y < 10) st.solo ^= 1 << (y - 5);
+       else if (y === LIVE.FILL) L.fillHeld = true;
+       else if (y === LIVE.FILL_BAR) { L.fillBar = !L.fillBar; L.fillAt = nextBar(); }
+       else if (y === LIVE.TAP) {                     /* ui_layers.c tap_tempo: the last taps' mean, 40..240 */
