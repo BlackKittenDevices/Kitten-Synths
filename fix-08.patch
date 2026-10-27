@@ -1,0 +1,707 @@
+diff --git a/firmware/hal/fm1_flash.h b/firmware/hal/fm1_flash.h
+index 8befc33..69fc4aa 100644
+--- a/firmware/hal/fm1_flash.h
++++ b/firmware/hal/fm1_flash.h
+@@ -44,14 +44,17 @@ static inline void *fl_far(void *p) { void *volatile q = p; return q; }
+ #define FL_FM6_LO       0x000E5000u                /* the FM6 patch bank (fm6_bank.c), A / B sectors; SLOOP 2.4 */
+ #define FL_FM6_HI       0x000E7000u
+ #define FL_USR4_LO      0x000E7000u                /* the user sample slot USR4 (eng_sample.c), 80 KiB; SLOOP 2.4 */
+-#define FL_USR4_HI      0x000FB000u                /* (0xFB000..0xFBFFF stays free) */
++#define FL_USR4_HI      0x000FB000u
++#define FL_KIT_LO       0x000FB000u                /* Kitten Synths (project.c ks_*): the LITE part and the MUUG patches of the projects */
++#define FL_KIT_HI       0x000FC000u
+ /* [off, off + n) inside [lo, hi), without wrapping: off + n can overflow, and
+  * the 1 MiB part ignores the high address bits, so a wrapped range lands low. */
+ #define FL_IN(off, n, lo, hi) ((uint32_t)(off) >= (lo) && (uint32_t)(off) <= (hi) && \
+                                (uint32_t)(n) <= (hi) - (uint32_t)(off))
+ /* Felucca's own store (projects, user samples; settings; the FM6 bank) */
+ #define FL_STORE_OK(off, n) (FL_IN(off, n, FL_DATA_LO, FL_DATA_HI) || FL_IN(off, n, FL_GLOB_LO, FL_GLOB_HI) || \
+-                             FL_IN(off, n, FL_FM6_LO, FL_FM6_HI) || FL_IN(off, n, FL_USR4_LO, FL_USR4_HI))
++                             FL_IN(off, n, FL_FM6_LO, FL_FM6_HI) || FL_IN(off, n, FL_USR4_LO, FL_USR4_HI) || \
++                             FL_IN(off, n, FL_KIT_LO, FL_KIT_HI))
+ /* Where the RAM driver may erase / program. The app build allows only its own
+  * data regions; the update loader (firmware/loader) defines its own window. */
+ #ifndef FL_RANGE_OK
+diff --git a/firmware/src/kitten_store.c b/firmware/src/kitten_store.c
+new file mode 100644
+index 0000000..5d17a86
+--- /dev/null
++++ b/firmware/src/kitten_store.c
+@@ -0,0 +1,131 @@
++/* SPDX-License-Identifier: GPL-3.0-only
++ * Kitten Synths: the LITE part and the MUUG patches of a project, in the flash object OBJ_KITTEN (included by project.c; the host
++ * test tests/kitten_store_test.c includes it with a RAM flash). Needs proj_tmp, autosave_buf, flash_ok, storage.c, eng_muug.c. */
++#ifndef UI_SMALL
++#define UI_SMALL
++#endif
++/* ---- Kitten Synths: what a project file has no room for, beside it (flash object OBJ_KITTEN, one sector).
++ * A project file (SLOOP's, 3816 of 3840 bytes) holds tracks 1..3 and the drums. The LITE part (the fourth synth) and the MUUG
++ * patches that are the part's own (SLOT = OWN) go in this object: one entry for each slot A..D and one for the working project
++ * (the autosave), saved with the project, loaded with it. The object: "KSC1", the five entries' lengths (u16, 0 = none), the entries
++ * one after the other (a mask of the patches, 3 x FG_NUM bytes, the LITE record run-length coded). Staged in proj_tmp; the record
++ * is built in autosave_buf (free outside autosave_tick: the callers check). */
++#define KS_MAGIC 0x4B534331u                   /* "KSC1" */
++#define KS_N 5u                                /* the slots A..D, then the working project */
++#define KS_TAB (4u + 2u * KS_N)
++#define KS_MAX 3800u                           /* the object's bytes at most (a sector's payload is 3840) */
++_Static_assert(KS_MAX <= ST_PAYLOAD_MAX && sizeof proj_tmp >= KS_MAX && sizeof autosave_buf >= 3u * sizeof(proj_trk_t),
++               "the Kitten object fits its sector and the stage; a new entry (the record and its coding) fits autosave_buf");
++UI_SMALL static uint32_t ks_hash(void)           /* the LITE part and the own patches as they are now (the autosave's change test) */
++{
++    const track_t *t = &trk[NHEAVY];
++    uint32_t h = proj_hash(t->p, sizeof t->p) * 31u + proj_hash(t->step, sizeof t->step), k;
++    h = (h * 31u + proj_hash(t->micro, sizeof t->micro)) * 31u + proj_hash(t->fill, sizeof t->fill);
++    h = (h * 31u + proj_hash(t->lock, sizeof t->lock)) * 31u + t->eng_req * 257u + t->preset;
++    for (k = 0; k < NHEAVY; k++)
++        if (trk[k].eng_req == ENGI_MUUG && trk[k].p[P_E7] == (int16_t)FMINI_OWN)
++            h = h * 31u + proj_hash(fmini_patch[k], FG_NUM) + k;
++    return h;
++}
++static void ks_move(uint8_t *d, const uint8_t *s, uint32_t n)   /* overlapping: memmove */
++{
++    if (d < s)
++        while (n--)
++            *d++ = *s++;
++    else
++        while (n--)
++            d[n] = s[n];
++}
++static uint32_t ks_len(const uint8_t *b, uint32_t i) { return (uint32_t)b[4u + 2u * i] | (uint32_t)b[5u + 2u * i] << 8; }
++static void ks_set_len(uint8_t *b, uint32_t i, uint32_t n) { b[4u + 2u * i] = (uint8_t)n; b[5u + 2u * i] = (uint8_t)(n >> 8); }
++UI_SMALL static uint32_t ks_off(const uint8_t *b, uint32_t i)   /* where entry i starts */
++{
++    uint32_t o = KS_TAB, k;
++    for (k = 0; k < i; k++)
++        o += ks_len(b, k);
++    return o;
++}
++UI_SMALL static int ks_stage(void)                /* the object into proj_tmp (a fresh one if there is none); 1 = it was there */
++{
++    uint8_t *b = (uint8_t *)&proj_tmp;
++    uint32_t m, k, tot = KS_TAB;
++    int n = st_load(OBJ_KITTEN, b, KS_MAX);
++    if (n >= (int)KS_TAB && (memcpy(&m, b, 4), m == KS_MAGIC)) {
++        for (k = 0; k < KS_N; k++)
++            tot += ks_len(b, k);
++        if (tot <= (uint32_t)n)
++            return 1;
++    }
++    memset(b, 0, KS_TAB);
++    m = KS_MAGIC;
++    memcpy(b, &m, 4);
++    return 0;
++}
++/* slot 0..3 / 4 = the working project: its entry from what plays now. 0 = saved, 1 = saved without the LITE record (no room left
++ * in the object), else an error */
++UI_SMALL static int ks_write(uint32_t slot)
++{
++    uint8_t *b = (uint8_t *)&proj_tmp, *e = (uint8_t *)&autosave_buf.t[1], mask = 0;
++    proj_trk_t *r = &autosave_buf.t[0];
++    uint32_t k, w, n, off, old, tot, tail;
++    int part = 0;
++    if (!flash_ok || slot >= KS_N)
++        return -1;
++    for (k = 0; k < NHEAVY; k++)
++        if (trk[k].eng_req == ENGI_MUUG && trk[k].p[P_E7] == (int16_t)FMINI_OWN) {
++            mask |= (uint8_t)(1u << k);
++            memcpy(e + 1u + k * FG_NUM, fmini_patch[k], FG_NUM);
++        }
++    e[0] = mask;
++    memset(r, 0, sizeof *r);
++    proj_trk_capture(r, NHEAVY);
++    w = ks_rle(e + KS_HDR, 2u * sizeof *r - KS_HDR, (const uint8_t *)r, sizeof *r);
++    n = KS_HDR + w;
++    ks_stage();
++    old = ks_len(b, slot);
++    for (tot = KS_TAB, k = 0; k < KS_N; k++)
++        tot += ks_len(b, k);
++    if (tot - old + n > KS_MAX) {                  /* no room: the patches alone */
++        n = KS_HDR;
++        part = 1;
++    }
++    if (tot - old + n > KS_MAX)
++        return -2;
++    off = ks_off(b, slot);
++    tail = tot - off - old;
++    ks_move(b + off + n, b + off + old, tail);     /* the entries after it move */
++    memcpy(b + off, e, n);
++    ks_set_len(b, slot, n);
++    k = st_save(OBJ_KITTEN, b, tot - old + n);
++    return k ? (int)k : part;
++}
++/* the entry of slot 0..4 into the working tracks: the own MUUG patches, then the LITE part. -1: no entry, 0: done,
++ * 1: done without the LITE record. Called with the transport stopped, as project_apply */
++UI_SMALL static int ks_apply(uint32_t slot, const project_t *p)
++{
++    const uint8_t *b = (const uint8_t *)&proj_tmp, *e;
++    proj_trk_t *r = &autosave_buf.t[0];
++    uint32_t k, len;
++    if (!flash_ok || slot >= KS_N || !ks_stage())
++        return -1;
++    len = ks_len(b, slot);
++    e = b + ks_off(b, slot);
++    if (len < KS_HDR)
++        return -1;
++    fm1_irq_off();
++    for (k = 0; k < NHEAVY; k++)
++        if ((e[0] >> k) & 1u && trk[k].eng_req == ENGI_MUUG && trk[k].p[P_E7] == (int16_t)FMINI_OWN) {
++            uint8_t pt[FG_SIZE];
++            memset(pt, 0, sizeof pt);
++            memcpy(pt, e + 1u + k * FG_NUM, FG_NUM);
++            fmini_set_patch(k, pt);
++            fmini_adopt(k);
++        }
++    fm1_irq_on();
++    if (len == KS_HDR || !ks_unrle((uint8_t *)r, sizeof *r, e + KS_HDR, len - KS_HDR))
++        return 1;
++    fm1_irq_off();
++    proj_apply_trk(p, NHEAVY, r);
++    fm1_irq_on();
++    return 0;
++}
+diff --git a/firmware/src/project.c b/firmware/src/project.c
+index 64bc6c6..d1ef5dd 100644
+--- a/firmware/src/project.c
++++ b/firmware/src/project.c
+@@ -466,6 +466,18 @@ static void drum_tw_get(const project_t *p)
+     }
+ }
+ 
++UI_SMALL static void proj_trk_capture(proj_trk_t *d, uint32_t j)     /* the working track j, as a record */
++{
++    uint32_t k;
++    for (k = 0; k < P_COUNT; k++)
++        pt_set(d, k, trk[j].p[k]);
++    d->engine = trk[j].eng_req;
++    d->preset = trk[j].preset;
++    memcpy(d->step, trk[j].step, sizeof trk[j].step);
++    for (k = 0; k < NSTEP; k++)
++        pt_set_mf(d, k, trk[j].micro[k], (uint32_t)trk[j].fill[k / 4u] >> (2u * (k % 4u)));
++    memcpy(d->lock, trk[j].lock, sizeof trk[j].lock);
++}
+ UI_SMALL static void proj_capture(project_t *p)        /* what is playing now, as a project */
+ {
+     uint32_t i, j;
+@@ -478,41 +490,73 @@ UI_SMALL static void proj_capture(project_t *p)        /* what is playing now, a
+     p->drdly = (uint8_t)song.g[G_DRDLY];
+     proj_tx_put(p);
+     for (j = 0; j < NTRK; j++) {
+-        uint32_t k, r = proj_rec(j);
++        uint32_t r = proj_rec(j);
+         if (r == PROJ_NONE)
+-            continue;                                   /* (the LITE part: no record yet) */
++            continue;                                   /* (the LITE part: its own record, ks_* below) */
+         i = r;
+-        for (k = 0; k < P_COUNT; k++)
+-            pt_set(&p->t[i], k, trk[j].p[k]);
+-        p->t[i].engine = trk[j].eng_req;
+-        p->t[i].preset = trk[j].preset;
+-        memcpy(p->t[i].step, trk[j].step, sizeof trk[j].step);
+-        for (k = 0; k < NSTEP; k++)
+-            pt_set_mf(&p->t[i], k, trk[j].micro[k], (uint32_t)trk[j].fill[k / 4u] >> (2u * (k % 4u)));
+-        memcpy(p->t[i].lock, trk[j].lock, sizeof trk[j].lock);
++        proj_trk_capture(&p->t[i], j);
+     }
+     drum_tw_put(p);                                     /* (2.7) the drum sounds' TUNE and DECAY */
+     p->sum = proj_sum(p);
+ }
+ 
+-/* the LITE part's record: a plain track on its power-on sound, no steps (a project has none for it yet) */
+-static const proj_trk_t *proj_lite_rec(void)
++/* Kitten Synths: an entry of the object beside the projects (ks_* in the flash part below): a mask of the own MUUG patches, 3 x FG_NUM
++ * bytes, then the LITE part's record, run-length coded (ks_rle: 0 = it does not fit the room given). */
++#define KS_HDR (1u + NHEAVY * FG_NUM)
++UI_SMALL static uint32_t ks_rle(uint8_t *o, uint32_t max, const uint8_t *s, uint32_t n)   /* 0 = does not fit */
+ {
+-    static proj_trk_t r;
+-    uint32_t k;
+-    memset(&r, 0, sizeof r);
+-    proj_trk_plain(&r);
+-    for (k = 0; k < P_COUNT; k++)
+-        pt_set(&r, k, k >= P_E0 ? ENGINES[ENGI_SAMPLE]->edit[k - P_E0].def : TP[k].def);
+-    r.engine = ENGI_SAMPLE;
+-    r.preset = 0xFF;                                    /* 0xFF: its default preset */
+-    for (k = 0; k < NSTEP; k++)
+-        r.step[k].time = ST_REST;
+-    return &r;
++    uint32_t i = 0, w = 0;
++    while (i < n) {
++        uint32_t r = 1, l;
++        while (i + r < n && r < 129u && s[i + r] == s[i])
++            r++;
++        if (r >= 3u) {                         /* 0x80 | (r - 2): r copies of the byte */
++            if (w + 2u > max)
++                return 0;
++            o[w++] = (uint8_t)(0x80u | (r - 2u));
++            o[w++] = s[i];
++            i += r;
++            continue;
++        }
++        l = 0;                                 /* a literal run (up to 128), until the next run of three */
++        while (i + l < n && l < 128u && !(i + l + 2u < n && s[i + l] == s[i + l + 1u] && s[i + l] == s[i + l + 2u]))
++            l++;
++        if (!l)
++            l = 1;
++        if (w + 1u + l > max)
++            return 0;
++        o[w++] = (uint8_t)(l - 1u);
++        memcpy(o + w, s + i, l);
++        w += l;
++        i += l;
++    }
++    return w;
++}
++UI_SMALL static int ks_unrle(uint8_t *d, uint32_t n, const uint8_t *s, uint32_t len)   /* 1 = exactly n bytes came out */
++{
++    uint32_t i = 0, w = 0;
++    while (i < len && w < n) {
++        uint32_t c = s[i++], l;
++        if (c & 0x80u) {
++            l = (c & 0x7Fu) + 2u;
++            if (i >= len || w + l > n)
++                return 0;
++            memset(d + w, s[i++], l);
++        } else {
++            l = c + 1u;
++            if (i + l > len || w + l > n)
++                return 0;
++            memcpy(d + w, s + i, l);
++            i += l;
++        }
++        w += l;
++    }
++    return w == n;
+ }
+ /* a project's tracks (and its globals, all: a load; or only the drum level / reverb / delay: a song
+  * section) into the working one, every value back inside its range. The audio ISR must not run
+  * meanwhile (the song sections: called from it; a load: IRQ off) */
++UI_SMALL static void proj_apply_trk(const project_t *p, uint32_t k, const proj_trk_t *s);
+ static void proj_apply(const project_t *p, int all)
+ {
+     uint32_t i, k;
+@@ -525,9 +569,17 @@ static void proj_apply(const project_t *p, int all)
+     song.g[G_DRDLY] = (int16_t)clamp(p->drdly, GP[G_DRDLY].min, GP[G_DRDLY].max);   /* (a load and a section, as REV) */
+     proj_tx_get(p);                                     /* GLO > TEXTURE (2.6): a load and a section */
+     drum_tw_get(p);                                     /* (2.7) the drum sounds' TUNE and DECAY: a load and a section */
+-    for (k = 0; k < NTRK; k++) {
++    for (k = 0; k < NTRK; k++)
++        if (proj_rec(k) != PROJ_NONE)                   /* (the LITE part keeps its sound: a project file has no record of it;
++                                                         * ks_apply puts the one saved beside the project) */
++            proj_apply_trk(p, k, &p->t[proj_rec(k)]);
++}
++/* one record into the working track k, every value back inside its range */
++UI_SMALL static void proj_apply_trk(const project_t *p, uint32_t k, const proj_trk_t *s)
++{
++    uint32_t i;
++    {
+         track_t *t = &trk[k];
+-        const proj_trk_t *s = proj_rec(k) == PROJ_NONE ? proj_lite_rec() : &p->t[proj_rec(k)];
+         uint32_t e = k < NPART ? eng_fit(k, s->engine % NENGINES) : 0u;
+         if (k < NPART && e != s->engine % NENGINES)
+             e = ENGI_SAMPLE;                            /* (a part that cannot play it: its power-on sound) */
+@@ -606,6 +658,9 @@ UI_SMALL static void proj_fetch(uint32_t slot)
+         q->magic = 0;
+ }
+ #include "fm6_bank.c"                           /* the FM6 patch bank (eng_fm6.c PTCH B1..B27): staged in proj_tmp */
++
++static project_t autosave_buf __attribute__((section(".pool")));
++#include "kitten_store.c"                       /* the LITE part and the own MUUG patches beside a project (OBJ_KITTEN) */
+ #endif
+ 
+ static const char *const SEC_NAME[4] = {"A", "B", "C", "D"};   /* (2.7: the slots named as the song's sections) */
+@@ -620,8 +675,15 @@ UI_SMALL static void project_save(uint32_t slot)
+     if (flash_ok) {
+         if (st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p))
+             ui_message("SAVE ERROR");
+-        else
+-            ui_say("SAVED SECTION ", SEC_NAME[slot & 3u]);
++        else {
++            int rc = ks_write(slot & 3u);                   /* the LITE part and the own MUUG patches, beside it */
++            if (rc < 0)
++                ui_say("SAVED, LITE NOT: ", SEC_NAME[slot & 3u]);
++            else if (rc > 0)
++                ui_say("LITE TOO BIG: ", SEC_NAME[slot & 3u]);
++            else
++                ui_say("SAVED SECTION ", SEC_NAME[slot & 3u]);
++        }
+         return;
+     }
+ #endif
+@@ -698,6 +760,9 @@ UI_SMALL static void project_load(uint32_t slot)
+         return;
+     }
+     project_apply(p);
++#if FELUCCA_FLASH
++    ks_apply(slot & 3u, p);                                 /* (none beside it: the LITE part keeps its sound) */
++#endif
+     ui_say("LOADED SECTION ", SEC_NAME[slot & 3u]);
+ }
+ 
+@@ -706,7 +771,6 @@ UI_SMALL static void project_load(uint32_t slot)
+  * ~50 ms: never while something plays); loaded at power-on (autosave_resume) */
+ #define AUTOSAVE_IDLE 2500u                    /* ms without input */
+ #define AUTOSAVE_GAP 20000u                    /* ms between two saves at least */
+-static project_t autosave_buf __attribute__((section(".pool")));
+ static uint32_t autosave_hash, autosave_ms, autosave_checked;
+ 
+ UI_SMALL static int audio_quiet(void)
+@@ -731,10 +795,10 @@ UI_SMALL static void autosave_tick(void)                /* main loop */
+         return;
+     autosave_checked = now;
+     proj_capture(&autosave_buf);
+-    h = autosave_buf.sum;
++    h = autosave_buf.sum ^ ks_hash();                   /* (the LITE part and the own patches change it too) */
+     if (h == autosave_hash || !audio_quiet())
+         return;
+-    if (st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
++    if (st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0 && ks_write(KS_N - 1u) == 0)
+         autosave_hash = h;
+     autosave_ms = fm1_ms;
+ #endif
+@@ -761,6 +825,8 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
+     drch_seed = 0;
+     proj_apply(q, 1);
+     song.sel = (uint8_t)proj_trk_of(q->sel < PROJ_NTRK ? q->sel : 0u);
++    ks_apply(KS_N - 1u, q);                    /* the LITE part and the own MUUG patches the project had */
++    autosave_hash = q->sum ^ ks_hash();        /* (q->sum: the record scratch in autosave_buf is not the project any more) */
+     for (n = 0; n < NPART; n++)
+         trk[n].engine = trk[n].eng_req;        /* (nothing sounds yet: no fade) */
+ #endif
+diff --git a/firmware/src/storage.c b/firmware/src/storage.c
+index 39eba30..4d20082 100644
+--- a/firmware/src/storage.c
++++ b/firmware/src/storage.c
+@@ -24,7 +24,7 @@
+  * (upreset.c); the working project (autosave, project.c): copy A 0x9F000, copy B 0xFE000 (the two sectors
+  * left: A/B needs no two neighbours); the FM6 patch bank (fm6_bank.c, SLOOP 2.4): 0xE5000 / 0xE6000, the first
+  * two sectors of the free 0xE5000..0xFBFFF after the update staging (FL_FM6, fm1_flash.h) */
+-enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_AUTOSAVE = OBJ_UPRESET0 + 2, OBJ_FM6BANK, OBJ_COUNT };
++enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_AUTOSAVE = OBJ_UPRESET0 + 2, OBJ_FM6BANK, OBJ_KITTEN, OBJ_COUNT };
+ 
+ typedef struct {
+     uint32_t magic;
+@@ -58,6 +58,9 @@ UI_SMALL static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset
+         return 0xFC000u + copy * ST_SECTOR;
+     if (obj == OBJ_AUTOSAVE)
+         return copy ? 0xFE000u : 0x9F000u;
++    if (obj == OBJ_KITTEN)                          /* one sector for both "copies": the header's slot says which was written last,
++                                                     * a save erases it first (no safe copy: a power cut loses the LITE data only) */
++        return 0xFB000u;
+     if (obj == OBJ_FM6BANK)
+         return 0xE5000u + copy * ST_SECTOR;
+     if (obj >= OBJ_UPRESET0 && obj < OBJ_AUTOSAVE)
+diff --git a/tests/kitten_store_test.c b/tests/kitten_store_test.c
+new file mode 100644
+index 0000000..3f6c829
+--- /dev/null
++++ b/tests/kitten_store_test.c
+@@ -0,0 +1,163 @@
++/* SPDX-License-Identifier: GPL-3.0-only
++ * Kitten Synths: the LITE part and the own MUUG patches beside a project (firmware/src/kitten_store.c) over a RAM flash.
++ *   build/host/kitten_store_test
++ * 1. a write of slot A and a load: the own patches and the LITE part come back; the other slots stay as they were.
++ * 2. several slots are independent (a write of B moves nothing of A; a rewrite of A with a different size keeps B).
++ * 3. a busy LITE part that does not fit the object: only the patches are saved (return 1), and the load says so.
++ * 4. no object / a bad magic: a load says -1 and changes nothing.
++ * 5. a torn write leaves the old object whole. */
++#define main hostsim_main
++#include <stddef.h>
++#include "hostsim.c"
++#undef main
++#define PROJ_HOST 1
++static uint32_t trk_def_engine(uint32_t i)
++{
++    static const uint8_t E[NHEAVY] = {0, 1, 3};
++    return i < NHEAVY ? E[i] : 0u;
++}
++#include "../firmware/src/project.c"
++#include "../firmware/hal/fm1_flash.h"
++
++static uint8_t nor[0x100000];
++static int fail_after = -1;
++static int st_read(uint32_t off, void *dst, uint32_t n) { memcpy(dst, nor + off, n); return 0; }
++static int st_erase(uint32_t off) { memset(nor + off, 0xFF, 4096); return 0; }
++static int st_prog(uint32_t off, const void *src, uint32_t n)
++{
++    const uint8_t *s = src;
++    uint32_t i;
++    if (fail_after == 0)
++        return -9;
++    if (fail_after > 0)
++        fail_after--;
++    for (i = 0; i < n; i++)
++        nor[off + i] &= s[i];
++    return 0;
++}
++#include "../firmware/src/storage.c"
++static union { project_t v6; uint8_t raw[4096]; } proj_tmp;
++static project_t autosave_buf;
++static int flash_ok = 1;
++#include "../firmware/src/kitten_store.c"
++
++static int bad;
++static void check(const char *what, int ok)
++{
++    printf("kitten: %-90s %s\n", what, ok ? "ok" : "FAIL");
++    bad += !ok;
++}
++static project_t pj;
++static void own(uint32_t k, uint8_t seed)
++{
++    uint8_t pt[FG_SIZE];
++    uint32_t i;
++    host_preset(&trk[k], ENGI_MUUG, 0);
++    for (i = 0; i < sizeof pt; i++)
++        pt[i] = (uint8_t)(i < FG_NUM ? (seed + i) & 63u : 0);
++    fmini_set_patch(k, pt);
++    trk[k].p[P_E7] = (int16_t)FMINI_OWN;
++}
++static void lite(uint8_t lvl, uint32_t steps)
++{
++    uint32_t i;
++    host_preset(&trk[NHEAVY], ENGI_DIGITAL, 2);
++    trk[NHEAVY].p[P_LEVEL] = lvl;
++    for (i = 0; i < steps; i++) {
++        trk[NHEAVY].step[i].n = 1;
++        trk[NHEAVY].step[i].note[0] = (uint8_t)(30 + (i * 7u) % 50u);
++        trk[NHEAVY].step[i].time = ST_NOTE;
++        trk[NHEAVY].micro[i] = (int8_t)(i % 9u) - 4;
++    }
++}
++int main(void)
++{
++    int r;
++    uint8_t a0[FG_NUM];
++    memset(nor, 0xFF, sizeof nor);
++    host_tracks_init();
++    memset(&pj, 0, sizeof pj);
++    pj.rsv[0] = 0x40;
++
++    check("4. nothing saved: a load says -1", ks_apply(0, &pj) == -1);
++
++    own(0, 5);
++    own(2, 9);
++    lite(55, 16);
++    memcpy(a0, fmini_patch[0], FG_NUM);
++    r = ks_write(0);
++    check("1. slot A written", r == 0);
++    host_tracks_init();
++    host_preset(&trk[0], ENGI_MUUG, 0);
++    trk[0].p[P_E7] = (int16_t)FMINI_OWN;
++    host_preset(&trk[2], ENGI_MUUG, 0);
++    trk[2].p[P_E7] = (int16_t)FMINI_OWN;
++    lite(99, 0);
++    check("1. a load of A: done", ks_apply(0, &pj) == 0);
++    check("1. ... the own patch of part 1 is back", !memcmp(fmini_patch[0], a0, FG_NUM));
++    check("1. ... the LITE part (level, notes, nudge)",
++          trk[NHEAVY].p[P_LEVEL] == 55 && trk[NHEAVY].step[5].n == 1 && trk[NHEAVY].step[5].note[0] == 30 + (5 * 7) % 50 &&
++          trk[NHEAVY].micro[5] == 5 % 9 - 4);
++
++    /* 2 */
++    own(0, 20);
++    memset(trk[NHEAVY].step, 0, sizeof trk[NHEAVY].step);
++    lite(33, 4);
++    check("2. slot B written", ks_write(1) == 0);
++    check("2. A rewritten with another size", (lite(77, 40), ks_write(0)) == 0);
++    own(0, 1);
++    lite(1, 0);
++    check("2. B loads its own", ks_apply(1, &pj) == 0 && trk[NHEAVY].p[P_LEVEL] == 33 && trk[NHEAVY].step[3].n == 1 &&
++                                 trk[NHEAVY].step[4].n == 0);
++    check("2. A loads its own (the new one)", ks_apply(0, &pj) == 0 && trk[NHEAVY].p[P_LEVEL] == 77 && trk[NHEAVY].step[39].n == 1);
++    check("2. the working project (slot 4) has no entry yet", ks_apply(4, &pj) == -1);
++    check("2. ... and writes one", ks_write(4) == 0 && ks_apply(4, &pj) == 0);
++
++    /* 3 */
++    {
++        uint32_t i, j;
++        int w;
++        uint32_t seed = 12345;
++        lite(60, 64);
++        for (i = 0; i < 64u; i++) {
++            trk[NHEAVY].step[i].n = 4;
++            for (j = 0; j < 4u; j++) {
++                seed = seed * 1103515245u + 12345u;
++                trk[NHEAVY].step[i].note[j] = (uint8_t)(seed >> 16);
++            }
++            trk[NHEAVY].micro[i] = (int8_t)(seed >> 8);
++        }
++        for (i = 0; i < 4u; i++)
++            if (ks_write(i) < 0)
++                break;
++        w = ks_write(2);
++        check("3. a room that is full: the patches alone are saved (1) or it fits (0), never an error", w == 0 || w == 1);
++        w = ks_apply(2, &pj);
++        check("3. ... and a load says so (1) or is whole (0)", w == 0 || w == 1);
++        check("3. A still loads", ks_apply(1, &pj) >= 0);
++    }
++
++    /* 5 */
++    {
++        uint8_t keep[4096];
++        host_tracks_init();
++        own(0, 3);
++        lite(10, 2);
++        check("5. a write", ks_write(0) == 0);
++        memcpy(keep, nor + 0xFB000, sizeof keep);
++        lite(11, 3);
++        check("5. before: loads", ks_apply(0, &pj) == 0);
++        fail_after = 2;
++        r = ks_write(0);
++        fail_after = -1;
++        check("5. a torn write reports the error", r < 0);
++        lite(1, 0);
++        r = ks_apply(0, &pj);
++        /* (one sector: no second copy; the object is lost whole, never half: the load says -1 and changes nothing) */
++        check("5. ... and the load is whole or refused (-1), the LITE part untouched when refused",
++              (r == 0 && (trk[NHEAVY].p[P_LEVEL] == 10 || trk[NHEAVY].p[P_LEVEL] == 11)) || (r == -1 && trk[NHEAVY].p[P_LEVEL] == 1));
++        check("5. a write after it works again", ks_write(0) == 0 && ks_apply(0, &pj) == 0);
++    }
++    printf("kitten: %s\n", bad ? "FAILED" : "all ok");
++    return bad;
++}
+diff --git a/tests/lite_part_test.c b/tests/lite_part_test.c
+index 2466255..cd1ec14 100644
+--- a/tests/lite_part_test.c
++++ b/tests/lite_part_test.c
+@@ -180,7 +180,42 @@ int main(void)
+         check("6. a load puts back the heavy parts' level and steps, and the drum lanes",
+               trk[0].p[P_LEVEL] == 77 && trk[1].step[5].n == 1 && dstep_has(&TDRUM->dstep[3], 5));
+         check("6. the file's selected track (record 3) is the drum track again", proj_trk_of(q.sel) == TRK_DRUM && proj_trk_of(2) == 2u && proj_trk_of(9) == 0u);
+-        check("6. the LITE part has its power-on sound (SAMPLE) and no steps after a load", trk[NHEAVY].eng_req == ENGI_SAMPLE && !trk[NHEAVY].step[2].n);
++        check("6. a project file has no record of the LITE part: a load leaves it as it was (ks_apply puts back the one saved beside it)", trk[NHEAVY].eng_req == ENGI_LOFI);
++    }
++
++    /* 7. the LITE part beside a project (project.c ks_*): its record, run-length coded and back */
++    {
++        static proj_trk_t rec, back;
++        static uint8_t enc[2000], rnd[sizeof rec];
++        uint32_t n, i, w;
++        host_tracks_init();
++        host_preset(&trk[NHEAVY], ENGI_DIGITAL, 3);
++        trk[NHEAVY].p[P_LEVEL] = 55;
++        for (i = 0; i < 16u; i++)
++            trk[NHEAVY].step[i].n = 1, trk[NHEAVY].step[i].note[0] = (uint8_t)(48 + i * 3), trk[NHEAVY].step[i].time = ST_NOTE;
++        trk[NHEAVY].micro[3] = -7;
++        memset(&rec, 0, sizeof rec);
++        proj_trk_capture(&rec, NHEAVY);
++        n = ks_rle(enc, 1200u, (const uint8_t *)&rec, sizeof rec);
++        check("7. a LITE record with a 16-step pattern fits an entry, run-length coded", n && n < 1200u);
++        memset(&back, 0x5A, sizeof back);
++        check("7. ... and decodes to the same bytes", ks_unrle((uint8_t *)&back, sizeof back, enc, n) && !memcmp(&rec, &back, sizeof rec));
++        check("7. a cut-short stream is refused", !ks_unrle((uint8_t *)&back, sizeof back, enc, n - 1u));
++        for (i = 0; i < sizeof rnd; i++)                      /* noise does not compress: it is refused, never overruns */
++            rnd[i] = (uint8_t)(i * 2654435761u >> 13);
++        w = ks_rle(enc, (uint32_t)sizeof rnd - 40u, rnd, sizeof rnd);
++        check("7. a record that does not fit says so (0)", w == 0);
++        host_tracks_init();                                   /* the part is changed, the record put back */
++        trk[NHEAVY].p[P_LEVEL] = 99;
++        {
++            static project_t pj;
++            memset(&pj, 0, sizeof pj);
++            pj.rsv[0] = 0x40;
++            proj_apply_trk(&pj, NHEAVY, &rec);
++        }
++        check("7. the record applied to the LITE part: its engine, level, notes and nudge come back",
++              trk[NHEAVY].eng_req == ENGI_DIGITAL && trk[NHEAVY].p[P_LEVEL] == 55 && trk[NHEAVY].step[5].note[0] == 63 &&
++              trk[NHEAVY].micro[3] == -7);
+     }
+ 
+     printf("lite: %s\n", bad ? "FAILED" : "all ok");
+diff --git a/tests/muug_test.c b/tests/muug_test.c
+index c4ff0ef..8c25585 100644
+--- a/tests/muug_test.c
++++ b/tests/muug_test.c
+@@ -50,10 +50,10 @@ static void setup(uint32_t slot)
+ static void patch_set(const uint8_t *v)
+ {
+     ed_len = 0;
+-    uint8_t a[1 + FG_SIZE];
++    uint8_t a[1 + FG_NUM];
+     a[0] = 0;
+-    memcpy(a + 1, v, FG_SIZE);
+-    ed_muug_handle(ED_MUUG_PUT, a, 1u + FG_SIZE);
++    memcpy(a + 1, v, FG_NUM);                                   /* (the wire carries the 18 bytes: the padding stays) */
++    ed_muug_handle(ED_MUUG_PUT, a, 1u + FG_NUM);
+ }
+ static void render(uint32_t note, double *y, uint32_t n)
+ {
+@@ -112,10 +112,10 @@ int main(void)
+         uint8_t a = 0;
+         ed_muug_handle(ED_MUUG_GET, &a, 1);
+     }
+-    same = ed_len == 2u + FG_SIZE && ed_buf[1] == 0;
+-    for (i = 0; i < FG_SIZE && same; i++)
++    same = ed_len == 2u + FG_NUM && ed_buf[1] == 0;
++    for (i = 0; i < FG_NUM && same; i++)
+         same &= ed_buf[2 + i] == fmini_patch[0][i];
+-    check("2. MUUG_GET returns the part's FG_SIZE bytes (what it plays)", same);
++    check("2. MUUG_GET returns the part's FG_NUM bytes (what it plays)", same);
+     ed_len = 0;
+     {
+         uint8_t a = NPART;                                           /* the drum track: none */
+diff --git a/tests/run_tests.sh b/tests/run_tests.sh
+index 9ba4839..5c24bb9 100644
+--- a/tests/run_tests.sh
++++ b/tests/run_tests.sh
+@@ -159,6 +159,9 @@ run "MUUG: patch put and clamp, MUUG_GET / MUUG_PUT, wave, range, switches, mixe
+ # the LITE part (tests/lite_part_test.c): its engines, its independence, MIDI as SLOOP's, the wire's four tracks, the project's four records
+ $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/lite_part_test" tests/lite_part_test.c -lm
+ run "LITE part: its engines, no arena, independent draws, MIDI OFF, the wire's four tracks, a project's four records" "$OUT/lite_part_test"
++# the LITE part and the own MUUG patches beside a project (firmware/src/kitten_store.c, a RAM flash)
++$CC -O1 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/kitten_store_test" tests/kitten_store_test.c -lm
++run "Kitten store: LITE part + own MUUG patches saved beside a project (slots A..D, autosave, full object, torn write)" "$OUT/kitten_store_test"
+ $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/regress" tests/regress.c -lm
+ # the CPU budget: counted by the kernel on macOS; elsewhere under callgrind when valgrind is there (exact, ~45 s;
+ # SKIP_CPU_VALGRIND=1 to time instead, which is only a rough check)
+diff --git a/tests/storage_test.c b/tests/storage_test.c
+index 9cb47e0..c9aeefe 100644
+--- a/tests/storage_test.c
++++ b/tests/storage_test.c
+@@ -125,16 +125,31 @@ int main(void)
+             for (c = 0; c < 2u; c++) {
+                 uint32_t a = st_sector(o, c);
+                 int data = a >= 0x97000u && a + 4096u <= 0xA0000u, ups = a >= 0xDC000u && a + 4096u <= 0xE0000u;
+-                int glob = a >= 0xFC000u && a + 4096u <= 0xFF000u, fm6 = a >= 0xE5000u && a + 4096u <= 0xE7000u;
+-                inside &= (data || ups || glob || fm6) && !(a & 0xFFFu);
++                int glob = a >= 0xFC000u && a + 4096u <= 0xFF000u, fm6 = a >= 0xE5000u && a + 4096u <= 0xE7000u,
++                    kit = o == OBJ_KITTEN && a == 0xFB000u;         /* (Kitten Synths: one sector, both copies) */
++                inside &= (data || ups || glob || fm6 || kit) && !(a & 0xFFFu);
+                 for (o2 = 0; o2 < OBJ_COUNT; o2++)
+                     for (c2 = 0; c2 < 2u; c2++)
+-                        if ((o2 != o || c2 != c) && st_sector(o2, c2) == a)
++                        if ((o2 != o || c2 != c) && o2 != OBJ_KITTEN && st_sector(o2, c2) == a)
+                             apart = 0;
+             }
+         bad += check("data stays in the Felucca regions (autosave too)", inside);
+         bad += check("every object copy has its own sector", apart);
+     }
++    {   /* Kitten Synths: OBJ_KITTEN, one sector for both "copies": every save erases it, the newest wins, a torn one loses it */
++        static char k1[3804], k2[3804], gk[3804];
++        memset(k1, 'K', sizeof k1);
++        memset(k2, 'L', sizeof k2);
++        bad += check("kitten: empty", st_load(OBJ_KITTEN, gk, sizeof gk) < 0);
++        bad += check("kitten: save, load", st_save(OBJ_KITTEN, k1, sizeof k1) == 0 && st_load(OBJ_KITTEN, gk, sizeof gk) == (int)sizeof k1 && !memcmp(gk, k1, sizeof k1));
++        bad += check("kitten: save again, the newest", st_save(OBJ_KITTEN, k2, sizeof k2) == 0 && st_load(OBJ_KITTEN, gk, sizeof gk) == (int)sizeof k2 && !memcmp(gk, k2, sizeof k2));
++        bad += check("kitten: and again", st_save(OBJ_KITTEN, k1, sizeof k1) == 0 && !memcmp(gk, k2, 0) && st_load(OBJ_KITTEN, gk, sizeof gk) == (int)sizeof k1 && !memcmp(gk, k1, sizeof k1));
++        fail_after = 4;
++        st_save(OBJ_KITTEN, k2, sizeof k2);
++        fail_after = -1;
++        bad += check("kitten: a torn save leaves nothing (no second copy) and does not crash", st_load(OBJ_KITTEN, gk, sizeof gk) < 0);
++        bad += check("kitten: the next save works", st_save(OBJ_KITTEN, k2, sizeof k2) == 0 && st_load(OBJ_KITTEN, gk, sizeof gk) == (int)sizeof k2);
++    }
+     {   /* SLOOP 2.5: the settings in two parts (persist_t, then the SYN kits): one record, A/B as any other */
+         static char p1[88], p2[1464], all[88 + 1464], got2[88 + 1464];
+         memset(p1, 'P', sizeof p1);
+diff --git a/tests/userkit_test.c b/tests/userkit_test.c
+index 96ede32..21637aa 100644
+--- a/tests/userkit_test.c
++++ b/tests/userkit_test.c
+@@ -83,7 +83,7 @@ int main(void)
+           !strcmp(DRUM_KIT_NAMES[DRUM_PAIR], "USR3+4") && DRUM_PAIR == DRUM_SYN - 1u && !strcmp(DRUM_KIT_NAMES[DRUM_SAMPLED], "808"),
+           "KIT: USR1..USR4, USR3+4 after the synthesised kits (the old kit numbers kept)");
+     check(SMP_USER_OFF(0u) == 0xA0000u && SMP_USER_OFF(2u) == 0xC8000u && SMP_USER_OFF(3u) == 0xE7000u &&
+-          FL_STORE_OK(0xE7000u, 0x14000u) && !FL_STORE_OK(0xE7000u, 0x14001u) && !FL_STORE_OK(0xFB000u, 0x1000u) &&
++          FL_STORE_OK(0xE7000u, 0x14000u) && !FL_STORE_OK(0xE7000u, 0x14001u) && FL_STORE_OK(0xFB000u, 0x1000u) && !FL_STORE_OK(0xFB000u, 0x1001u) &&
+           SMP_USER_OFF(3u) >= FL_FM6_HI && SMP_USER_OFF(3u) + SMP_USER_SIZE <= FL_GLOB_LO && !strcmp(SMP_ALL_NAMES[SMP_NSETS + 3u], "USR4"),
+           "USR4: 0xE7000..0xFAFFF, after the FM6 bank, before the settings; the store may write it, not past it");
+ 
