@@ -17,3 +17,4 @@ Before the first install: make a **full copy of the FM-1 memory** (MvaveFM1Unbri
 - `muug.patch`: what is added to SLOOP 2.8 (commit `ec9e537`): Muug, the lite part, the editor, tests.
 - `.github/workflows/build.yml`: gets SLOOP, applies the patch, runs the tests and builds with JieLi's toolchain.
 - `servir.py`: serves the artifact on your computer.
+- The LITE part (4th synth) has no SLICER recording buffer: the pool must keep 8 KiB spare (`tools/build.py`) and SLOOP's four 8 KB buffers were already all it allowed. Its SLICER setting does nothing; tracks 1-3 and the drums keep theirs.

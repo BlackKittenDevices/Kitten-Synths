@@ -2066,6 +2066,42 @@ index cbb4201..2a53a4d 100644
                  d = &e->edit[i];
                  slot = &t->p[P_E0 + i];
              }
+diff --git a/firmware/src/slicer.c b/firmware/src/slicer.c
+index 9a29497..c562ac3 100644
+--- a/firmware/src/slicer.c
++++ b/firmware/src/slicer.c
+@@ -46,7 +46,11 @@ static const uint16_t SL_PAT[SL_NPAT] = {
+ };
+ static const uint8_t SL_DEN[6] = {2, 4, 8, 3, 6, 12};   /* P_SLRATE (N_SLDIV): a step = 1 / DEN beats */
+ 
+-static int16_t sl_buf[NTRK][SL_LEN] __attribute__((section(".pool")));
++/* a recording per track that has a SLICER: the heavy parts and the drum track. The LITE part has none (the 4th part
++ * went over the pool's 8 KiB headroom, tools/build.py): its SLICER setting is accepted, and does nothing. */
++#define SL_NBUF (NHEAVY + 1u)
++static int16_t sl_buf[SL_NBUF][SL_LEN] __attribute__((section(".pool")));
++static int16_t *sl_buf_of(uint32_t k) { return k < NHEAVY ? sl_buf[k] : k == TRK_DRUM ? sl_buf[NHEAVY] : 0; }
+ typedef struct {
+     uint32_t pos, len;           /* clock units into the step, its length */
+     uint32_t base;               /* the step without swing (units) */
+@@ -154,7 +158,8 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
+ {
+     uint32_t k = (uint32_t)(t - trk), i = 0, bpm = (uint32_t)song.g[G_BPM];
+     sl_t *s = &sl[k];
+-    int act = b && (t->p[P_SLCR] != SL_OFF || s->gc || s->w);
++    int16_t *sb = sl_buf_of(k);                     /* (0: the LITE part, no recording: the clock only) */
++    int act = b && sb && (t->p[P_SLCR] != SL_OFF || s->gc || s->w);
+     while (i < n) {
+         uint32_t m, left;
+         while (s->pos >= s->len)
+@@ -162,7 +167,7 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
+         left = (s->len - s->pos + bpm - 1u) / bpm;  /* samples to the boundary */
+         m = left < n - i ? left : n - i;
+         if (act)
+-            sl_seg(t, s, sl_buf[k], b + i, m, left);
++            sl_seg(t, s, sb, b + i, m, left);
+         s->pos += m * bpm;
+         i += m;
+     }
 diff --git a/firmware/src/ui.c b/firmware/src/ui.c
 index 7cb22cb..005109e 100644
 --- a/firmware/src/ui.c
