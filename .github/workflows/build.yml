@@ -65,6 +65,9 @@ jobs:
         run: |
           cd sloop && ls -l build/ build/loader/ | tee ../size.log
           python3 -c "import os; n=os.path.getsize('build/felucca.bin'); print('FLASH: image %d B of 581564 B, free %d B' % (n, 581564-n))" | tee -a ../size.log
+          # the same line as an annotation (readable on the run's page and through the API without downloading the artifact)
+          python3 -c "import os; n=os.path.getsize('build/felucca.bin'); print('::notice title=FLASH::image %d B of 581564 B, free %d B' % (n, 581564-n))"
+          if grep -q "boot logo as text" ../build.log; then echo "::warning title=LOGO::the flash was full: the boot logo was built as text"; fi
           grep -i -E "ram|flash|size|bytes|free|overflow" ../build.log | tail -20 | tee -a ../size.log || true
 
       - name: Tests (the host suite and the web editor)

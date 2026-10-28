@@ -1,0 +1,280 @@
+diff --git a/firmware/src/gfx.c b/firmware/src/gfx.c
+index 3a0a941..b0b22a7 100644
+--- a/firmware/src/gfx.c
++++ b/firmware/src/gfx.c
+@@ -44,11 +44,11 @@ typedef struct {
+     uint16_t c[5];
+ } palette_t;
+ static const palette_t PALETTES[] = {
+-    {"GREEN", {RGB(0, 40, 12), RGB(0, 84, 30), RGB(16, 140, 54), RGB(56, 200, 92), RGB(120, 255, 146)}},
+-    {"AMBER", {RGB(60, 26, 0), RGB(110, 50, 0), RGB(170, 82, 0), RGB(225, 120, 8), RGB(255, 166, 40)}},
+-    {"CYAN", {RGB(0, 30, 50), RGB(0, 62, 96), RGB(16, 112, 160), RGB(56, 172, 222), RGB(140, 222, 255)}},
+-    {"RED", {RGB(52, 8, 8), RGB(100, 18, 14), RGB(170, 36, 26), RGB(226, 64, 48), RGB(255, 112, 92)}},
+-    {"MONO", {RGB(40, 40, 40), RGB(80, 80, 80), RGB(130, 130, 130), RGB(186, 186, 186), RGB(226, 226, 226)}},
++    {"SLIME", {RGB(0, 40, 12), RGB(0, 84, 30), RGB(16, 140, 54), RGB(56, 200, 92), RGB(120, 255, 146)}},
++    {"BONE", {RGB(40, 40, 40), RGB(80, 80, 80), RGB(130, 130, 130), RGB(186, 186, 186), RGB(226, 226, 226)}},
++    {"WITCH", {RGB(30, 8, 52), RGB(66, 24, 108), RGB(112, 52, 172), RGB(164, 94, 232), RGB(216, 164, 255)}},
++    {"BLOOD", {RGB(52, 8, 8), RGB(100, 18, 14), RGB(170, 36, 26), RGB(226, 64, 48), RGB(255, 112, 92)}},
++    {"PUMPKIN", {RGB(60, 22, 0), RGB(120, 48, 0), RGB(190, 82, 0), RGB(255, 120, 10), RGB(255, 172, 52)}},   /* the default: Halloween */
+ };
+ #define NPALETTES (sizeof(PALETTES) / sizeof(PALETTES[0]))
+ static uint16_t pal[5];
+@@ -82,12 +82,12 @@ static uint8_t theme_valid, theme_on;
+ /* (gfx.c is compiled before core.h: te_slot(), the slot of a working track, is in core.h) Six colour slots: the four of SLOOP (tracks 1..3, the drum track), then the LITE part (4: a light grey) and the second drum
+  * track (5: violet). A working track's slot is te_slot(): the slots 0..3 are the wire's tracks as they always were. */
+ #define NTE 6u
+-static const uint16_t TE_COL_DEF[NTE] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(176, 96, 255)};
+-static const uint16_t TE_MID_DEF[NTE] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18), RGB(142, 145, 150), RGB(117, 64, 170)};
+-static const uint16_t TE_DIM_DEF[NTE] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8), RGB(72, 73, 76), RGB(58, 32, 86)};
+-static uint16_t TE_COL[NTE] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(176, 96, 255)};
+-static uint16_t TE_MID[NTE] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18), RGB(142, 145, 150), RGB(117, 64, 170)};
+-static uint16_t TE_DIM[NTE] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8), RGB(72, 73, 76), RGB(58, 32, 86)};
++static const uint16_t TE_COL_DEF[NTE] = {RGB(176, 96, 255), RGB(110, 226, 48), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(214, 40, 48)};
++static const uint16_t TE_MID_DEF[NTE] = {RGB(117, 64, 170), RGB(73, 150, 32), RGB(170, 132, 16), RGB(170, 66, 18), RGB(142, 145, 150), RGB(142, 26, 32)};
++static const uint16_t TE_DIM_DEF[NTE] = {RGB(58, 32, 86), RGB(37, 76, 16), RGB(86, 66, 8), RGB(86, 32, 8), RGB(72, 73, 76), RGB(72, 14, 16)};
++static uint16_t TE_COL[NTE] = {RGB(176, 96, 255), RGB(110, 226, 48), RGB(255, 198, 24), RGB(255, 98, 26), RGB(214, 218, 226), RGB(214, 40, 48)};
++static uint16_t TE_MID[NTE] = {RGB(117, 64, 170), RGB(73, 150, 32), RGB(170, 132, 16), RGB(170, 66, 18), RGB(142, 145, 150), RGB(142, 26, 32)};
++static uint16_t TE_DIM[NTE] = {RGB(58, 32, 86), RGB(37, 76, 16), RGB(86, 66, 8), RGB(86, 32, 8), RGB(72, 73, 76), RGB(72, 14, 16)};
+ static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
+ {
+     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
+diff --git a/firmware/src/panel.c b/firmware/src/panel.c
+index e447fac..a8c53df 100644
+--- a/firmware/src/panel.c
++++ b/firmware/src/panel.c
+@@ -146,7 +146,7 @@ UI_SMALL static void settings_init(void)
+ {
+     if (settings.magic != SETTINGS_MAGIC || settings.palette >= NPALETTES) {
+         settings.magic = SETTINGS_MAGIC;
+-        settings.palette = 4;                  /* MONO (default) */
++        settings.palette = 4;                  /* PUMPKIN (default) */
+         settings.lowcut = 0;
+         settings.zoom = 0;                     /* large readout of the touched value: off */
+     }
+diff --git a/firmware/src/params.c b/firmware/src/params.c
+index 01bb71a..0b88e5a 100644
+--- a/firmware/src/params.c
++++ b/firmware/src/params.c
+@@ -414,7 +414,7 @@ enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE,
+        FAM_COUNT };
+ enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG, SC_DRUM, SC_MUUG };   /* SC_MUUG: eng_muug.c MG, the patch */
+ enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
+-       GR_SLCR, GR_INS };
++       GR_SLCR, GR_INS, GR_FENV, GR_FILT };
+ 
+ typedef struct {
+     const char *title;
+@@ -424,7 +424,7 @@ typedef struct {
+ 
+ static const page_t PAGES[] = {
+     {"ENV", FAM_ENV, SC_TRACK, GR_ADSR, {P_ATK, P_DEC, P_SUS, P_REL}},
+-    {"FLT ENV", FAM_ENV, SC_ENGINE, GR_NONE, {P_E3, P_E4, P_E5, P_E2}},   /* MUUG only: the filter's contour (F.ATK F.DEC F.SUS CNTR) */
++    {"FLT ENV", FAM_ENV, SC_ENGINE, GR_FENV, {P_E3, P_E4, P_E5, P_E2}},   /* MUUG only: the filter's contour (F.ATK F.DEC F.SUS CNTR) */
+     {"ENV DEST", FAM_ENV, SC_TRACK, GR_NONE, {P_ED_FLT, P_ED_PIT, P_ED_SHP, P_ESYNC}},   /* (P_ED_FX: the level trim, no
+                                                                        * page); 2.6: ESYNC, ENV's times as note values */
+     {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, P_LPHASE, P_LFADE}},
+@@ -446,7 +446,7 @@ static const page_t PAGES[] = {
+     {"OSC WAV", FAM_EDIT, SC_MUUG, GR_NONE, {4, 5, 6, 7}},
+     {"OSC FRQ", FAM_EDIT, SC_MUUG, GR_NONE, {8, 9, 10, 11}},
+     {"MIXER", FAM_EDIT, SC_MUUG, GR_NONE, {12, 13, 14, 15}},
+-    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E7}},   /* ANALOG only (2.6, Felucca 1.5): TYPE CUT
++    {"FILTER", FAM_EDIT, SC_TRACK, GR_FILT, {P_FTYPE, P_E4, P_E5, P_E7}},   /* ANALOG only (2.6, Felucca 1.5): TYPE CUT
+                                                                           * RES KTR (page_shown) */
+     {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
+     {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_PAN, P_MUTE}},
+diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
+index 9455fd6..b85732d 100644
+--- a/firmware/src/ui_draw.c
++++ b/firmware/src/ui_draw.c
+@@ -179,10 +179,10 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
+ /* Matches voice.c: attack is linear, decay and release are exponential
+  * (env += (target - env) * k each tick, ~99 % after the set time). Time
+  * axis is the parameter value (the times themselves are exponential). */
+-UI_SMALL static void graph_adsr(const track_t *t, uint16_t c)
++UI_SMALL static void graph_env(uint16_t c, int32_t pa, int32_t pd, int32_t ps, int32_t pr)   /* ATK DEC SUS REL, 0..127 */
+ {
+-    int32_t a = 4 + t->p[P_ATK] * 50 / 127, d = 6 + t->p[P_DEC] * 50 / 127, r = 6 + t->p[P_REL] * 60 / 127;
+-    int32_t top = 8, bot = 90, sus = t->p[P_SUS] * 1000 / 127;          /* 0..1000 */
++    int32_t a = 4 + pa * 50 / 127, d = 6 + pd * 50 / 127, r = 6 + pr * 60 / 127;
++    int32_t top = 8, bot = 90, sus = ps * 1000 / 127;                   /* 0..1000 */
+     int32_t x0 = 6, x1 = x0 + a, x3 = 232 - r, i, px, py;
+     int32_t e = 32768;                                                  /* exp(-4.6 u), Q15 */
+ #define EGY(lvl) (bot - (lvl) * (bot - top) / 1000)
+@@ -211,6 +211,30 @@ UI_SMALL static void graph_adsr(const track_t *t, uint16_t c)
+ #undef EGY
+ }
+ 
++/* Kitten Synths: the filter's response as the knobs move it. The axis is the cutoff knob (0..127 over 8..230 px, 16 px an octave),
++ * the height decibels (1 px = 1 dB, 0 dB at y 34): flat in the pass band, the slope past the cutoff (LP / HP; BP both sides at half)
++ * and the resonance's peak (res 0..127 = 0..18 dB, one octave wide), the cutoff marked with a thin line.
++ * type 0 LP, 1 BP, 2 HP; slope in dB per octave (0 = the filter is off) */
++UI_SMALL static void graph_filt(uint16_t c, uint32_t type, int32_t cut, int32_t res, int32_t slope)
++{
++    int32_t xc = 8 + cut + (cut * 3 >> 2), x, y, py = 34;
++    cv_rect(xc, 10, 1, 80, C_DIM);
++    for (x = 8; x < 232; x += 2) {
++        int32_t o = x - xc, ao = o < 0 ? -o : o, att = type == 1u ? ao * slope >> 5 : (type == 0u) == (o > 0) ? ao * slope >> 4 : 0;
++        y = 34 - (ao < 16 ? (res * 18 >> 7) * (16 - ao) >> 4 : 0) + att;
++        y = y > 91 ? 91 : y;
++        if (x > 8)
++            cv_line(x - 2, py, x, y, c);
++        py = y;
++    }
++    cv_line(0, 91, 239, 91, C_LINE);
++}
++
++UI_SMALL static void graph_adsr(const track_t *t, uint16_t c)
++{
++    graph_env(c, t->p[P_ATK], t->p[P_DEC], t->p[P_SUS], t->p[P_REL]);
++}
++
+ UI_SMALL static void graph_lfo(const track_t *t, uint16_t c)
+ {
+     int32_t x, py = 50;
+@@ -417,9 +441,16 @@ UI_SMALL static uint32_t str_hash(uint32_t h, const char *s)
+ }
+ 
+ /* a page drawn with its values large (graph_big) */
++/* Kitten Synths: MUUG's EDIT 1 (CUT EMPH CNTR F.ATK) draws its filter in the middle instead of the big values */
++UI_SMALL static int muug_filter_page(const page_t *pg)
++{
++    return pg->id[0] == P_E0 && pg->fam == FAM_EDIT && pg->scope == SC_ENGINE && !is_drum(TSEL) &&
++           TSEL->eng_req % NENGINES == ENGI_MUUG;
++}
+ UI_SMALL static int big_page(const page_t *pg)            /* (2.6: the INSERT pages too: their middle stayed empty) */
+ {
+-    return (pg->graph == GR_NONE || pg->graph == GR_INS) && pg->scope != SC_SONG && pg->scope != SC_DRUM;
++    return (pg->graph == GR_NONE || pg->graph == GR_INS) && pg->scope != SC_SONG && pg->scope != SC_DRUM &&
++           !muug_filter_page(pg);
+ }
+ UI_SMALL static uint32_t graph_signature(void)
+ {
+@@ -766,6 +797,12 @@ UI_SMALL static void draw_graph(void)
+         case GR_ADSR:
+             graph_adsr(t, c);
+             break;
++        case GR_FENV:                                /* the filter's contour: MUUG's F.ATK F.DEC F.SUS (the release takes F.DEC) */
++            graph_env(c, t->p[P_E3], t->p[P_E4], t->p[P_E5], t->p[P_E4]);
++            break;
++        case GR_FILT:
++            graph_filt(c, (uint32_t)t->p[P_FTYPE], t->p[P_E4], t->p[P_E5], 12);   /* ANALOG: TYPE, CUT, RES (two poles) */
++            break;
+         case GR_LFO:
+             graph_lfo(t, c);
+             break;
+@@ -798,7 +835,9 @@ UI_SMALL static void draw_graph(void)
+             graph_user();
+             break;
+         default:
+-            if (big_page(pg)) {
++            if (muug_filter_page(pg)) {              /* the ladder, 24 dB an octave: CUT and EMPH */
++                graph_filt(c, 0u, t->p[P_E0], t->p[P_E1], 24);
++            } else if (big_page(pg)) {
+                 cv_oy = 0;
+                 graph_big();
+             }
+diff --git a/firmware/src/ui_vis.c b/firmware/src/ui_vis.c
+index 313bec5..fe9ee08 100644
+--- a/firmware/src/ui_vis.c
++++ b/firmware/src/ui_vis.c
+@@ -321,7 +321,7 @@ static void vis_spectrum(void)
+ }
+ static uint16_t vis_heat(uint32_t v)               /* 0..255: black, blue, green, yellow, white */
+ {
+-    static const uint16_t ST[5] = {RGB(0, 0, 0), RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 255, 255)};
++    static const uint16_t ST[5] = {RGB(0, 0, 0), RGB(176, 96, 255), RGB(110, 226, 48), RGB(255, 198, 24), RGB(255, 255, 255)};
+     static const uint8_t AT[5] = {0, 77, 140, 204, 255};
+     uint32_t k;
+     v = (v + ((v * v) >> 8)) >> 1;                  /* (quiet parts a little darker: about v^1.4) */
+diff --git a/tools/kitten_img.py b/tools/kitten_img.py
+index e79b6f6..f7f12d4 100644
+--- a/tools/kitten_img.py
++++ b/tools/kitten_img.py
+@@ -34,8 +34,29 @@ def logo_uri():
+     return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
+ 
+ 
++def favicon_uri():
++    """the tab icon: the kitten on a black square, 64 x 64, in a data URI (it needs no file, so it also shows in the editor saved
++    as one file, in the simulator and with the site's service worker holding an older icon)"""
++    p = art()
++    if not p:
++        return None
++    from PIL import Image
++    cat = _native(p).crop(BOX)
++    w = 56
++    h = int(w * cat.height / cat.width)
++    sq = Image.new("RGB", (64, 64), (0, 0, 0))
++    sq.paste(cat.resize((w, h), Image.NEAREST), ((64 - w) // 2, (64 - h) // 2))
++    b = io.BytesIO()
++    sq.quantize(32).save(b, "PNG", optimize=True)
++    return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
++
++
+ def brand(html):
+-    return html.replace(PLACEHOLDER, logo_uri())
++    html = html.replace(PLACEHOLDER, logo_uri())
++    fav = favicon_uri()
++    if fav and "</head>" in html:                   # the cat's icon, outside the PWA block (the one-file editor drops it)
++        html = html.replace("</head>", '<link rel="icon" type="image/png" href="' + fav + '">\n</head>', 1)
++    return html
+ 
+ 
+ def icons(out_dir):
+diff --git a/web/editor.html b/web/editor.html
+index de9badf..0dd45ba 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -18,7 +18,7 @@
+   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
+   :root {
+     --bg: #000; --s1: #0b0b0e; --s2: #1a1a1e; --s3: #36363c; --line: #232329; --dim: #76767e; --fg2: #c4c4cc; --fg: #f2f2f2;
+-    --red: #ff2c34; --t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a; --t5: #d6dae2; --t6: #b060ff; --trk: var(--t4);
++    --red: #ff2c34; --t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #d6dae2; --t6: #d62830; --trk: var(--t4);
+     --font: "SLOOP Terminus", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+     color-scheme: dark;
+   }
+@@ -4566,12 +4566,12 @@ const THEME = {
+   WHITE: [255, 255, 255], BLACK: [0, 0, 0],
+   /* the FM-1's own palettes (gfx.c PALETTES) and the tracks' colours (TE_COL_DEF), as RGB 0..255 */
+   BUILTIN: [
+-    ["GREEN", [[0, 40, 12], [0, 84, 30], [16, 140, 54], [56, 200, 92], [120, 255, 146]]],
+-    ["AMBER", [[60, 26, 0], [110, 50, 0], [170, 82, 0], [225, 120, 8], [255, 166, 40]]],
+-    ["CYAN", [[0, 30, 50], [0, 62, 96], [16, 112, 160], [56, 172, 222], [140, 222, 255]]],
+-    ["RED", [[52, 8, 8], [100, 18, 14], [170, 36, 26], [226, 64, 48], [255, 112, 92]]],
+-    ["MONO", [[40, 40, 40], [80, 80, 80], [130, 130, 130], [186, 186, 186], [226, 226, 226]]]],
+-  TRACKS: [[40, 124, 255], [30, 204, 112], [255, 198, 24], [255, 98, 26]],
++    ["SLIME", [[0, 40, 12], [0, 84, 30], [16, 140, 54], [56, 200, 92], [120, 255, 146]]],
++    ["BONE", [[40, 40, 40], [80, 80, 80], [130, 130, 130], [186, 186, 186], [226, 226, 226]]],
++    ["WITCH", [[30, 8, 52], [66, 24, 108], [112, 52, 172], [164, 94, 232], [216, 164, 255]]],
++    ["BLOOD", [[52, 8, 8], [100, 18, 14], [170, 36, 26], [226, 64, 48], [255, 112, 92]]],
++    ["PUMPKIN", [[60, 22, 0], [120, 48, 0], [190, 82, 0], [255, 120, 10], [255, 172, 52]]]],
++  TRACKS: [[176, 96, 255], [110, 226, 48], [255, 198, 24], [255, 98, 26]],
+   to565: ([r, g, b]) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3),
+   from565: (v) => [Math.round((((v >> 11) & 31) * 255) / 31), Math.round((((v >> 5) & 63) * 255) / 63), Math.round(((v & 31) * 255) / 31)],
+   /* as the FM-1 shows it: each colour through RGB565 */
+diff --git a/web/index_pkg.html b/web/index_pkg.html
+index 76c2f49..c3a164b 100644
+--- a/web/index_pkg.html
++++ b/web/index_pkg.html
+@@ -9,7 +9,7 @@
+ <!--PWA--><link rel="manifest" href="../sloop.webmanifest"><meta name="theme-color" content="#000000"><link rel="icon" href="../icon-192.png"><!--/PWA-->
+ <style>
+   :root { --bg: #000; --fg: #f2f2f2; --dim: #8a8a92; --tile: #16161a; --line: #2a2a30;
+-          --blue: #287cff; --green: #1ecc70; --yellow: #ffc618; --orange: #ff621a; --red: #ff2c34; }
++          --blue: #b060ff; --green: #6ee230; --yellow: #ffc618; --orange: #ff621a;   /* (Halloween: "blue" is the purple, "green" the slime) */ --red: #ff2c34; }
+   :root[data-theme="light"] { --bg: #f4f4f2; --fg: #111; --dim: #666; --tile: #e6e6e2; --line: #d0d0cc; }
+   * { box-sizing: border-box; }
+   body { margin: 0; background: var(--bg); color: var(--fg);
+@@ -61,9 +61,9 @@
+   <!--STUDIO_GUIDE-->
+   <!--BANNER-->
+   <h1>Kitten Synths — custom firmware for the M-VAVE FM-1</h1>
+-  <p class="lead">A groovebox you play live: five tracks — three synths, a light synth and a drum machine — 13 synth engines (with six-operator FM, DX7 patches and Muug, a Minimoog-style engine with 100 sounds and its own editor), 253 sounds, 37 drum kits from 808 to techno, amapiano and ambient, your own samples and drum kits, 27 punch-in effects. 64 steps a pattern, four song slots, MIDI as SLOOP. Halloween black cats optional.</p>
++  <p class="lead">A groovebox you play live: five tracks — three synths, a light synth and a drum machine — 13 synth engines (with six-operator FM, DX7 patches and Muug, a Minimoog-style engine with 100 sounds and its own editor), 250 sounds, 37 drum kits from 808 to techno, amapiano and ambient, your own samples and drum kits, 27 punch-in effects. 64 steps a pattern, four song slots, MIDI as SLOOP. Halloween black cats optional.</p>
+   <div class="tiles">
+-    <div class="tile" style="--c: var(--blue)"><b>253</b><span>sounds, 13 engines, your samples</span></div>
++    <div class="tile" style="--c: var(--blue)"><b>250</b><span>sounds, 13 engines, your samples</span></div>
+     <div class="tile" style="--c: var(--green)"><b>5</b><span>tracks: 3 synths, a light synth, drums</span></div>
+     <div class="tile" style="--c: var(--yellow)"><b>100</b><span>Muug sounds: the Minimoog engine</span></div>
+     <div class="tile" style="--c: var(--orange)"><b>37</b><span>drum kits, 27 punch-in fx</span></div>

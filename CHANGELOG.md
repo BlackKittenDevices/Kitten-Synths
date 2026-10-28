@@ -2,6 +2,14 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-14 · Gráficos de filtro, paleta Halloween, ícono del navegador
+- MUUG: la página FLT ENV dibuja el contorno del filtro como la envolvente principal, y EDIT 1 dibuja la curva del filtro con el corte y la resonancia.
+- ANALOG: la página FILTER dibuja la curva en LP, BP o HP.
+- Paleta de fábrica PUMPKIN (naranja sobre negro); pistas en violeta, verde ácido, amarillo, hueso y naranja. Paletas SLIME, BONE, WITCH y BLOOD. Editor e instalador con los mismos colores.
+- Ícono de la pestaña del navegador con el gato (embebido, también en el editor guardado como archivo).
+- El instalador dice 250 sonidos (decía 253).
+- La compilación deja la memoria libre como anotación de la ejecución.
+
 ## fix-13 · Logo de inicio más largo
 - El logo del gatito se muestra 2,5 segundos (antes 0,9) para poder leerlo completo.
 

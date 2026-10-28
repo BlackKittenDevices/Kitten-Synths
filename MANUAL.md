@@ -53,10 +53,17 @@ El orden es siempre **1, 2, 3, LITE, batería** (la batería, última). Lo ves e
 
 ### ★ Estética de gatitos y Halloween
 
-- Logo de bienvenida con el **gatito**.
+- Logo de bienvenida con el **gatito** (dura 2,5 segundos).
+- **Paleta de fábrica PUMPKIN**: fondo negro y textos en naranja, con pistas en violeta, verde ácido, amarillo, gris hueso y naranja. Las otras paletas son SLIME (verde), BONE (gris), WITCH (violeta) y BLOOD (rojo).
 - Un visualizador nuevo: **el gatito con los ojos que se abren y cierran al ritmo del BPM**.
 - Se quitaron los visualizadores BOUNCE, SLOOP (barquito) y LCD.
 - El instalador y el editor web usan la identidad de Kitten Synths.
+
+### ★ Gráficos de filtro y de envolvente
+
+- La página **FLT ENV** de MUUG dibuja el contorno del filtro (F.ATK, F.DEC, F.SUS) con el mismo gráfico que la envolvente principal.
+- La primera página de EDIT de MUUG (CUT, EMPH, CNTR, F.ATK) dibuja la **curva del filtro** de escalera: la línea vertical marca la frecuencia de corte y el pico, la resonancia, y se mueven mientras girás las perillas.
+- La página FILTER de ANALOG dibuja la curva en pasabajos (LP), pasabanda (BP) o pasaaltos (HP) según el tipo elegido.
 
 ### ★ Instalador y editor web propios
 
@@ -121,8 +128,8 @@ El instalador de Kitten Synths **no** trae la opción de volver al firmware ofic
 
 | Pista | Qué es | Color |
 | --- | --- | --- |
-| 1 | Sinte | azul |
-| 2 | Sinte | verde |
+| 1 | Sinte | violeta |
+| 2 | Sinte | verde ácido |
 | 3 | Sinte | amarillo |
 | 4 | ★ Sinte LITE | gris claro |
 | 5 | Batería | naranja |
@@ -356,7 +363,7 @@ Mantené **HOME** para abrir el menú. SELECT pasa de sección, KNOB 1–3 cambi
 
 | Ítem | Opciones |
 | --- | --- |
-| **COLOR** | 5 paletas y tu tema propio (hecho en el editor web) |
+| **COLOR** | 5 paletas (★ PUMPKIN, la de fábrica, naranja; SLIME, BONE, WITCH y BLOOD) y tu tema propio (hecho en el editor web) |
 | **ZOOM** | Lectura grande del valor que girás |
 | **KNOB ACCEL** | Las perillas aceleran si las girás rápido |
 | **LIGHTS** | Brillo de los botones: OFF / LOW / MID / HIGH |
