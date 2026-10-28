@@ -15,6 +15,7 @@ on:
 
 env:
   SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
+  FM1_IDENTITY: FM-1_931                                      # identidad propia en el Firmware Hub (928 es de otro firmware)
   VERSION: 2.8-kitten                                         # one digit each, then a suffix (tools/build.py --release): the editor reads "2.8" as the SLOOP version
 
 jobs:

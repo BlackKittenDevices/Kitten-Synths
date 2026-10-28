@@ -1,0 +1,15 @@
+diff --git a/tools/build.py b/tools/build.py
+index 9297331..2b1ef6f 100644
+--- a/tools/build.py
++++ b/tools/build.py
+@@ -323,6 +323,10 @@ def main():
+         if not m:
+             raise SystemExit(f"--release {a.release}: use X.Y or X.Y-suffix, one digit each")
+         PRODUCT = "FM-1_9" + m[1] + m[2]
++        if os.environ.get("FM1_IDENTITY"):      # Kitten Synths: its own identity (the hub lists 928 as another firmware)
++            PRODUCT = os.environ["FM1_IDENTITY"]
++            if not re.fullmatch(r"FM-1_9\d\d", PRODUCT):
++                raise SystemExit(f"FM1_IDENTITY {PRODUCT!r}: use FM-1_9NN")
+         VERSION = a.release.upper() if "BETA" in a.release.upper() else a.release.upper() + " BETA"
+         name = f"felucca-{a.release}.fwsc"
+     fm1pkg_make.SDK = a.sdk

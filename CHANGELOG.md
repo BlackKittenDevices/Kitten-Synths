@@ -2,6 +2,12 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-16 · Identidad propia para el Firmware Hub
+
+- El paquete ya no usa la identidad `FM-1_928` (la tiene otro firmware en el Hub). Kitten Synths se identifica ahora como **`FM-1_931`**, tanto en el paquete como por USB (MIDI).
+- Se define en el workflow (`FM1_IDENTITY`) y `tools/build.py` la toma al compilar una versión.
+- Se agrega `fmhub.json` con el texto de la tarjeta.
+
 ## fix-15 · Nombre del instalador y favicon
 - El enlace del editor web dice "Kitty installer" (antes "SLOOP installer").
 - El gato es el único ícono de pestaña de las páginas (se quita el ícono por archivo que podía elegirse en su lugar).

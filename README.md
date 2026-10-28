@@ -60,6 +60,10 @@ Paso a paso en el [Manual, capítulo 2](MANUAL.md#2-instalación).
 - El firmware oficial V15 de M-VAVE ya no se consigue fácilmente, y el instalador de Kitten Synths **no** trae una opción de "volver a V15". Para volver atrás podés instalar el `.fwsc` de otro firmware compatible, por ejemplo SLOOP.
 - Si algo sale mal: mantené **OCT−** apretado al encender (rescate USB) y volvé a instalar.
 
+## Firmware Hub
+
+Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwarehub.com/kb/): es libre (GPL-3.0), hace música, trae el cargador de actualización de Felucca en el `.fwsc` de cada Release y se identifica como **`FM-1_931`** (identidad propia, no compartida). La tarjeta usa el texto de `fmhub.json`.
+
 ## Probar sin FM-1
 
 El paquete trae un simulador en el navegador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
@@ -68,7 +72,7 @@ El paquete trae un simulador en el navegador, en `http://localhost:8766/simulato
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| `muug.patch` y `fix-01.patch` … `fix-15.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
+| `muug.patch` y `fix-01.patch` … `fix-16.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |
