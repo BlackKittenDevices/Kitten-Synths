@@ -2,6 +2,9 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-13 · Logo de inicio más largo
+- El logo del gatito se muestra 2,5 segundos (antes 0,9) para poder leerlo completo.
+
 ## fix-12 · Pantalla ABOUT de Kitten Synths
 - HOME → ABOUT muestra KITTEN SYNTHS y Black Kitten Devices, con los créditos de SLOOP, Felucca, FMini-1 (MUUG) y las muestras.
 

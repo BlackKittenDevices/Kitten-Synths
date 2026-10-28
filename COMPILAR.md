@@ -50,4 +50,4 @@ Algunas pruebas necesitan el SDK y el paquete compilado; fuera de la compilació
 
 ## Agregar un cambio
 
-Los cambios se escriben como un parche nuevo (`fix-13.patch`, etc.) que se aplica después de los anteriores. Así el historial de lo que hace Kitten Synths queda separado del código de SLOOP. Antes de subirlo, comprobá que aplica sobre la cadena completa y mirá la línea `FLASH:` del registro.
+Los cambios se escriben como un parche nuevo (`fix-14.patch`, etc.) que se aplica después de los anteriores. Así el historial de lo que hace Kitten Synths queda separado del código de SLOOP. Antes de subirlo, comprobá que aplica sobre la cadena completa y mirá la línea `FLASH:` del registro.

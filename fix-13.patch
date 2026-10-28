@@ -1,0 +1,19 @@
+diff --git a/firmware/src/main.c b/firmware/src/main.c
+index f37cfdf..5bff5e0 100644
+--- a/firmware/src/main.c
++++ b/firmware/src/main.c
+@@ -247,7 +247,13 @@ UI_SMALL static void fm1_main(void)
+         panel_setup();                        /* OCT- + OCT+ held at power-on */
+         settings_save();
+     }
+-    fm1_delay_ms(900);                                  /* (the logo stays a moment) */
++    {                                                   /* the logo stays 2.5 s (it was 0.9 s): time to read it; the watchdog is fed meanwhile */
++        uint32_t k;
++        for (k = 0; k < 25u; k++) {
++            fm1_delay_ms(100);
++            fm1_wdt_feed();
++        }
++    }
+     lcd_fill(0, 0, 240, 240, C_BLACK);
+ 
+     healthy_since = fm1_ms;
