@@ -1,0 +1,42 @@
+diff --git a/tools/kitten_img.py b/tools/kitten_img.py
+index f7f12d4..5d7d6e3 100644
+--- a/tools/kitten_img.py
++++ b/tools/kitten_img.py
+@@ -6,6 +6,7 @@ get an empty 1x1 picture and the same icons as before: nothing fails."""
+ import base64
+ import io
+ import os
++import re
+ from pathlib import Path
+ 
+ PLACEHOLDER = "KITTEN_IMG_PLACEHOLDER"
+@@ -55,6 +56,7 @@ def brand(html):
+     html = html.replace(PLACEHOLDER, logo_uri())
+     fav = favicon_uri()
+     if fav and "</head>" in html:                   # the cat's icon, outside the PWA block (the one-file editor drops it)
++        html = re.sub(r'<link rel="icon" href="[^"]*">', "", html)    # (the only icon: no older one beside it to be picked instead)
+         html = html.replace("</head>", '<link rel="icon" type="image/png" href="' + fav + '">\n</head>', 1)
+     return html
+ 
+diff --git a/web/editor.html b/web/editor.html
+index 0dd45ba..bfbeac4 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -4897,7 +4897,7 @@ const TEXT = {
+     putDone: "本体に書き込みました: スロット ", storedSlot: "本体に保存しました: スロット ", erasedSlot: "消去しました: スロット ",
+     loadedUser: "読み込みました: ", reloaded: "本体で音色が変わったので読み直しました", readingBank: "スロットを読み込み中",
+     badEngine: "このファームウェアにないエンジンです: ", flashFail: "書き込みに失敗しました（rc {rc}）",
+-    installer: "SLOOP インストーラー",
++    installer: "Kitty インストーラー",
+     offline: "エディタをダウンロード（パソコンでオフライン用：Chrome / Edge で開く）",
+     install: "アプリとしてインストール（オフラインで使える・Android も）",
+     tabSeq: "シーケンサー", tabTracks: "トラック", tabSettings: "設定",
+@@ -5239,7 +5239,7 @@ const TEXT = {
+     putDone: "Written to the device: slot ", storedSlot: "Stored on the device: slot ", erasedSlot: "Erased slot ",
+     loadedUser: "Loaded ", reloaded: "The sound changed on the device: read again", readingBank: "Reading the slots",
+     badEngine: "This firmware has no such engine: ", flashFail: "Write failed (rc {rc})",
+-    installer: "SLOOP installer",
++    installer: "Kitty installer",
+     offline: "Download the editor (offline on a computer: open it in Chrome or Edge)",
+     install: "Install the app (works offline, Android too)",
+     tabSeq: "Sequencer", tabTracks: "Tracks", tabSettings: "Settings",

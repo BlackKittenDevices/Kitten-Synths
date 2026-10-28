@@ -2,6 +2,10 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-15 · Nombre del instalador y favicon
+- El enlace del editor web dice "Kitty installer" (antes "SLOOP installer").
+- El gato es el único ícono de pestaña de las páginas (se quita el ícono por archivo que podía elegirse en su lugar).
+
 ## fix-14 · Gráficos de filtro, paleta Halloween, ícono del navegador
 - MUUG: la página FLT ENV dibuja el contorno del filtro como la envolvente principal, y EDIT 1 dibuja la curva del filtro con el corte y la resonancia.
 - ANALOG: la página FILTER dibuja la curva en LP, BP o HP.
