@@ -1,4 +1,4 @@
-<p align="center"><b>=^.^=</b></p>
+<p align="center"><img src="splashes%20y%20logos/kitten%20splash.png" alt="Kitten Synths" width="420"></p>
 
 <h1 align="center">Kitten Synths</h1>
 
@@ -29,6 +29,21 @@ La **compatibilidad MIDI es idéntica a la de SLOOP**: mismos canales, mismos me
 
 > **Estado:** beta. Probado en un FM-1 real por su autor (editor, MIDI, CPU, guardado). Aun así, instalar firmware propio es **bajo tu propio riesgo** y sin garantía. Leé [Antes de instalar](#antes-de-instalar).
 
+## Capturas
+
+Pantallas del FM-1 generadas con el código real del firmware (en el equipo se ven igual, a 240 × 240 píxeles).
+
+| | | |
+| --- | --- | --- |
+| <img src="capturas/c01_pistas.png" width="240"><br>**Pistas**: tres sintes, LITE y batería | <img src="capturas/c02_presets_muug.png" width="240"><br>**Lista de sonidos** (MUUG) | <img src="capturas/c14_pista_lite.png" width="240"><br>**Parte LITE** seleccionada |
+| <img src="capturas/c03_muug_filtro.png" width="240"><br>**MUUG**: curva del filtro | <img src="capturas/c04_muug_resonancia.png" width="240"><br>La misma curva con **resonancia** | <img src="capturas/c05_muug_env_filtro.png" width="240"><br>**MUUG**: contorno del filtro |
+| <img src="capturas/c06_env_principal.png" width="240"><br>Envolvente principal | <img src="capturas/c07_muug_osc_rangos.png" width="240"><br>MUUG: rangos de osciladores | <img src="capturas/c08_muug_osc_ondas.png" width="240"><br>MUUG: formas de onda |
+| <img src="capturas/c09_muug_osc_frecuencias.png" width="240"><br>MUUG: frecuencias | <img src="capturas/c10_muug_mezclador.png" width="240"><br>MUUG: mezclador | <img src="capturas/c11_muug_modulacion.png" width="240"><br>MUUG: modulación |
+| <img src="capturas/c12_analog_pasabajos.png" width="240"><br>ANALOG: filtro pasabajos | <img src="capturas/c13_analog_pasaaltos.png" width="240"><br>ANALOG: filtro pasaaltos | <img src="capturas/c15_lite_edicion.png" width="240"><br>Edición de la parte LITE |
+
+<p align="center"><img src="capturas/editor_web.png" alt="Editor web de Kitten Synths" width="640"></p>
+<p align="center"><sub>El editor web (se abre desde el instalador).</sub></p>
+
 ## Instalar (resumen)
 
 1. Entrá a la pestaña **Actions** de este repositorio → **build** → **Run workflow** (o bajá una versión ya compilada si hay una en *Releases*).
@@ -58,6 +73,7 @@ El paquete trae un simulador en el navegador, en `http://localhost:8766/simulato
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |
+| `capturas/` | Las capturas de pantalla de este README. |
 | `MANUAL.md` | Manual de uso. |
 | `CARACTERISTICAS.md` | Ficha técnica y lista de sonidos. |
 | `COMPILAR.md` | Cómo funciona la compilación y cómo hacerla a mano. |

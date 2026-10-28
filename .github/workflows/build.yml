@@ -4,7 +4,12 @@
 # Run it by hand: Actions > build > Run workflow. The result is the artifact "kitten-synths".
 name: build
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Etiqueta de la Release a crear con el paquete (por ejemplo v2.8-kitten). Vacío: no publica"
+        required: false
+        default: ""
   push:
     paths: ["muug.patch", "fix-*.patch", "splashes y logos/**", ".github/workflows/build.yml"]
 
@@ -14,6 +19,8 @@ env:
 
 jobs:
   build:
+    permissions:
+      contents: write                                             # only to publish a Release (the input above)
     env:
       KITTEN_ART: ${{ github.workspace }}/splashes y logos          # the kitten pictures for the installer, the editor and the icons (tools/kitten_img.py)
     runs-on: ubuntu-22.04                                      # x86-64: the JieLi toolchain runs natively
@@ -95,3 +102,27 @@ jobs:
             build.log
             size.log
             tests.log
+
+      - name: Release (only when the run was started with a tag in "release")
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release }}
+        run: |
+          mkdir -p rel
+          cp "sloop/build/felucca-$VERSION.fwsc" "rel/Kitten-Synths-$VERSION.fwsc"
+          (cd kitten-synths && zip -qr ../rel/Kitten-Synths-instalador-$VERSION.zip .)
+          sed '1,3d' CHANGELOG.md > notes.md
+          {
+            echo "# Kitten Synths $VERSION"
+            echo
+            echo "Firmware para el M-VAVE FM-1 (SLOOP 2.8 + MUUG + parte LITE). **Beta: instalalo bajo tu propio riesgo.** Antes hacé una copia de seguridad."
+            echo
+            echo "**Cómo instalar:** descargá \`Kitten-Synths-instalador-$VERSION.zip\`, descomprimilo y ejecutá \`servir.py\` (Python 3, Chrome o Edge). El manual está en la carpeta \`docs\` del zip y en el repositorio (\`MANUAL.md\`)."
+            echo
+            echo "\`Kitten-Synths-$VERSION.fwsc\` es el paquete de firmware suelto, por si preferís instalarlo con otra herramienta."
+            echo
+            echo "## Cambios"
+            cat notes.md
+          } > release-notes.md
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Kitten Synths $VERSION" --prerelease --notes-file release-notes.md "rel/Kitten-Synths-$VERSION.fwsc" "rel/Kitten-Synths-instalador-$VERSION.zip"
