@@ -62,7 +62,7 @@ Paso a paso en el [Manual, capítulo 2](MANUAL.md#2-instalación).
 
 ## Firmware Hub
 
-Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwarehub.com/kb/): es libre (GPL-3.0), hace música, trae el cargador de actualización de Felucca en el `.fwsc` de cada Release y se identifica como **`FM-1_931`** (identidad propia, no compartida). La tarjeta usa el texto de `fmhub.json`.
+Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwarehub.com/kb/): es libre (GPL-3.0), hace música, trae el cargador de actualización de Felucca en el `.fwsc` de cada Release y se identifica como **`FM-1_969`** (identidad propia, no compartida). La tarjeta usa el texto de `fmhub.json`.
 
 ## Probar sin FM-1
 

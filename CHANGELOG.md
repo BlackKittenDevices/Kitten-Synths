@@ -4,7 +4,7 @@ Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplic
 
 ## fix-16 · Identidad propia para el Firmware Hub
 
-- El paquete ya no usa la identidad `FM-1_928` (la tiene otro firmware en el Hub). Kitten Synths se identifica ahora como **`FM-1_931`**, tanto en el paquete como por USB (MIDI).
+- El paquete ya no usa la identidad `FM-1_928` (la tiene otro firmware en el Hub). Kitten Synths se identifica ahora como **`FM-1_969`**, tanto en el paquete como por USB (MIDI).
 - Se define en el workflow (`FM1_IDENTITY`) y `tools/build.py` la toma al compilar una versión.
 - Se agrega `fmhub.json` con el texto de la tarjeta.
 
