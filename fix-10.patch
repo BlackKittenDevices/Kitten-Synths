@@ -1,0 +1,1179 @@
+diff --git a/firmware/src/eng_digital.c b/firmware/src/eng_digital.c
+index 3b6b6db..a04475a 100644
+--- a/firmware/src/eng_digital.c
++++ b/firmware/src/eng_digital.c
+@@ -130,8 +130,7 @@ static const preset_t DIGITAL_PRESETS[] = {
+     {"PLUGG BELL", {4, 3, 1, 4, 56, 60, 0, 0}, {0, 90, 0, 82}, 0, 0, FX(0, 22, 36, 56)},
+     {"GLASS PAD", {4, 2, 1, 5, 34, 100, 0, 0}, {62, 92, 112, 92}, 0, 0, FX(0, 50, 26, 62), XP(P_LD_PIT + 1, 1, P_LRATE + 1, 40)},
+     {"FM BASS", {0, 1, 1, 1, 34, 40, 8, 0}, {0, 60, 70, 25}, 0, 1, FX(0, 0, 0, 6), XP(P_GLIDE + 1, 36, P_TRANS + 1, -24)},
+-    /* SLOOP 2.5: mallets, steel drum, harp, a finger bass */
+-    {"STEEL DRUM", {4, 2, 2, 2, 45, 45, 0, 0}, {0, 88, 0, 66}, 0, 0, FX(0, 12, 18, 30)},
++    /* SLOOP 2.5: mallets, harp, a finger bass (Kitten Synths: the steel drum is out) */
+     {"GLOCKEN", {4, 5, 1, 8, 40, 60, 0, 0}, {0, 95, 0, 85}, 0, 0, FX(0, 0, 24, 40), XP(P_TRANS + 1, 12)},
+     {"CELESTA", {4, 2, 1, 4, 30, 50, 0, 0}, {0, 84, 0, 70}, 0, 0, FX(0, 15, 20, 40), XP(P_TRANS + 1, 12)},
+     {"XYLOPHONE", {4, 4, 3, 3, 70, 18, 0, 0}, {0, 77, 0, 58}, 0, 0, FX(0, 0, 14, 26), XP(P_TRANS + 1, 12)},
+diff --git a/firmware/src/eng_drawbar.c b/firmware/src/eng_drawbar.c
+index 4a51255..a10a9c8 100644
+--- a/firmware/src/eng_drawbar.c
++++ b/firmware/src/eng_drawbar.c
+@@ -281,7 +281,6 @@ static const preset_t DRAWBAR_PRESETS[] = {
+     /* SLOOP 2.5: {REG, SUB, BODY, TOP, PERC, CLICK, DRIVE, ROTR} */
+     {"ROCK ORGAN", {7, 0, 0, 0, 0, 50, 80, 2}, {0, 64, 127, 40}, 0, 0, FX(20, 0, 6, 20)},
+     {"CHAPEL", {12, 0, 0, 0, 0, 10, 0, 1}, {20, 64, 127, 60}, 0, 0, FX(0, 0, 0, 50)},
+-    {"REGGAE ORG", {2, 0, 0, 0, 0, 60, 10, 0}, {0, 52, 0, 24}, 0, 0, FX(0, 0, 10, 15)},
+ };
+ 
+ static const engine_t ENG_DRAWBAR = {
+diff --git a/firmware/src/eng_formant.c b/firmware/src/eng_formant.c
+index 75288f9..c4e93ec 100644
+--- a/firmware/src/eng_formant.c
++++ b/firmware/src/eng_formant.c
+@@ -217,9 +217,6 @@ static const preset_t FORMANT_PRESETS[] = {
+     {"TALKBOX", {32, 95, 60, 0, 100, 4, 75, 0}, {4, 70, 110, 40}, 0, 1, FX(10, 15, 20, 25),
+      XP(P_GLIDE + 1, 60, P_LD_PIT + 1, 2, P_LRATE + 1, 89)},
+     {"WOW BASS", {95, 0, 68, 0, 100, 0, 80, 0}, {0, 70, 70, 30}, 0, 1, FX(10, 0, 0, 6), XP(P_TRANS + 1, -12)},
+-    /* SLOOP 2.5: a reedy harmonica, a hand tremolo that comes in on long notes */
+-    {"HARMONICA", {64, 0, 0, 0, 127, 20, 70, 0}, {4, 70, 115, 25}, 0, 1, FX(10, 10, 10, 22),
+-     XP(P_LD_AMP + 1, 18, P_LRATE + 1, 80, P_LFADE + 1, 60)},
+     {"ROBOT", {40, 40, 0, 0, 127, 0, 110, 0}, {0, 60, 110, 20}, 0, 1, FX(10, 0, 20, 15), XP(P_GLIDE + 1, 20)},
+     {"VOX PAD", {20, 100, 110, 0, 50, 30, 60, 10}, {80, 90, 118, 90}, 0, 0, FX(0, 60, 15, 70)},
+ };
+diff --git a/firmware/src/eng_muug_presets.h b/firmware/src/eng_muug_presets.h
+index 6d022ec..e1b5ad8 100644
+--- a/firmware/src/eng_muug_presets.h
++++ b/firmware/src/eng_muug_presets.h
+@@ -3,17 +3,17 @@
+ 
+ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+     FGP(3, 3, 2, 2, 2, 3, 65, 64, 90, 90, 70, 0, 7, 1, 64, 0, 64, 50),   /* 00 MINI LEAD */
+-    FGP(2, 2, 1, 2, 3, 0, 65, 64, 120, 110, 90, 0, 7, 0, 64, 0, 40, 0),   /* 01 I FEEL ARP */
++    FGP(2, 2, 1, 2, 3, 0, 65, 64, 120, 110, 90, 0, 7, 0, 64, 0, 40, 0),   /* 01 SIENTO ARP */
+     FGP(3, 3, 4, 2, 2, 2, 66, 62, 80, 80, 60, 0, 7, 0, 64, 0, 64, 0),   /* 02 LUSH STRINGS */
+     FGP(2, 3, 4, 0, 0, 3, 64, 64, 90, 100, 50, 0, 7, 0, 64, 0, 100, 0),   /* 03 ROTARY ORG */
+     FGP(4, 4, 5, 0, 0, 0, 127, 111, 100, 70, 40, 0, 7, 0, 64, 0, 127, 0),   /* 04 CRYSTAL BELL */
+     FGP(3, 3, 3, 2, 2, 3, 65, 63, 115, 115, 90, 0, 7, 0, 64, 0, 64, 0),   /* 05 DUB STAB */
+-    FGP(3, 3, 2, 2, 2, 2, 65, 63, 90, 90, 70, 0, 39, 0, 64, 0, 64, 0),   /* 06 CS-80 BRASS */
++    FGP(3, 3, 2, 2, 2, 2, 65, 63, 90, 90, 70, 0, 39, 0, 64, 0, 64, 0),   /* 06 CS-80X BRASS */
+     FGP(2, 2, 3, 2, 2, 4, 66, 64, 90, 90, 60, 25, 95, 0, 64, 0, 40, 0),   /* 07 SPACE DRONE */
+-    FGP(3, 3, 4, 2, 3, 2, 65, 63, 100, 90, 60, 0, 7, 0, 64, 0, 70, 0),   /* 08 TANGERINE */
++    FGP(3, 3, 4, 2, 3, 2, 65, 63, 100, 90, 60, 0, 7, 0, 64, 0, 70, 0),   /* 08 MANDARINA */
+     FGP(3, 4, 5, 0, 0, 3, 64, 64, 100, 60, 30, 0, 7, 0, 64, 0, 90, 0),   /* 09 E.PIANO */
+-    FGP(3, 3, 2, 2, 2, 3, 62, 65, 100, 100, 75, 0, 7, 1, 64, 0, 90, 68),   /* 10 EMERSON */
+-    FGP(3, 3, 4, 2, 2, 2, 65, 63, 100, 100, 60, 0, 39, 0, 64, 0, 100, 0),   /* 11 NUMAN */
++    FGP(3, 3, 2, 2, 2, 3, 62, 65, 100, 100, 75, 0, 7, 1, 64, 0, 90, 68),   /* 10 EMMERSON */
++    FGP(3, 3, 4, 2, 2, 2, 65, 63, 100, 100, 60, 0, 39, 0, 64, 0, 100, 0),   /* 11 NUMANN */
+     FGP(3, 3, 2, 1, 4, 3, 65, 64, 100, 80, 60, 0, 39, 1, 64, 0, 80, 51),   /* 12 HAMMER */
+     FGP(3, 4, 3, 2, 2, 1, 19, 65, 100, 85, 60, 0, 39, 1, 64, 0, 90, 57),   /* 13 FIFTHS */
+     FGP(3, 3, 4, 2, 2, 2, 66, 64, 100, 100, 75, 0, 7, 0, 64, 0, 90, 0),   /* 14 RAVE ARP */
+@@ -22,18 +22,18 @@ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+     FGP(2, 3, 3, 3, 2, 2, 64, 62, 105, 100, 100, 0, 39, 1, 64, 0, 55, 59),   /* 17 TITAN */
+     FGP(3, 3, 4, 3, 2, 3, 65, 63, 120, 118, 70, 0, 39, 1, 64, 0, 100, 46),   /* 18 FUZZ LEAD */
+     FGP(3, 3, 3, 1, 2, 5, 62, 64, 100, 100, 70, 0, 71, 0, 64, 0, 60, 0),   /* 19 GROWL */
+-    FGP(3, 4, 3, 0, 3, 2, 64, 64, 105, 35, 0, 14, 59, 0, 64, 0, 100, 0),   /* 20 MOOG FLUTE */
++    FGP(3, 4, 3, 0, 3, 2, 64, 64, 105, 35, 0, 14, 59, 0, 64, 0, 100, 0),   /* 20 MOOGH FLUTE */
+     FGP(3, 4, 3, 0, 2, 2, 64, 64, 100, 50, 0, 0, 35, 1, 64, 0, 100, 74),   /* 21 G-FUNK */
+     FGP(3, 3, 3, 0, 2, 2, 64, 64, 120, 25, 0, 0, 35, 1, 64, 0, 100, 64),   /* 22 SINE SOLO */
+-    FGP(3, 3, 2, 2, 2, 0, 63, 64, 95, 95, 70, 0, 39, 0, 64, 0, 70, 0),   /* 23 BANKS */
++    FGP(3, 3, 2, 2, 2, 0, 63, 64, 95, 95, 70, 0, 39, 0, 64, 0, 70, 0),   /* 23 BANKSH */
+     FGP(3, 3, 4, 4, 3, 5, 65, 64, 100, 60, 30, 0, 39, 0, 64, 0, 100, 0),   /* 24 OBOE */
+     FGP(3, 3, 4, 2, 2, 0, 65, 64, 100, 90, 30, 0, 39, 0, 64, 0, 100, 0),   /* 25 SOLO VIOLIN */
+     FGP(3, 3, 4, 0, 3, 0, 64, 63, 100, 55, 60, 0, 7, 0, 64, 0, 90, 0),   /* 26 DREAMER */
+     FGP(4, 3, 3, 0, 0, 2, 64, 64, 110, 40, 0, 8, 59, 1, 64, 0, 100, 61),   /* 27 WHISTLE */
+     FGP(3, 3, 2, 3, 0, 3, 63, 64, 100, 80, 40, 0, 39, 0, 64, 0, 80, 0),   /* 28 MELLOW PULSE */
+     FGP(3, 3, 2, 1, 4, 3, 64, 64, 100, 60, 30, 10, 63, 1, 64, 0, 90, 50),   /* 29 SAX LEAD */
+-    FGP(2, 2, 3, 2, 2, 0, 63, 64, 110, 100, 60, 0, 7, 0, 64, 0, 40, 0),   /* 30 MOOG BASS */
+-    FGP(2, 2, 3, 3, 3, 2, 64, 64, 110, 95, 55, 0, 7, 0, 64, 0, 55, 0),   /* 31 CHAMELEON */
++    FGP(2, 2, 3, 2, 2, 0, 63, 64, 110, 100, 60, 0, 7, 0, 64, 0, 40, 0),   /* 30 MOOGH BASS */
++    FGP(2, 2, 3, 3, 3, 2, 64, 64, 110, 95, 55, 0, 7, 0, 64, 0, 55, 0),   /* 31 CAMALEON */
+     FGP(1, 2, 3, 0, 0, 2, 64, 64, 110, 100, 0, 0, 3, 0, 64, 0, 0, 0),   /* 32 SUB BASS */
+     FGP(2, 2, 1, 2, 2, 0, 62, 64, 105, 105, 70, 0, 71, 0, 64, 0, 40, 0),   /* 33 WOBBLE BASS */
+     FGP(2, 3, 3, 3, 2, 2, 65, 64, 110, 75, 0, 0, 3, 0, 64, 0, 50, 0),   /* 34 OCTAVE PUMP */
+@@ -41,10 +41,10 @@ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+     FGP(2, 2, 3, 2, 2, 2, 66, 64, 105, 105, 60, 0, 71, 0, 64, 0, 40, 0),   /* 36 REESE */
+     FGP(2, 2, 3, 0, 3, 0, 64, 64, 127, 115, 60, 0, 7, 0, 64, 0, 50, 0),   /* 37 RUBBER */
+     FGP(2, 3, 2, 3, 3, 3, 65, 63, 120, 100, 70, 0, 7, 0, 64, 0, 70, 0),   /* 38 FUZZ BASS */
+-    FGP(2, 3, 2, 2, 3, 0, 64, 64, 100, 95, 70, 0, 7, 1, 64, 0, 60, 48),   /* 39 WONDER BASS */
+-    FGP(3, 3, 4, 2, 2, 4, 66, 63, 90, 90, 55, 0, 39, 0, 64, 0, 100, 0),   /* 40 SOLINA */
++    FGP(2, 3, 2, 2, 3, 0, 64, 64, 100, 95, 70, 0, 7, 1, 64, 0, 60, 48),   /* 39 WONDERS BASS */
++    FGP(3, 3, 4, 2, 2, 4, 66, 63, 90, 90, 55, 0, 39, 0, 64, 0, 100, 0),   /* 40 SOLINAH */
+     FGP(3, 3, 2, 2, 3, 2, 63, 64, 85, 75, 60, 0, 7, 0, 64, 0, 70, 0),   /* 41 WARM PAD */
+-    FGP(3, 3, 3, 4, 5, 3, 65, 63, 90, 75, 60, 0, 39, 0, 64, 0, 80, 0),   /* 42 JUNO PWM */
++    FGP(3, 3, 3, 4, 5, 3, 65, 63, 90, 75, 60, 0, 39, 0, 64, 0, 80, 0),   /* 42 JUNOH PWM */
+     FGP(3, 3, 4, 0, 3, 0, 65, 63, 95, 60, 60, 6, 63, 0, 64, 0, 60, 0),   /* 43 CHOIR */
+     FGP(3, 3, 2, 2, 2, 2, 63, 65, 90, 90, 65, 0, 7, 0, 64, 0, 40, 0),   /* 44 SWEEP PAD */
+     FGP(3, 4, 5, 0, 0, 0, 64, 65, 90, 70, 50, 0, 39, 0, 64, 0, 100, 0),   /* 45 ANGELS */
+@@ -52,8 +52,8 @@ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+     FGP(3, 3, 4, 2, 4, 2, 65, 63, 85, 70, 45, 0, 7, 0, 64, 0, 70, 0),   /* 47 PULSE PAD */
+     FGP(2, 2, 3, 2, 2, 0, 65, 64, 100, 75, 50, 0, 39, 0, 64, 0, 80, 0),   /* 48 CELLOS */
+     FGP(3, 3, 3, 0, 2, 2, 64, 64, 50, 0, 0, 70, 89, 0, 64, 0, 60, 0),   /* 49 AIR PAD */
+-    FGP(3, 3, 2, 2, 2, 3, 65, 63, 95, 95, 60, 0, 7, 0, 64, 0, 70, 0),   /* 50 MOOG BRASS */
+-    FGP(3, 3, 4, 2, 2, 2, 65, 64, 100, 100, 50, 0, 7, 0, 64, 0, 70, 0),   /* 51 JUMP BRASS */
++    FGP(3, 3, 2, 2, 2, 3, 65, 63, 95, 95, 60, 0, 7, 0, 64, 0, 70, 0),   /* 50 MOOGH BRASS */
++    FGP(3, 3, 4, 2, 2, 2, 65, 64, 100, 100, 50, 0, 7, 0, 64, 0, 70, 0),   /* 51 SALTO BRASS */
+     FGP(3, 3, 4, 2, 3, 2, 65, 64, 100, 70, 40, 5, 63, 1, 64, 0, 90, 44),   /* 52 TRUMPET */
+     FGP(3, 4, 2, 0, 2, 3, 64, 64, 100, 40, 45, 0, 39, 0, 64, 0, 60, 0),   /* 53 FRENCH HORN */
+     FGP(3, 3, 3, 2, 2, 3, 65, 63, 105, 105, 70, 0, 7, 0, 64, 0, 70, 0),   /* 54 BRASS STAB */
+@@ -72,16 +72,16 @@ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+     FGP(3, 3, 3, 2, 2, 2, 65, 64, 90, 90, 0, 0, 3, 0, 64, 0, 70, 0),   /* 67 PIZZICATO */
+     FGP(3, 3, 4, 2, 3, 2, 63, 64, 100, 60, 40, 0, 7, 0, 64, 0, 90, 0),   /* 68 POP PLUCK */
+     FGP(3, 4, 3, 0, 0, 2, 64, 64, 100, 50, 0, 0, 3, 0, 64, 0, 100, 0),   /* 69 HARP */
+-    FGP(3, 3, 4, 5, 4, 3, 64, 64, 100, 80, 35, 0, 7, 0, 64, 0, 110, 0),   /* 70 CLAVINET */
++    FGP(3, 3, 4, 5, 4, 3, 64, 64, 100, 80, 35, 0, 7, 0, 64, 0, 110, 0),   /* 70 CLAVINETE */
+     FGP(2, 3, 4, 0, 3, 3, 64, 64, 80, 95, 70, 0, 7, 0, 64, 0, 100, 0),   /* 71 PIPE ORGAN */
+     FGP(3, 4, 3, 2, 3, 0, 64, 64, 90, 50, 60, 10, 31, 0, 64, 0, 110, 0),   /* 72 SYNTH PIANO */
+     FGP(3, 4, 3, 2, 3, 5, 64, 64, 90, 70, 50, 0, 7, 0, 64, 0, 100, 0),   /* 73 HARPSICHORD */
+     FGP(3, 5, 3, 0, 0, 2, 64, 64, 110, 25, 0, 0, 3, 0, 64, 0, 100, 0),   /* 74 VIBES */
+-    FGP(3, 3, 4, 3, 0, 3, 64, 64, 95, 75, 25, 0, 7, 0, 64, 0, 100, 0),   /* 75 WURLY */
++    FGP(3, 3, 4, 3, 0, 3, 64, 64, 95, 75, 25, 0, 7, 0, 64, 0, 100, 0),   /* 75 WURLEY */
+     FGP(3, 4, 5, 0, 0, 0, 114, 111, 100, 60, 40, 6, 15, 0, 64, 0, 100, 0),   /* 76 TUBULAR */
+     FGP(5, 4, 3, 0, 3, 2, 64, 64, 100, 35, 0, 0, 3, 0, 64, 0, 100, 0),   /* 77 MUSIC BOX */
+     FGP(3, 3, 4, 5, 5, 4, 66, 63, 90, 90, 60, 0, 39, 0, 64, 0, 90, 0),   /* 78 ACCORDION */
+-    FGP(3, 4, 2, 3, 3, 4, 64, 64, 100, 70, 40, 0, 39, 0, 64, 0, 100, 0),   /* 79 FARFISA */
++    FGP(3, 4, 2, 3, 3, 4, 64, 64, 100, 70, 40, 0, 39, 0, 64, 0, 100, 0),   /* 79 FARFISAH */
+     FGP(1, 2, 2, 2, 2, 2, 63, 65, 100, 100, 80, 15, 95, 0, 64, 0, 0, 0),   /* 80 DARK DRONE */
+     FGP(5, 4, 5, 0, 0, 3, 64, 63, 90, 70, 30, 0, 7, 0, 64, 0, 100, 0),   /* 81 STAR DUST */
+     FGP(3, 3, 4, 4, 5, 0, 66, 64, 90, 90, 50, 0, 71, 0, 64, 0, 50, 0),   /* 82 ALIEN CHOIR */
+@@ -108,17 +108,17 @@ static const uint8_t FMINI_FACTORY[FMINI_NFACTORY][FG_NUM] = {
+ #define FMINI_CATS "LBPKKULPUKLLLLLLLLLLLLLLLLLLLLBBBBBBBBBBPPPPPPPPPPLLLLLLLLLLUUUUUUUUUUKKKKKKKKKKPPPPPPPPPPFFFFFFFFFF"   /* category.c: B bass, L lead, P pad, U pluck, K keys, D drum, F fx */
+ static const preset_t FMINI_PRESETS[] = {
+     {"MINI LEAD", {61, 44, 51, 0, 79, 70, 30, 0}, {15, 81, 110, 70}, 0, 1, FX(30, 0, 55, 40), PAT(4)},
+-    {"I FEEL ARP", {46, 46, 64, 0, 65, 20, 0, 1}, {9, 70, 40, 55}, 0, 1, FX(15, 0, 20, 10), PAT(2)},
++    {"SIENTO ARP", {46, 46, 64, 0, 65, 20, 0, 1}, {9, 70, 40, 55}, 0, 1, FX(15, 0, 20, 10), PAT(2)},
+     {"LUSH STRINGS", {63, 29, 0, 0, 81, 100, 14, 2}, {79, 86, 118, 89}, 0, 0, FX(0, 90, 0, 50), PAT(5)},
+     {"ROTARY ORG", {70, 0, 0, 0, 62, 127, 0, 3}, {24, 62, 127, 55}, 0, 0, FX(0, 80, 0, 64), PAT(6)},
+     {"CRYSTAL BELL", {47, 29, 76, 0, 99, 0, 0, 4}, {0, 106, 0, 99}, 0, 0, FX(0, 20, 30, 70), PAT(7)},
+     {"DUB STAB", {47, 42, 81, 0, 70, 0, 0, 5}, {9, 80, 0, 72}, 0, 0, FX(20, 0, 90, 45), PAT(6)},
+-    {"CS-80 BRASS", {42, 39, 76, 75, 92, 70, 20, 6}, {61, 86, 118, 84}, 0, 0, FX(0, 60, 0, 45), PAT(5)},
++    {"CS-80X BRASS", {42, 39, 76, 75, 92, 70, 20, 6}, {61, 86, 118, 84}, 0, 0, FX(0, 60, 0, 45), PAT(5)},
+     {"SPACE DRONE", {44, 48, 64, 108, 112, 60, 70, 7}, {106, 108, 118, 109}, 0, 0, FX(0, 80, 60, 90), PAT(5)},
+-    {"TANGERINE", {51, 55, 66, 0, 74, 10, 0, 8}, {0, 78, 25, 69}, 0, 0, FX(20, 40, 85, 55), PAT(13)},
++    {"MANDARINA", {51, 55, 66, 0, 74, 10, 0, 8}, {0, 78, 25, 69}, 0, 0, FX(20, 40, 85, 55), PAT(13)},
+     {"E.PIANO", {57, 32, 51, 0, 75, 10, 0, 9}, {9, 101, 10, 75}, 0, 0, FX(0, 70, 0, 25), PAT(6)},
+-    {"EMERSON", {59, 58, 46, 0, 86, 55, 28, 10}, {9, 77, 118, 75}, 0, 1, FX(60, 0, 55, 35), PAT(4)},
+-    {"NUMAN", {62, 36, 30, 0, 89, 85, 14, 11}, {19, 73, 122, 78}, 0, 1, FX(20, 115, 35, 45), PAT(4)},
++    {"EMMERSON", {59, 58, 46, 0, 86, 55, 28, 10}, {9, 77, 118, 75}, 0, 1, FX(60, 0, 55, 35), PAT(4)},
++    {"NUMANN", {62, 36, 30, 0, 89, 85, 14, 11}, {19, 73, 122, 78}, 0, 1, FX(20, 115, 35, 45), PAT(4)},
+     {"HAMMER", {55, 55, 61, 50, 83, 25, 18, 12}, {0, 84, 100, 65}, 0, 1, FX(70, 0, 70, 30), PAT(4)},
+     {"FIFTHS", {62, 48, 41, 0, 83, 65, 20, 13}, {15, 77, 120, 77}, 0, 1, FX(75, 70, 35, 50), PAT(4)},
+     {"RAVE ARP", {63, 38, 51, 0, 72, 50, 0, 14}, {0, 75, 70, 64}, 0, 0, FX(25, 70, 75, 45), PAT(13)},
+@@ -127,18 +127,18 @@ static const preset_t FMINI_PRESETS[] = {
+     {"TITAN", {49, 47, 81, 57, 90, 45, 16, 17}, {15, 75, 122, 81}, 0, 1, FX(85, 0, 35, 55), PAT(4)},
+     {"FUZZ LEAD", {67, 36, 23, 0, 75, 70, 20, 18}, {0, 72, 120, 67}, 0, 1, FX(127, 0, 50, 25), PAT(4)},
+     {"GROWL", {47, 64, 30, 0, 77, 50, 85, 19}, {15, 75, 120, 75}, 0, 1, FX(60, 40, 35, 40), PAT(4)},
+-    {"MOOG FLUTE", {55, 32, 20, 0, 72, 55, 26, 20}, {54, 81, 118, 75}, 0, 1, FX(0, 40, 25, 55), PAT(4)},
++    {"MOOGH FLUTE", {55, 32, 20, 0, 72, 55, 26, 20}, {54, 81, 118, 75}, 0, 1, FX(0, 40, 25, 55), PAT(4)},
+     {"G-FUNK", {56, 42, 0, 0, 72, 100, 18, 21}, {46, 84, 120, 79}, 0, 1, FX(0, 60, 50, 40), PAT(4)},
+     {"SINE SOLO", {45, 0, 0, 0, 72, 100, 24, 22}, {28, 86, 120, 81}, 0, 1, FX(0, 0, 55, 60), PAT(4)},
+-    {"BANKS", {55, 36, 36, 65, 96, 60, 22, 23}, {50, 84, 118, 83}, 0, 1, FX(0, 70, 40, 60), PAT(4)},
++    {"BANKSH", {55, 36, 36, 65, 96, 60, 22, 23}, {50, 84, 118, 83}, 0, 1, FX(0, 70, 40, 60), PAT(4)},
+     {"OBOE", {56, 46, 20, 46, 77, 70, 22, 24}, {48, 77, 118, 68}, 0, 1, FX(0, 25, 20, 35), PAT(4)},
+     {"SOLO VIOLIN", {59, 34, 20, 55, 77, 80, 40, 25}, {64, 77, 120, 73}, 0, 1, FX(0, 35, 20, 55), PAT(4)},
+     {"DREAMER", {54, 34, 38, 0, 84, 25, 0, 26}, {22, 89, 40, 84}, 0, 0, FX(0, 60, 80, 80), PAT(13)},
+     {"WHISTLE", {60, 4, 0, 0, 72, 100, 34, 27}, {59, 77, 120, 77}, 0, 1, FX(0, 30, 30, 60), PAT(4)},
+     {"MELLOW PULSE", {47, 27, 30, 0, 84, 55, 18, 28}, {31, 81, 118, 77}, 0, 1, FX(0, 100, 45, 55), PAT(13)},
+     {"SAX LEAD", {54, 39, 36, 44, 75, 55, 30, 29}, {44, 77, 118, 69}, 0, 1, FX(30, 25, 30, 40), PAT(4)},
+-    {"MOOG BASS", {37, 38, 56, 0, 86, 35, 0, 30}, {15, 81, 118, 68}, 0, 1, FX(30, 0, 0, 8), PAT(2)},
+-    {"CHAMELEON", {38, 70, 99, 0, 62, 0, 0, 31}, {0, 69, 45, 53}, 0, 1, FX(35, 0, 25, 10), PAT(2)},
++    {"MOOGH BASS", {37, 38, 56, 0, 86, 35, 0, 30}, {15, 81, 118, 68}, 0, 1, FX(30, 0, 0, 8), PAT(2)},
++    {"CAMALEON", {38, 70, 99, 0, 62, 0, 0, 31}, {0, 69, 45, 53}, 0, 1, FX(35, 0, 25, 10), PAT(2)},
+     {"SUB BASS", {38, 8, 13, 0, 72, 60, 0, 32}, {28, 77, 118, 65}, 0, 1, FX(40, 0, 0, 0), PAT(8)},
+     {"WOBBLE BASS", {42, 65, 13, 0, 72, 60, 110, 33}, {19, 77, 118, 68}, 0, 1, FX(80, 0, 0, 15), PAT(2)},
+     {"OCTAVE PUMP", {53, 32, 76, 0, 61, 0, 0, 34}, {0, 69, 40, 53}, 0, 1, FX(30, 0, 25, 12), PAT(2)},
+@@ -146,10 +146,10 @@ static const preset_t FMINI_PRESETS[] = {
+     {"REESE", {43, 32, 20, 0, 84, 60, 30, 36}, {28, 81, 120, 77}, 0, 1, FX(60, 100, 0, 35), PAT(8)},
+     {"RUBBER", {45, 47, 56, 0, 65, 0, 0, 37}, {0, 84, 0, 62}, 0, 1, FX(25, 0, 18, 0), PAT(2)},
+     {"FUZZ BASS", {56, 34, 25, 0, 72, 60, 0, 38}, {9, 75, 115, 62}, 0, 1, FX(127, 0, 0, 10), PAT(2)},
+-    {"WONDER BASS", {42, 46, 71, 0, 75, 30, 0, 39}, {15, 81, 100, 65}, 0, 1, FX(20, 0, 20, 20), PAT(2)},
+-    {"SOLINA", {68, 6, 0, 0, 62, 127, 8, 40}, {61, 81, 120, 81}, 0, 0, FX(0, 127, 0, 35), PAT(5)},
++    {"WONDERS BASS", {42, 46, 71, 0, 75, 30, 0, 39}, {15, 81, 100, 65}, 0, 1, FX(20, 0, 20, 20), PAT(2)},
++    {"SOLINAH", {68, 6, 0, 0, 62, 127, 8, 40}, {61, 81, 120, 81}, 0, 0, FX(0, 127, 0, 35), PAT(5)},
+     {"WARM PAD", {50, 30, 25, 92, 103, 60, 0, 41}, {89, 96, 115, 99}, 0, 0, FX(0, 70, 0, 80), PAT(5)},
+-    {"JUNO PWM", {63, 27, 13, 0, 86, 90, 6, 42}, {65, 81, 118, 84}, 0, 0, FX(0, 127, 0, 35), PAT(13)},
++    {"JUNOH PWM", {63, 27, 13, 0, 86, 90, 6, 42}, {65, 81, 118, 84}, 0, 0, FX(0, 127, 0, 35), PAT(13)},
+     {"CHOIR", {59, 44, 15, 72, 90, 80, 30, 43}, {84, 86, 118, 92}, 0, 0, FX(0, 50, 0, 85), PAT(5)},
+     {"SWEEP PAD", {38, 48, 89, 106, 110, 40, 0, 44}, {96, 99, 115, 101}, 0, 0, FX(0, 60, 50, 70), PAT(5)},
+     {"ANGELS", {79, 0, 0, 0, 62, 127, 14, 45}, {92, 90, 110, 106}, 0, 0, FX(0, 60, 35, 110), PAT(5)},
+@@ -157,8 +157,8 @@ static const preset_t FMINI_PRESETS[] = {
+     {"PULSE PAD", {56, 38, 38, 0, 81, 35, 0, 47}, {46, 86, 60, 92}, 0, 0, FX(0, 80, 60, 80), PAT(13)},
+     {"CELLOS", {42, 27, 0, 0, 62, 127, 42, 48}, {73, 81, 118, 84}, 0, 0, FX(0, 40, 0, 60), PAT(5)},
+     {"AIR PAD", {62, 65, 38, 99, 106, 50, 60, 49}, {92, 93, 118, 101}, 0, 0, FX(0, 70, 0, 90), PAT(5)},
+-    {"MOOG BRASS", {46, 38, 66, 57, 77, 50, 0, 50}, {48, 77, 118, 72}, 0, 0, FX(0, 40, 0, 40), PAT(5)},
+-    {"JUMP BRASS", {47, 30, 76, 44, 85, 40, 0, 51}, {39, 84, 95, 77}, 0, 0, FX(15, 70, 0, 50), PAT(5)},
++    {"MOOGH BRASS", {46, 38, 66, 57, 77, 50, 0, 50}, {48, 77, 118, 72}, 0, 0, FX(0, 40, 0, 40), PAT(5)},
++    {"SALTO BRASS", {47, 30, 76, 44, 85, 40, 0, 51}, {39, 84, 95, 77}, 0, 0, FX(15, 70, 0, 50), PAT(5)},
+     {"TRUMPET", {46, 36, 66, 51, 72, 50, 30, 52}, {46, 77, 118, 67}, 0, 1, FX(20, 0, 25, 35), PAT(4)},
+     {"FRENCH HORN", {44, 30, 41, 65, 84, 60, 14, 53}, {62, 81, 118, 81}, 0, 0, FX(0, 35, 0, 70), PAT(5)},
+     {"BRASS STAB", {50, 36, 76, 0, 73, 0, 0, 54}, {9, 75, 0, 67}, 0, 0, FX(40, 0, 55, 40), PAT(6)},
+@@ -177,16 +177,16 @@ static const preset_t FMINI_PRESETS[] = {
+     {"PIZZICATO", {45, 29, 61, 0, 65, 0, 0, 67}, {0, 73, 0, 65}, 0, 0, FX(0, 60, 25, 50), PAT(13)},
+     {"POP PLUCK", {54, 39, 51, 0, 75, 10, 0, 68}, {0, 82, 0, 73}, 0, 0, FX(0, 50, 90, 45), PAT(13)},
+     {"HARP", {60, 4, 25, 0, 75, 0, 0, 69}, {0, 98, 0, 89}, 0, 0, FX(0, 50, 40, 80), PAT(13)},
+-    {"CLAVINET", {52, 32, 71, 0, 69, 10, 0, 70}, {0, 86, 0, 55}, 0, 0, FX(25, 0, 0, 15), PAT(6)},
++    {"CLAVINETE", {52, 32, 71, 0, 69, 10, 0, 70}, {0, 86, 0, 55}, 0, 0, FX(25, 0, 0, 15), PAT(6)},
+     {"PIPE ORGAN", {68, 6, 0, 0, 62, 127, 0, 71}, {39, 62, 127, 59}, 0, 0, FX(0, 25, 0, 100), PAT(5)},
+     {"SYNTH PIANO", {49, 25, 81, 0, 77, 0, 0, 72}, {0, 106, 0, 77}, 0, 0, FX(0, 25, 0, 45), PAT(6)},
+     {"HARPSICHORD", {63, 32, 30, 0, 68, 0, 0, 73}, {0, 93, 0, 59}, 0, 0, FX(0, 0, 0, 40), PAT(3)},
+     {"VIBES", {60, 4, 25, 0, 77, 0, 0, 74}, {0, 108, 0, 96}, 0, 0, FX(0, 30, 0, 70), PAT(3)},
+-    {"WURLY", {59, 29, 30, 0, 72, 15, 0, 75}, {9, 98, 10, 72}, 0, 0, FX(30, 50, 0, 35), PAT(6)},
++    {"WURLEY", {59, 29, 30, 0, 72, 15, 0, 75}, {9, 98, 10, 72}, 0, 0, FX(30, 50, 0, 35), PAT(6)},
+     {"TUBULAR", {67, 0, 25, 0, 81, 0, 0, 76}, {0, 115, 0, 106}, 0, 0, FX(0, 20, 30, 100), PAT(7)},
+     {"MUSIC BOX", {73, 10, 25, 0, 72, 0, 0, 77}, {0, 84, 0, 84}, 0, 0, FX(0, 20, 45, 60), PAT(7)},
+     {"ACCORDION", {63, 32, 13, 0, 62, 127, 14, 78}, {48, 72, 118, 61}, 0, 0, FX(0, 30, 0, 30), PAT(6)},
+-    {"FARFISA", {64, 37, 13, 0, 62, 100, 16, 79}, {19, 62, 120, 57}, 0, 0, FX(0, 70, 0, 30), PAT(6)},
++    {"FARFISAH", {64, 37, 13, 0, 62, 100, 16, 79}, {19, 62, 120, 57}, 0, 0, FX(0, 70, 0, 30), PAT(6)},
+     {"DARK DRONE", {41, 44, 13, 108, 112, 70, 70, 80}, {106, 108, 118, 109}, 0, 1, FX(40, 0, 0, 80), PAT(8)},
+     {"STAR DUST", {72, 0, 0, 0, 62, 127, 0, 81}, {15, 92, 0, 92}, 0, 0, FX(0, 50, 70, 110), PAT(13)},
+     {"ALIEN CHOIR", {54, 74, 25, 99, 103, 60, 60, 82}, {99, 99, 118, 106}, 0, 0, FX(0, 90, 60, 100), PAT(5)},
+diff --git a/firmware/src/eng_phys.c b/firmware/src/eng_phys.c
+index 419cb48..277a692 100644
+--- a/firmware/src/eng_phys.c
++++ b/firmware/src/eng_phys.c
+@@ -230,9 +230,6 @@ static const preset_t PHYS_PRESETS[] = {
+     {"STR PLUCK", {PM_STRING, 56, 72, 84, 40, 96, 0, 0}, {0, 100, 127, 58}, 0, 0, FX(0, 10, 30, 30)},
+     {"BOWED MTL", {PM_MODAL, 98, 70, 112, 10, 80, 90, 0}, {60, 90, 127, 90}, 0, 0, FX(0, 40, 20, 70)},
+     {"THUMB PNO", {PM_MODAL, 34, 16, 56, 100, 90, 0, 48}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 20, 40)},
+-    /* MEMB: {MODEL, HARM, BRIT, DAMP, POS, ACC, BEND, EXC} */
+-    {"HAND DRUM", {PM_MEMB, 112, 76, 56, 44, 100, 14, 24}, {0, 100, 127, 64}, 0, 0, FX(0, 0, 10, 30)},
+-    {"MEMB TOMS", {PM_MEMB, 0, 52, 40, 30, 100, 40, 30}, {0, 100, 127, 70}, 0, 0, FX(0, 0, 0, 40)},
+     /* SYMP: {MODEL, CHRD, BRIT, DAMP, SYMP, ACC, BUZZ, EXC} */
+     {"SITAR", {PM_SYMP, 127, 80, 88, 64, 100, 92, 0}, {0, 100, 127, 90}, 0, 0, FX(0, 10, 20, 50)},
+     {"PHYS HARP", {PM_SYMP, 8, 62, 74, 60, 90, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 20, 20, 60)},
+@@ -255,7 +252,6 @@ static const preset_t PHYS_PRESETS[] = {
+     {"STEEL PAN", {PM_MODAL, 36, 80, 90, 30, 100, 0, 20}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 20, 35)},
+     {"WOOD BLOCK", {PM_MODAL, 116, 30, 35, 40, 110, 0, 60}, {0, 100, 127, 20}, 0, 0, FX(0, 0, 10, 20)},
+     /* MEMB: {MODEL, HARM, BRIT, DAMP, POS, ACC, BEND, EXC} */
+-    {"TABLA", {PM_MEMB, 120, 70, 70, 50, 110, 20, 30}, {0, 100, 127, 50}, 0, 0, FX(0, 0, 10, 25)},
+     {"CONGA", {PM_MEMB, 90, 60, 50, 40, 100, 8, 40}, {0, 100, 127, 40}, 0, 0, FX(0, 0, 10, 25)},
+     {"TIMPANI", {PM_MEMB, 10, 50, 100, 20, 110, 6, 10}, {0, 100, 127, 90}, 0, 0, FX(0, 0, 0, 50), XP(P_TRANS + 1, -12)},
+ };
+diff --git a/firmware/src/preset_trim.h b/firmware/src/preset_trim.h
+index 0edc105..3b4f1d9 100644
+--- a/firmware/src/preset_trim.h
++++ b/firmware/src/preset_trim.h
+@@ -4,16 +4,16 @@
+ #define PT_MAX 32u
+ static const int8_t PRESET_TRIM[PT_ENGINES][PT_MAX] = {
+     {/* 0.0 808 BOOM */ -9, /* 0.1 808 DIRTY */ -3, /* 0.2 SUB BASS */ -10, /* 0.3 808 SLIDE */ -4, /* 0.4 ACID 303 */ 23, /* 0.5 PLUGG BASS */ -6, /* 0.6 REESE */ 3, /* 0.7 WOBBLE */ 7, /* 0.8 FUNK BASS */ 16, /* 0.9 G-FUNK LD */ -10, /* 0.10 TRAP PLUCK */ 23, /* 0.11 SYN BRASS */ 23, /* 0.12 SUPERSAW */ -18, /* 0.13 WARM PAD */ -7, /* 0.14 DARK STR */ -4, /* 0.15 ATMOS PAD */ -9, /* 0.16 PAN FLUTE */ -7, /* 0.17 FAT LEAD */ -5, /* 0.18 MONO BASS */ 14, /* 0.19 PWM LEAD */ -6, /* 0.20 SAW BASS */ 17, /* 0.21 SINE PAD */ -23},
+-    {/* 1.0 RHODES */ 23, /* 1.1 DX RHODES */ 15, /* 1.2 WURLI */ 23, /* 1.3 CLAV */ 14, /* 1.4 M1 PIANO */ 17, /* 1.5 AFRO KEYS */ 18, /* 1.6 TRAP BELL */ 6, /* 1.7 MUSIC BOX */ 7, /* 1.8 MARIMBA */ 23, /* 1.9 KALIMBA */ 23, /* 1.10 PLUGG BELL */ 16, /* 1.11 GLASS PAD */ -18, /* 1.12 FM BASS */ 11, /* 1.13 STEEL DRUM */ 23, /* 1.14 GLOCKEN */ 7, /* 1.15 CELESTA */ 12, /* 1.16 XYLOPHONE */ 23, /* 1.17 HARP */ 9, /* 1.18 BASS GTR */ 17, /* 1.19 TUBE BELL */ 1, /* 1.20 FM PLUCK */ 23, /* 1.21 FM GRAND */ 9},
++    {/* 1.0 RHODES */ 23, /* 1.1 DX RHODES */ 15, /* 1.2 WURLI */ 23, /* 1.3 CLAV */ 14, /* 1.4 M1 PIANO */ 17, /* 1.5 AFRO KEYS */ 18, /* 1.6 TRAP BELL */ 6, /* 1.7 MUSIC BOX */ 7, /* 1.8 MARIMBA */ 23, /* 1.9 KALIMBA */ 23, /* 1.10 PLUGG BELL */ 16, /* 1.11 GLASS PAD */ -18, /* 1.12 FM BASS */ 11, /* 1.13 GLOCKEN */ 7, /* 1.14 CELESTA */ 12, /* 1.15 XYLOPHONE */ 23, /* 1.16 HARP */ 9, /* 1.17 BASS GTR */ 17, /* 1.18 TUBE BELL */ 1, /* 1.19 FM PLUCK */ 23, /* 1.20 FM GRAND */ 9},
+     {/* 2.0 CZ BASS */ 23, /* 2.1 SOFT KEYS */ 23, /* 2.2 CZ STRING */ -21, /* 2.3 RESO PLUCK */ 19, /* 2.4 CZ BRASS */ 8, /* 2.5 CZ LEAD */ -8, /* 2.6 CZ PAD */ -20, /* 2.7 CZ RESO */ 5},
+     {/* 3.0 GAME LEAD */ -4, /* 3.1 GB BASS */ 15, /* 3.2 8BIT ARP */ -5, /* 3.3 NES BASS */ 13, /* 3.4 CHIP CHORD */ 4, /* 3.5 1BIT BEEP */ 2, /* 3.6 WAVE LEAD */ 0, /* 3.7 CHIP NOISE */ 23},
+-    {/* 4.0 GRAND PNO */ 17, /* 4.1 UP BASS */ 2, /* 4.2 VIBES */ -4, /* 4.3 HORN STAB */ -8, /* 4.4 STRING STB */ 23, /* 4.5 LOFI FLUTE */ -1, /* 4.6 SCRATCH */ -3, /* 4.7 GM KIT */ 0, /* 4.8 DUSTY PNO */ 19, /* 4.9 LOFI KEYS */ 11, /* 4.10 DEEP BASS */ 23},
+-    {/* 5.0 CHOIR AAH */ -26, /* 5.1 SOUL OOH */ -24, /* 5.2 TALKBOX */ -7, /* 5.3 WOW BASS */ 6, /* 5.4 HARMONICA */ -5, /* 5.5 ROBOT */ -2, /* 5.6 VOX PAD */ -19},
++    {/* 4.0 GRAND PNO */ 17, /* 4.1 VIBES */ -4, /* 4.2 HORN STAB */ -8, /* 4.3 STRING STB */ 23, /* 4.4 LOFI FLUTE */ -1, /* 4.5 SCRATCH */ -3, /* 4.6 GM KIT */ 0, /* 4.7 DUSTY PNO */ 19, /* 4.8 LOFI KEYS */ 11, /* 4.9 DEEP BASS */ 23},
++    {/* 5.0 CHOIR AAH */ -26, /* 5.1 SOUL OOH */ -24, /* 5.2 TALKBOX */ -7, /* 5.3 WOW BASS */ 6, /* 5.4 ROBOT */ -2, /* 5.5 VOX PAD */ -19},
+     {/* 6.0 FAT BASS */ 23, /* 6.1 MIN STAB */ 23, /* 6.2 MIN7 STAB */ 23, /* 6.3 RAVE STAB */ 23, /* 6.4 DUB CHORD */ 23, /* 6.5 SAW PAD */ -11, /* 6.6 SYNC LEAD */ -3, /* 6.7 HOOVER */ 5, /* 6.8 ACCORDION */ 12, /* 6.9 ENSEMBLE */ -7, /* 6.10 80S POLY */ 17, /* 6.11 SQR LEAD */ -8, /* 6.12 POWER STAB */ 23, /* 6.13 PULSE PAD */ -15},
+-    {/* 7.0 SOUL ORGAN */ -14, /* 7.1 GOSPEL */ -10, /* 7.2 JAZZ ORGAN */ -8, /* 7.3 DIRTY B3 */ -10, /* 7.4 HOUSE ORGN */ -7, /* 7.5 ROCK ORGAN */ -12, /* 7.6 CHAPEL */ 10, /* 7.7 REGGAE ORG */ 23},
++    {/* 7.0 SOUL ORGAN */ -14, /* 7.1 GOSPEL */ -10, /* 7.2 JAZZ ORGAN */ -8, /* 7.3 DIRTY B3 */ -10, /* 7.4 HOUSE ORGN */ -7, /* 7.5 ROCK ORGAN */ -12, /* 7.6 CHAPEL */ 10},
+     {/* 8.0 LOFI CLOUD */ 4, /* 8.1 VIBE HAZE */ 2, /* 8.2 FLUTE DUST */ -1, /* 8.3 STR CLOUD */ 0, /* 8.4 SHIMMER */ 7, /* 8.5 DRONE */ 9, /* 8.6 PNO FREEZE */ 23, /* 8.7 HORN CLOUD */ -6},
+     {/* 9.0 TINE EP */ -1, /* 9.1 GLASS BELL */ 4, /* 9.2 ROUND BASS */ 14, /* 9.3 BRASS SECT */ 23, /* 9.4 SOFT PAD */ 2, /* 9.5 WOOD BARS */ 23, /* 9.6 DRAWBARS */ 11, /* 9.7 NYLON PICK */ 23},
+-    {/* 10.0 BELL TREE */ -10, /* 10.1 MODAL BAR */ 23, /* 10.2 STR PLUCK */ 16, /* 10.3 BOWED MTL */ -6, /* 10.4 THUMB PNO */ 18, /* 10.5 HAND DRUM */ 8, /* 10.6 MEMB TOMS */ 14, /* 10.7 SITAR */ 12, /* 10.8 PHYS HARP */ 10, /* 10.9 NYLON GTR */ 16, /* 10.10 STEEL GTR */ 21, /* 10.11 MUTED GTR */ 23, /* 10.12 PLUCK BASS */ 23, /* 10.13 KOTO */ 1, /* 10.14 BANJO */ 23, /* 10.15 CELLO BOW */ 3, /* 10.16 TANPURA */ -24, /* 10.17 CHIMES */ -15, /* 10.18 BIG BELL */ -12, /* 10.19 VIBRA BAR */ 2, /* 10.20 GLASS BOWL */ -7, /* 10.21 STEEL PAN */ -8, /* 10.22 WOOD BLOCK */ 23, /* 10.23 TABLA */ 3, /* 10.24 CONGA */ 7, /* 10.25 TIMPANI */ -15},
++    {/* 10.0 BELL TREE */ -10, /* 10.1 MODAL BAR */ 23, /* 10.2 STR PLUCK */ 16, /* 10.3 BOWED MTL */ -6, /* 10.4 THUMB PNO */ 18, /* 10.5 SITAR */ 12, /* 10.6 PHYS HARP */ 10, /* 10.7 NYLON GTR */ 16, /* 10.8 STEEL GTR */ 21, /* 10.9 MUTED GTR */ 23, /* 10.10 PLUCK BASS */ 23, /* 10.11 KOTO */ 1, /* 10.12 BANJO */ 23, /* 10.13 CELLO BOW */ 3, /* 10.14 TANPURA */ -24, /* 10.15 CHIMES */ -15, /* 10.16 BIG BELL */ -12, /* 10.17 VIBRA BAR */ 2, /* 10.18 GLASS BOWL */ -7, /* 10.19 STEEL PAN */ -8, /* 10.20 WOOD BLOCK */ 23, /* 10.21 CONGA */ 7, /* 10.22 TIMPANI */ -15},
+     {/* 11.0 WIND */ -1, /* 11.1 RAIN */ 0, /* 11.2 NZ ARCADE */ 14, /* 11.3 NZ METAL */ 23, /* 11.4 OCEAN */ 23, /* 11.5 VINYL */ 23, /* 11.6 HISS */ -12, /* 11.7 RISER */ 0, /* 11.8 NZ SNARE */ 23, /* 11.9 BITCRUSH */ 17, /* 11.10 RADIO */ -9},
+     {/* 12.0 BREAK 16 */ 23, /* 12.1 CHOP 8 */ 23, /* 12.2 REVERSE */ 23, /* 12.3 USR SLICE */ 23},
+ };
+diff --git a/firmware/src/ui.c b/firmware/src/ui.c
+index fc970b5..ff814b6 100644
+--- a/firmware/src/ui.c
++++ b/firmware/src/ui.c
+@@ -666,25 +666,25 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_BASS, 0, "808 BOOM"}, {BK_BASS, 0, "808 DIRTY"}, {BK_BASS, 0, "808 SLIDE"}, {BK_BASS, 0, "SUB BASS"},
+     {BK_BASS, 0, "PLUGG BASS"}, {BK_BASS, 0, "REESE"}, {BK_BASS, 0, "WOBBLE"}, {BK_BASS, 0, "ACID 303"},
+     {BK_BASS, 1, "FM BASS"}, {BK_BASS, 2, "CZ BASS"}, {BK_BASS, 6, "FAT BASS"}, {BK_BASS, 0, "FUNK BASS"},
+-    {BK_BASS, 5, "WOW BASS"}, {BK_BASS, 3, "GB BASS"}, {BK_BASS, 4, "UP BASS"}, {BK_BASS, 4, "DEEP BASS"},
++    {BK_BASS, 5, "WOW BASS"}, {BK_BASS, 3, "GB BASS"}, {BK_BASS, 4, "DEEP BASS"},
+     {BK_BASS, ENGI_FM6, "ROUND BASS"}, {BK_BASS, 1, "BASS GTR"}, {BK_BASS, 0, "MONO BASS"},
+     {BK_BASS, ENGI_PHYS, "PLUCK BASS"}, {BK_BASS, 3, "NES BASS"}, {BK_BASS, 0, "SAW BASS"},
+-    {BK_BASS, ENGI_MUUG, "I FEEL ARP"}, {BK_BASS, ENGI_MUUG, "MOOG BASS"}, {BK_BASS, ENGI_MUUG, "CHAMELEON"},
++    {BK_BASS, ENGI_MUUG, "SIENTO ARP"}, {BK_BASS, ENGI_MUUG, "MOOGH BASS"}, {BK_BASS, ENGI_MUUG, "CAMALEON"},
+     {BK_BASS, ENGI_MUUG, "SUB BASS"}, {BK_BASS, ENGI_MUUG, "WOBBLE BASS"}, {BK_BASS, ENGI_MUUG, "OCTAVE PUMP"},
+     {BK_BASS, ENGI_MUUG, "SEQ BASS"}, {BK_BASS, ENGI_MUUG, "REESE"}, {BK_BASS, ENGI_MUUG, "RUBBER"},
+-    {BK_BASS, ENGI_MUUG, "FUZZ BASS"}, {BK_BASS, ENGI_MUUG, "WONDER BASS"},
++    {BK_BASS, ENGI_MUUG, "FUZZ BASS"}, {BK_BASS, ENGI_MUUG, "WONDERS BASS"},
+     {BK_KEYS, 1, "RHODES"}, {BK_KEYS, 1, "DX RHODES"}, {BK_KEYS, 1, "WURLI"}, {BK_KEYS, 1, "M1 PIANO"},
+     {BK_KEYS, 1, "AFRO KEYS"}, {BK_KEYS, 4, "GRAND PNO"}, {BK_KEYS, 4, "DUSTY PNO"}, {BK_KEYS, 4, "LOFI KEYS"},
+     {BK_KEYS, 2, "SOFT KEYS"}, {BK_KEYS, 1, "CLAV"}, {BK_KEYS, ENGI_FM6, "TINE EP"}, {BK_KEYS, 1, "FM GRAND"},
+     {BK_KEYS, ENGI_MUUG, "ROTARY ORG"}, {BK_KEYS, ENGI_MUUG, "CRYSTAL BELL"}, {BK_KEYS, ENGI_MUUG, "E.PIANO"},
+-    {BK_KEYS, ENGI_MUUG, "CLAVINET"}, {BK_KEYS, ENGI_MUUG, "PIPE ORGAN"}, {BK_KEYS, ENGI_MUUG, "SYNTH PIANO"},
+-    {BK_KEYS, ENGI_MUUG, "HARPSICHORD"}, {BK_KEYS, ENGI_MUUG, "VIBES"}, {BK_KEYS, ENGI_MUUG, "WURLY"},
++    {BK_KEYS, ENGI_MUUG, "CLAVINETE"}, {BK_KEYS, ENGI_MUUG, "PIPE ORGAN"}, {BK_KEYS, ENGI_MUUG, "SYNTH PIANO"},
++    {BK_KEYS, ENGI_MUUG, "HARPSICHORD"}, {BK_KEYS, ENGI_MUUG, "VIBES"}, {BK_KEYS, ENGI_MUUG, "WURLEY"},
+     {BK_KEYS, ENGI_MUUG, "TUBULAR"}, {BK_KEYS, ENGI_MUUG, "MUSIC BOX"}, {BK_KEYS, ENGI_MUUG, "ACCORDION"},
+-    {BK_KEYS, ENGI_MUUG, "FARFISA"},
++    {BK_KEYS, ENGI_MUUG, "FARFISAH"},
+     {BK_ORGAN, 7, "SOUL ORGAN"}, {BK_ORGAN, 7, "GOSPEL"}, {BK_ORGAN, 7, "JAZZ ORGAN"},
+     {BK_ORGAN, 7, "DIRTY B3"}, {BK_ORGAN, 7, "HOUSE ORGN"}, {BK_ORGAN, ENGI_FM6, "DRAWBARS"},
+     {BK_ORGAN, 6, "ACCORDION"}, {BK_ORGAN, 7, "ROCK ORGAN"}, {BK_ORGAN, 7, "CHAPEL"},
+-    {BK_ORGAN, 7, "REGGAE ORG"}, {BK_PAD, 0, "WARM PAD"}, {BK_PAD, 6, "SAW PAD"}, {BK_PAD, 1, "GLASS PAD"},
++    {BK_PAD, 0, "WARM PAD"}, {BK_PAD, 6, "SAW PAD"}, {BK_PAD, 1, "GLASS PAD"},
+     {BK_PAD, 0, "DARK STR"}, {BK_PAD, 2, "CZ STRING"}, {BK_PAD, 0, "ATMOS PAD"}, {BK_PAD, 8, "LOFI CLOUD"},
+     {BK_PAD, 8, "VIBE HAZE"}, {BK_PAD, 5, "CHOIR AAH"}, {BK_PAD, 5, "SOUL OOH"}, {BK_PAD, ENGI_FM6, "SOFT PAD"},
+     {BK_PAD, 6, "ENSEMBLE"}, {BK_PAD, 8, "STR CLOUD"}, {BK_PAD, 8, "SHIMMER"}, {BK_PAD, 8, "DRONE"},
+@@ -692,8 +692,8 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_PAD, ENGI_PHYS, "GLASS BOWL"}, {BK_PAD, ENGI_NOISE, "OCEAN"}, {BK_PAD, 2, "CZ PAD"},
+     {BK_PAD, 5, "VOX PAD"}, {BK_PAD, 8, "PNO FREEZE"}, {BK_PAD, 8, "HORN CLOUD"}, {BK_PAD, 0, "SINE PAD"},
+     {BK_PAD, 6, "PULSE PAD"},
+-    {BK_PAD, ENGI_MUUG, "LUSH STRINGS"}, {BK_PAD, ENGI_MUUG, "SPACE DRONE"}, {BK_PAD, ENGI_MUUG, "SOLINA"},
+-    {BK_PAD, ENGI_MUUG, "WARM PAD"}, {BK_PAD, ENGI_MUUG, "JUNO PWM"}, {BK_PAD, ENGI_MUUG, "CHOIR"},
++    {BK_PAD, ENGI_MUUG, "LUSH STRINGS"}, {BK_PAD, ENGI_MUUG, "SPACE DRONE"}, {BK_PAD, ENGI_MUUG, "SOLINAH"},
++    {BK_PAD, ENGI_MUUG, "WARM PAD"}, {BK_PAD, ENGI_MUUG, "JUNOH PWM"}, {BK_PAD, ENGI_MUUG, "CHOIR"},
+     {BK_PAD, ENGI_MUUG, "SWEEP PAD"}, {BK_PAD, ENGI_MUUG, "ANGELS"}, {BK_PAD, ENGI_MUUG, "ECLIPSE"},
+     {BK_PAD, ENGI_MUUG, "PULSE PAD"}, {BK_PAD, ENGI_MUUG, "CELLOS"}, {BK_PAD, ENGI_MUUG, "AIR PAD"},
+     {BK_PAD, ENGI_MUUG, "DARK DRONE"}, {BK_PAD, ENGI_MUUG, "STAR DUST"}, {BK_PAD, ENGI_MUUG, "ALIEN CHOIR"},
+@@ -702,17 +702,17 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_PAD, ENGI_MUUG, "SINGING BOWL"},
+     {BK_LEAD, 0, "SUPERSAW"}, {BK_LEAD, 0, "G-FUNK LD"}, {BK_LEAD, 6, "SYNC LEAD"},
+     {BK_LEAD, 6, "HOOVER"}, {BK_LEAD, 5, "TALKBOX"}, {BK_LEAD, 3, "GAME LEAD"}, {BK_LEAD, 4, "LOFI FLUTE"},
+-    {BK_LEAD, 8, "FLUTE DUST"}, {BK_LEAD, 0, "FAT LEAD"}, {BK_LEAD, 0, "PAN FLUTE"}, {BK_LEAD, 5, "HARMONICA"},
++    {BK_LEAD, 8, "FLUTE DUST"}, {BK_LEAD, 0, "FAT LEAD"}, {BK_LEAD, 0, "PAN FLUTE"},
+     {BK_LEAD, ENGI_NOISE, "NZ ARCADE"}, {BK_LEAD, 3, "WAVE LEAD"}, {BK_LEAD, 2, "CZ LEAD"},
+     {BK_LEAD, 5, "ROBOT"}, {BK_LEAD, 0, "PWM LEAD"}, {BK_LEAD, 6, "SQR LEAD"},
+-    {BK_LEAD, ENGI_MUUG, "MINI LEAD"}, {BK_LEAD, ENGI_MUUG, "CS-80 BRASS"}, {BK_LEAD, ENGI_MUUG, "EMERSON"},
+-    {BK_LEAD, ENGI_MUUG, "NUMAN"}, {BK_LEAD, ENGI_MUUG, "HAMMER"}, {BK_LEAD, ENGI_MUUG, "FIFTHS"},
++    {BK_LEAD, ENGI_MUUG, "MINI LEAD"}, {BK_LEAD, ENGI_MUUG, "CS-80X BRASS"}, {BK_LEAD, ENGI_MUUG, "EMMERSON"},
++    {BK_LEAD, ENGI_MUUG, "NUMANN"}, {BK_LEAD, ENGI_MUUG, "HAMMER"}, {BK_LEAD, ENGI_MUUG, "FIFTHS"},
+     {BK_LEAD, ENGI_MUUG, "RAVE ARP"}, {BK_LEAD, ENGI_MUUG, "ACID LEAD"}, {BK_LEAD, ENGI_MUUG, "PULSE HERO"},
+     {BK_LEAD, ENGI_MUUG, "TITAN"}, {BK_LEAD, ENGI_MUUG, "FUZZ LEAD"}, {BK_LEAD, ENGI_MUUG, "GROWL"},
+-    {BK_LEAD, ENGI_MUUG, "MOOG FLUTE"}, {BK_LEAD, ENGI_MUUG, "G-FUNK"}, {BK_LEAD, ENGI_MUUG, "SINE SOLO"},
+-    {BK_LEAD, ENGI_MUUG, "BANKS"}, {BK_LEAD, ENGI_MUUG, "OBOE"}, {BK_LEAD, ENGI_MUUG, "SOLO VIOLIN"},
++    {BK_LEAD, ENGI_MUUG, "MOOGH FLUTE"}, {BK_LEAD, ENGI_MUUG, "G-FUNK"}, {BK_LEAD, ENGI_MUUG, "SINE SOLO"},
++    {BK_LEAD, ENGI_MUUG, "BANKSH"}, {BK_LEAD, ENGI_MUUG, "OBOE"}, {BK_LEAD, ENGI_MUUG, "SOLO VIOLIN"},
+     {BK_LEAD, ENGI_MUUG, "DREAMER"}, {BK_LEAD, ENGI_MUUG, "WHISTLE"}, {BK_LEAD, ENGI_MUUG, "MELLOW PULSE"},
+-    {BK_LEAD, ENGI_MUUG, "SAX LEAD"}, {BK_LEAD, ENGI_MUUG, "MOOG BRASS"}, {BK_LEAD, ENGI_MUUG, "JUMP BRASS"},
++    {BK_LEAD, ENGI_MUUG, "SAX LEAD"}, {BK_LEAD, ENGI_MUUG, "MOOGH BRASS"}, {BK_LEAD, ENGI_MUUG, "SALTO BRASS"},
+     {BK_LEAD, ENGI_MUUG, "TRUMPET"}, {BK_LEAD, ENGI_MUUG, "FRENCH HORN"}, {BK_LEAD, ENGI_MUUG, "BRASS STAB"},
+     {BK_LEAD, ENGI_MUUG, "BRASS SWELL"}, {BK_LEAD, ENGI_MUUG, "HORN RIFF"}, {BK_LEAD, ENGI_MUUG, "TROMBONE"},
+     {BK_LEAD, ENGI_MUUG, "FLUGEL"}, {BK_LEAD, ENGI_MUUG, "FANFARE"},
+@@ -720,7 +720,7 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_PLUCK, 2, "RESO PLUCK"}, {BK_PLUCK, 1, "PLUGG BELL"}, {BK_PLUCK, 1, "TRAP BELL"},
+     {BK_PLUCK, 1, "MUSIC BOX"}, {BK_PLUCK, 1, "KALIMBA"}, {BK_PLUCK, 1, "MARIMBA"}, {BK_PLUCK, 4, "VIBES"},
+     {BK_PLUCK, 3, "8BIT ARP"}, {BK_PLUCK, ENGI_FM6, "GLASS BELL"}, {BK_PLUCK, ENGI_FM6, "WOOD BARS"},
+-    {BK_PLUCK, ENGI_FM6, "NYLON PICK"}, {BK_PLUCK, 1, "HARP"}, {BK_PLUCK, 1, "STEEL DRUM"},
++    {BK_PLUCK, ENGI_FM6, "NYLON PICK"}, {BK_PLUCK, 1, "HARP"},
+     {BK_PLUCK, 1, "GLOCKEN"}, {BK_PLUCK, 1, "CELESTA"}, {BK_PLUCK, 1, "XYLOPHONE"},
+     {BK_PLUCK, ENGI_PHYS, "STR PLUCK"}, {BK_PLUCK, ENGI_PHYS, "SITAR"}, {BK_PLUCK, ENGI_PHYS, "PHYS HARP"},
+     {BK_PLUCK, ENGI_PHYS, "BELL TREE"}, {BK_PLUCK, ENGI_PHYS, "MODAL BAR"}, {BK_PLUCK, ENGI_PHYS, "THUMB PNO"},
+@@ -729,7 +729,7 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_PLUCK, ENGI_PHYS, "CHIMES"}, {BK_PLUCK, ENGI_PHYS, "BIG BELL"}, {BK_PLUCK, ENGI_PHYS, "VIBRA BAR"},
+     {BK_PLUCK, ENGI_PHYS, "STEEL PAN"}, {BK_PLUCK, ENGI_PHYS, "WOOD BLOCK"}, {BK_PLUCK, 3, "1BIT BEEP"},
+     {BK_PLUCK, 2, "CZ RESO"}, {BK_PLUCK, 1, "TUBE BELL"}, {BK_PLUCK, 1, "FM PLUCK"},
+-    {BK_PLUCK, ENGI_MUUG, "DUB STAB"}, {BK_PLUCK, ENGI_MUUG, "TANGERINE"}, {BK_PLUCK, ENGI_MUUG, "PLUCK SAW"},
++    {BK_PLUCK, ENGI_MUUG, "DUB STAB"}, {BK_PLUCK, ENGI_MUUG, "MANDARINA"}, {BK_PLUCK, ENGI_MUUG, "PLUCK SAW"},
+     {BK_PLUCK, ENGI_MUUG, "MARIMBA"}, {BK_PLUCK, ENGI_MUUG, "KALIMBA"}, {BK_PLUCK, ENGI_MUUG, "FUNK ARP"},
+     {BK_PLUCK, ENGI_MUUG, "NYLON"}, {BK_PLUCK, ENGI_MUUG, "STEELDRUM"}, {BK_PLUCK, ENGI_MUUG, "8-BIT ARP"},
+     {BK_PLUCK, ENGI_MUUG, "PIZZICATO"}, {BK_PLUCK, ENGI_MUUG, "POP PLUCK"}, {BK_PLUCK, ENGI_MUUG, "HARP"},
+@@ -737,9 +737,9 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+     {BK_STAB, 6, "MIN7 STAB"}, {BK_STAB, 6, "RAVE STAB"}, {BK_STAB, 6, "DUB CHORD"}, {BK_STAB, 0, "SYN BRASS"},
+     {BK_STAB, 2, "CZ BRASS"}, {BK_STAB, 4, "HORN STAB"}, {BK_STAB, 4, "STRING STB"},
+     {BK_STAB, ENGI_FM6, "BRASS SECT"}, {BK_STAB, 6, "80S POLY"}, {BK_STAB, 3, "CHIP CHORD"},
+-    {BK_STAB, 6, "POWER STAB"}, {BK_FX, 4, "SCRATCH"}, {BK_FX, 4, "GM KIT"}, {BK_FX, ENGI_PHYS, "HAND DRUM"},
+-    {BK_FX, ENGI_PHYS, "MEMB TOMS"}, {BK_FX, ENGI_NOISE, "RAIN"}, {BK_FX, ENGI_NOISE, "NZ METAL"},
+-    {BK_FX, ENGI_PHYS, "TABLA"}, {BK_FX, ENGI_PHYS, "CONGA"}, {BK_FX, ENGI_PHYS, "TIMPANI"},
++    {BK_STAB, 6, "POWER STAB"}, {BK_FX, 4, "SCRATCH"}, {BK_FX, 4, "GM KIT"},
++    {BK_FX, ENGI_NOISE, "RAIN"}, {BK_FX, ENGI_NOISE, "NZ METAL"},
++    {BK_FX, ENGI_PHYS, "CONGA"}, {BK_FX, ENGI_PHYS, "TIMPANI"},
+     {BK_FX, ENGI_NOISE, "VINYL"}, {BK_FX, ENGI_NOISE, "HISS"}, {BK_FX, ENGI_NOISE, "RISER"},
+     {BK_FX, ENGI_NOISE, "NZ SNARE"}, {BK_FX, ENGI_NOISE, "BITCRUSH"}, {BK_FX, ENGI_NOISE, "RADIO"},
+     {BK_FX, 3, "CHIP NOISE"},
+diff --git a/tests/arena_test.c b/tests/arena_test.c
+index 91cca64..d493f13 100644
+--- a/tests/arena_test.c
++++ b/tests/arena_test.c
+@@ -203,7 +203,7 @@ int main(int argc, char **argv)
+                 uint32_t ev = frnd(100);
+                 p = frnd(NPART);
+                 if (ev < 12) {                          /* engine and preset, the UI's way */
+-                    uint32_t e = frnd(argc > 2 ? (uint32_t)atoi(argv[2]) : NENGINES);
++                    uint32_t e = eng_fit(p, frnd(argc > 2 ? (uint32_t)atoi(argv[2]) : NENGINES));
+                     host_preset_req(&trk[p], e, frnd(ENGINES[e]->npresets));
+                     switches++;
+                 } else if (ev < 20) {                   /* PHYS: MODEL under the notes (layout flips) */
+diff --git a/tests/cpu_baseline.txt b/tests/cpu_baseline.txt
+index ffe776c..4f88f0e 100644
+--- a/tests/cpu_baseline.txt
++++ b/tests/cpu_baseline.txt
+@@ -1,161 +1,254 @@
+ # SLOOP host CPU baseline (tests/regress.c): cost per sample, per mille of the idle + drums mix
+ # (cpu/mix/idle_drums = 1000), cc -O2; instructions counted on the host that wrote it. The check allows +25 %
+ # (instructions) or +35 % (timed). Rewritten by BUDGET_UPDATE=1.
+-cpu/ANALOG/00_808_BOOM 1896
+-cpu/ANALOG/01_808_DIRTY 1853
+-cpu/ANALOG/02_SUB_BASS 1920
+-cpu/ANALOG/03_808_SLIDE 1888
+-cpu/ANALOG/04_ACID_303 2004
+-cpu/ANALOG/05_PLUGG_BASS 1878
+-cpu/ANALOG/06_REESE 2109
+-cpu/ANALOG/07_WOBBLE 2176
+-cpu/ANALOG/08_FUNK_BASS 2347
+-cpu/ANALOG/09_G-FUNK_LD 1883
+-cpu/ANALOG/10_TRAP_PLUCK 2113
+-cpu/ANALOG/11_SYN_BRASS 2113
+-cpu/ANALOG/12_SUPERSAW 2113
+-cpu/ANALOG/13_WARM_PAD 2202
+-cpu/ANALOG/14_DARK_STR 1767
+-cpu/ANALOG/15_ATMOS_PAD 2203
+-cpu/ANALOG/16_PAN_FLUTE 1713
+-cpu/ANALOG/17_FAT_LEAD 2103
+-cpu/ANALOG/18_MONO_BASS 2177
+-cpu/ANALOG/19_PWM_LEAD 2033
+-cpu/ANALOG/20_SAW_BASS 2182
+-cpu/ANALOG/21_SINE_PAD 1959
+-cpu/DIGITAL/00_RHODES 1697
+-cpu/DIGITAL/01_DX_RHODES 1694
+-cpu/DIGITAL/02_WURLI 1767
+-cpu/DIGITAL/03_CLAV 1755
+-cpu/DIGITAL/04_M1_PIANO 1694
+-cpu/DIGITAL/05_AFRO_KEYS 1694
+-cpu/DIGITAL/06_TRAP_BELL 1689
+-cpu/DIGITAL/07_MUSIC_BOX 1694
+-cpu/DIGITAL/08_MARIMBA 1689
+-cpu/DIGITAL/09_KALIMBA 1689
+-cpu/DIGITAL/10_PLUGG_BELL 1694
+-cpu/DIGITAL/11_GLASS_PAD 1695
+-cpu/DIGITAL/12_FM_BASS 1655
+-cpu/DIGITAL/13_STEEL_DRUM 1692
+-cpu/DIGITAL/14_GLOCKEN 1687
+-cpu/DIGITAL/15_CELESTA 1692
+-cpu/DIGITAL/16_XYLOPHONE 1687
+-cpu/DIGITAL/17_HARP 1692
+-cpu/DIGITAL/18_BASS_GTR 1684
+-cpu/DIGITAL/19_TUBE_BELL 1693
+-cpu/DIGITAL/20_FM_PLUCK 1694
+-cpu/DIGITAL/21_FM_GRAND 1693
+-cpu/PHASE/00_CZ_BASS 1734
+-cpu/PHASE/01_SOFT_KEYS 1414
+-cpu/PHASE/02_CZ_STRING 1925
+-cpu/PHASE/03_RESO_PLUCK 1447
+-cpu/PHASE/04_CZ_BRASS 1415
+-cpu/PHASE/05_CZ_LEAD 1925
+-cpu/PHASE/06_CZ_PAD 1881
+-cpu/PHASE/07_CZ_RESO 1523
+-cpu/LOFI/00_GAME_LEAD 1333
+-cpu/LOFI/01_GB_BASS 1178
+-cpu/LOFI/02_8BIT_ARP 1325
+-cpu/LOFI/03_NES_BASS 1308
+-cpu/LOFI/04_CHIP_CHORD 1331
+-cpu/LOFI/05_1BIT_BEEP 1333
+-cpu/LOFI/06_WAVE_LEAD 1355
+-cpu/LOFI/07_CHIP_NOISE 1317
+-cpu/SAMPLE/00_GRAND_PNO 1603
+-cpu/SAMPLE/01_UP_BASS 1102
+-cpu/SAMPLE/02_VIBES 1142
+-cpu/SAMPLE/03_HORN_STAB 800
+-cpu/SAMPLE/04_STRING_STB 771
+-cpu/SAMPLE/05_LOFI_FLUTE 1407
+-cpu/SAMPLE/06_SCRATCH 758
+-cpu/SAMPLE/07_GM_KIT 784
+-cpu/SAMPLE/08_DUSTY_PNO 1891
+-cpu/SAMPLE/09_LOFI_KEYS 1893
+-cpu/SAMPLE/10_DEEP_BASS 1673
+-cpu/VOICE/00_CHOIR_AAH 1643
+-cpu/VOICE/01_SOUL_OOH 1635
+-cpu/VOICE/02_TALKBOX 1672
+-cpu/VOICE/03_WOW_BASS 1609
+-cpu/VOICE/04_HARMONICA 1637
+-cpu/VOICE/05_ROBOT 1515
+-cpu/VOICE/06_VOX_PAD 1603
+-cpu/TRIO/00_FAT_BASS 2059
+-cpu/TRIO/01_MIN_STAB 1992
+-cpu/TRIO/02_MIN7_STAB 2023
+-cpu/TRIO/03_RAVE_STAB 2059
+-cpu/TRIO/04_DUB_CHORD 2024
+-cpu/TRIO/05_SAW_PAD 1993
+-cpu/TRIO/06_SYNC_LEAD 2014
+-cpu/TRIO/07_HOOVER 2060
+-cpu/TRIO/08_ACCORDION 2280
+-cpu/TRIO/09_ENSEMBLE 1988
+-cpu/TRIO/10_80S_POLY 1990
+-cpu/TRIO/11_SQR_LEAD 2298
+-cpu/TRIO/12_POWER_STAB 2079
+-cpu/TRIO/13_PULSE_PAD 2289
+-cpu/WHEEL/00_SOUL_ORGAN 1770
+-cpu/WHEEL/01_GOSPEL 1923
+-cpu/WHEEL/02_JAZZ_ORGAN 1787
+-cpu/WHEEL/03_DIRTY_B3 1961
+-cpu/WHEEL/04_HOUSE_ORGN 2252
+-cpu/WHEEL/05_ROCK_ORGAN 2240
+-cpu/WHEEL/06_CHAPEL 1598
+-cpu/WHEEL/07_REGGAE_ORG 1593
+-cpu/GRAIN/00_LOFI_CLOUD 1547
+-cpu/GRAIN/01_VIBE_HAZE 1541
+-cpu/GRAIN/02_FLUTE_DUST 1366
+-cpu/GRAIN/03_STR_CLOUD 1588
+-cpu/GRAIN/04_SHIMMER 1543
+-cpu/GRAIN/05_DRONE 1338
+-cpu/GRAIN/06_PNO_FREEZE 1643
+-cpu/GRAIN/07_HORN_CLOUD 1566
+-cpu/FM6/00_TINE_EP 2050
+-cpu/FM6/01_GLASS_BELL 2055
+-cpu/FM6/02_ROUND_BASS 1750
+-cpu/FM6/03_BRASS_SECT 2158
+-cpu/FM6/04_SOFT_PAD 2155
+-cpu/FM6/05_WOOD_BARS 832
+-cpu/FM6/06_DRAWBARS 2138
+-cpu/FM6/07_NYLON_PICK 1357
+-cpu/PHYS/00_BELL_TREE 2308
+-cpu/PHYS/01_MODAL_BAR 2301
+-cpu/PHYS/02_STR_PLUCK 1418
+-cpu/PHYS/03_BOWED_MTL 2475
+-cpu/PHYS/04_THUMB_PNO 2299
+-cpu/PHYS/05_HAND_DRUM 2020
+-cpu/PHYS/06_MEMB_TOMS 2016
+-cpu/PHYS/07_SITAR 1346
+-cpu/PHYS/08_PHYS_HARP 1352
+-cpu/PHYS/09_NYLON_GTR 1403
+-cpu/PHYS/10_STEEL_GTR 1403
+-cpu/PHYS/11_MUTED_GTR 1389
+-cpu/PHYS/12_PLUCK_BASS 1384
+-cpu/PHYS/13_KOTO 1338
+-cpu/PHYS/14_BANJO 1389
+-cpu/PHYS/15_CELLO_BOW 2474
+-cpu/PHYS/16_TANPURA 1339
+-cpu/PHYS/17_CHIMES 2305
+-cpu/PHYS/18_BIG_BELL 2300
+-cpu/PHYS/19_VIBRA_BAR 2318
+-cpu/PHYS/20_GLASS_BOWL 2477
+-cpu/PHYS/21_STEEL_PAN 2302
+-cpu/PHYS/22_WOOD_BLOCK 2301
+-cpu/PHYS/23_TABLA 2024
+-cpu/PHYS/24_CONGA 2020
+-cpu/PHYS/25_TIMPANI 2016
+-cpu/NOISE/00_WIND 2060
+-cpu/NOISE/01_RAIN 2062
+-cpu/NOISE/02_NZ_ARCADE 1783
+-cpu/NOISE/03_NZ_METAL 1851
+-cpu/NOISE/04_OCEAN 2137
+-cpu/NOISE/05_VINYL 1738
+-cpu/NOISE/06_HISS 1725
+-cpu/NOISE/07_RISER 2063
+-cpu/NOISE/08_NZ_SNARE 2042
+-cpu/NOISE/09_BITCRUSH 2108
+-cpu/NOISE/10_RADIO 2130
+-cpu/mix/3parts_heavy_now_drums 2952
+-cpu/mix/3parts_phys_noise_drums 3263
+-cpu/mix/idle 548
++cpu/ANALOG/00_808_BOOM 1784
++cpu/ANALOG/01_808_DIRTY 1772
++cpu/ANALOG/02_SUB_BASS 1805
++cpu/ANALOG/03_808_SLIDE 1802
++cpu/ANALOG/04_ACID_303 1878
++cpu/ANALOG/05_PLUGG_BASS 1767
++cpu/ANALOG/06_REESE 1966
++cpu/ANALOG/07_WOBBLE 2027
++cpu/ANALOG/08_FUNK_BASS 2170
++cpu/ANALOG/09_G-FUNK_LD 1772
++cpu/ANALOG/10_TRAP_PLUCK 1970
++cpu/ANALOG/11_SYN_BRASS 1970
++cpu/ANALOG/12_SUPERSAW 1970
++cpu/ANALOG/13_WARM_PAD 2046
++cpu/ANALOG/14_DARK_STR 1673
++cpu/ANALOG/15_ATMOS_PAD 2047
++cpu/ANALOG/16_PAN_FLUTE 1627
++cpu/ANALOG/17_FAT_LEAD 1966
++cpu/ANALOG/18_MONO_BASS 2028
++cpu/ANALOG/19_PWM_LEAD 1902
++cpu/ANALOG/20_SAW_BASS 2029
++cpu/ANALOG/21_SINE_PAD 1838
++cpu/DIGITAL/00_RHODES 1566
++cpu/DIGITAL/01_DX_RHODES 1563
++cpu/DIGITAL/02_WURLI 1631
++cpu/DIGITAL/03_CLAV 1619
++cpu/DIGITAL/04_M1_PIANO 1563
++cpu/DIGITAL/05_AFRO_KEYS 1563
++cpu/DIGITAL/06_TRAP_BELL 1559
++cpu/DIGITAL/07_MUSIC_BOX 1563
++cpu/DIGITAL/08_MARIMBA 1559
++cpu/DIGITAL/09_KALIMBA 1559
++cpu/DIGITAL/10_PLUGG_BELL 1563
++cpu/DIGITAL/11_GLASS_PAD 1565
++cpu/DIGITAL/12_FM_BASS 1529
++cpu/DIGITAL/13_GLOCKEN 1559
++cpu/DIGITAL/14_CELESTA 1563
++cpu/DIGITAL/15_XYLOPHONE 1559
++cpu/DIGITAL/16_HARP 1563
++cpu/DIGITAL/17_BASS_GTR 1555
++cpu/DIGITAL/18_TUBE_BELL 1563
++cpu/DIGITAL/19_FM_PLUCK 1563
++cpu/DIGITAL/20_FM_GRAND 1563
++cpu/PHASE/00_CZ_BASS 1599
++cpu/PHASE/01_SOFT_KEYS 1325
++cpu/PHASE/02_CZ_STRING 1764
++cpu/PHASE/03_RESO_PLUCK 1354
++cpu/PHASE/04_CZ_BRASS 1326
++cpu/PHASE/05_CZ_LEAD 1763
++cpu/PHASE/06_CZ_PAD 1726
++cpu/PHASE/07_CZ_RESO 1415
++cpu/LOFI/00_GAME_LEAD 1256
++cpu/LOFI/01_GB_BASS 1124
++cpu/LOFI/02_8BIT_ARP 1249
++cpu/LOFI/03_NES_BASS 1229
++cpu/LOFI/04_CHIP_CHORD 1249
++cpu/LOFI/05_1BIT_BEEP 1250
++cpu/LOFI/06_WAVE_LEAD 1270
++cpu/LOFI/07_CHIP_NOISE 1232
++cpu/SAMPLE/00_GRAND_PNO 1489
++cpu/SAMPLE/01_VIBES 1108
++cpu/SAMPLE/02_HORN_STAB 810
++cpu/SAMPLE/03_STRING_STB 774
++cpu/SAMPLE/04_LOFI_FLUTE 1321
++cpu/SAMPLE/05_SCRATCH 587
++cpu/SAMPLE/06_GM_KIT 629
++cpu/SAMPLE/07_DUSTY_PNO 1736
++cpu/SAMPLE/08_LOFI_KEYS 1739
++cpu/SAMPLE/09_DEEP_BASS 1549
++cpu/VOICE/00_CHOIR_AAH 1523
++cpu/VOICE/01_SOUL_OOH 1525
++cpu/VOICE/02_TALKBOX 1567
++cpu/VOICE/03_WOW_BASS 1486
++cpu/VOICE/04_ROBOT 1435
++cpu/VOICE/05_VOX_PAD 1506
++cpu/TRIO/00_FAT_BASS 1893
++cpu/TRIO/01_MIN_STAB 1836
++cpu/TRIO/02_MIN7_STAB 1863
++cpu/TRIO/03_RAVE_STAB 1897
++cpu/TRIO/04_DUB_CHORD 1863
++cpu/TRIO/05_SAW_PAD 1837
++cpu/TRIO/06_SYNC_LEAD 1854
++cpu/TRIO/07_HOOVER 1899
++cpu/TRIO/08_ACCORDION 2089
++cpu/TRIO/09_ENSEMBLE 1836
++cpu/TRIO/10_80S_POLY 1838
++cpu/TRIO/11_SQR_LEAD 2087
++cpu/TRIO/12_POWER_STAB 1901
++cpu/TRIO/13_PULSE_PAD 2079
++cpu/WHEEL/00_SOUL_ORGAN 1628
++cpu/WHEEL/01_GOSPEL 1759
++cpu/WHEEL/02_JAZZ_ORGAN 1642
++cpu/WHEEL/03_DIRTY_B3 1815
++cpu/WHEEL/04_HOUSE_ORGN 2043
++cpu/WHEEL/05_ROCK_ORGAN 2058
++cpu/WHEEL/06_CHAPEL 1479
++cpu/GRAIN/00_LOFI_CLOUD 1447
++cpu/GRAIN/01_VIBE_HAZE 1431
++cpu/GRAIN/02_FLUTE_DUST 1277
++cpu/GRAIN/03_STR_CLOUD 1470
++cpu/GRAIN/04_SHIMMER 1451
++cpu/GRAIN/05_DRONE 1265
++cpu/GRAIN/06_PNO_FREEZE 1527
++cpu/GRAIN/07_HORN_CLOUD 1458
++cpu/FM6/00_TINE_EP 1908
++cpu/FM6/01_GLASS_BELL 1926
++cpu/FM6/02_ROUND_BASS 1650
++cpu/FM6/03_BRASS_SECT 1994
++cpu/FM6/04_SOFT_PAD 1995
++cpu/FM6/05_WOOD_BARS 843
++cpu/FM6/06_DRAWBARS 1982
++cpu/FM6/07_NYLON_PICK 1313
++cpu/PHYS/00_BELL_TREE 2114
++cpu/PHYS/01_MODAL_BAR 2109
++cpu/PHYS/02_STR_PLUCK 1329
++cpu/PHYS/03_BOWED_MTL 2261
++cpu/PHYS/04_THUMB_PNO 2108
++cpu/PHYS/05_SITAR 1261
++cpu/PHYS/06_PHYS_HARP 1283
++cpu/PHYS/07_NYLON_GTR 1332
++cpu/PHYS/08_STEEL_GTR 1328
++cpu/PHYS/09_MUTED_GTR 1319
++cpu/PHYS/10_PLUCK_BASS 1316
++cpu/PHYS/11_KOTO 1275
++cpu/PHYS/12_BANJO 1319
++cpu/PHYS/13_CELLO_BOW 2259
++cpu/PHYS/14_TANPURA 1275
++cpu/PHYS/15_CHIMES 2114
++cpu/PHYS/16_BIG_BELL 2108
++cpu/PHYS/17_VIBRA_BAR 2118
++cpu/PHYS/18_GLASS_BOWL 2262
++cpu/PHYS/19_STEEL_PAN 2109
++cpu/PHYS/20_WOOD_BLOCK 2109
++cpu/PHYS/21_CONGA 1866
++cpu/PHYS/22_TIMPANI 1863
++cpu/NOISE/00_WIND 1881
++cpu/NOISE/01_RAIN 1883
++cpu/NOISE/02_NZ_ARCADE 1641
++cpu/NOISE/03_NZ_METAL 1700
++cpu/NOISE/04_OCEAN 1948
++cpu/NOISE/05_VINYL 1602
++cpu/NOISE/06_HISS 1595
++cpu/NOISE/07_RISER 1885
++cpu/NOISE/08_NZ_SNARE 1865
++cpu/NOISE/09_BITCRUSH 1922
++cpu/NOISE/10_RADIO 1941
++cpu/MUUG/00_MINI_LEAD 2090
++cpu/MUUG/01_SIENTO_ARP 2073
++cpu/MUUG/02_LUSH_STRINGS 1980
++cpu/MUUG/03_ROTARY_ORG 1993
++cpu/MUUG/04_CRYSTAL_BELL 1932
++cpu/MUUG/05_DUB_STAB 2091
++cpu/MUUG/06_CS-80X_BRASS 1980
++cpu/MUUG/07_SPACE_DRONE 2104
++cpu/MUUG/08_MANDARINA 2096
++cpu/MUUG/09_E.PIANO 1995
++cpu/MUUG/10_EMMERSON 2090
++cpu/MUUG/11_NUMANN 2049
++cpu/MUUG/12_HAMMER 2120
++cpu/MUUG/13_FIFTHS 2031
++cpu/MUUG/14_RAVE_ARP 2049
++cpu/MUUG/15_ACID_LEAD 2008
++cpu/MUUG/16_PULSE_HERO 2187
++cpu/MUUG/17_TITAN 2087
++cpu/MUUG/18_FUZZ_LEAD 2127
++cpu/MUUG/19_GROWL 2078
++cpu/MUUG/20_MOOGH_FLUTE 2009
++cpu/MUUG/21_G-FUNK 1886
++cpu/MUUG/22_SINE_SOLO 1881
++cpu/MUUG/23_BANKSH 1967
++cpu/MUUG/24_OBOE 2124
++cpu/MUUG/25_SOLO_VIOLIN 1967
++cpu/MUUG/26_DREAMER 1996
++cpu/MUUG/27_WHISTLE 1944
++cpu/MUUG/28_MELLOW_PULSE 2060
++cpu/MUUG/29_SAX_LEAD 2201
++cpu/MUUG/30_MOOGH_BASS 2017
++cpu/MUUG/31_CAMALEON 2131
++cpu/MUUG/32_SUB_BASS 1915
++cpu/MUUG/33_WOBBLE_BASS 2015
++cpu/MUUG/34_OCTAVE_PUMP 2009
++cpu/MUUG/35_SEQ_BASS 2090
++cpu/MUUG/36_REESE 2043
++cpu/MUUG/37_RUBBER 2053
++cpu/MUUG/38_FUZZ_BASS 2166
++cpu/MUUG/39_WONDERS_BASS 2067
++cpu/MUUG/40_SOLINAH 2028
++cpu/MUUG/41_WARM_PAD 2026
++cpu/MUUG/42_JUNOH_PWM 2119
++cpu/MUUG/43_CHOIR 2068
++cpu/MUUG/44_SWEEP_PAD 1983
++cpu/MUUG/45_ANGELS 1932
++cpu/MUUG/46_ECLIPSE 2091
++cpu/MUUG/47_PULSE_PAD 2031
++cpu/MUUG/48_CELLOS 1962
++cpu/MUUG/49_AIR_PAD 1877
++cpu/MUUG/50_MOOGH_BRASS 2026
++cpu/MUUG/51_SALTO_BRASS 2045
++cpu/MUUG/52_TRUMPET 2168
++cpu/MUUG/53_FRENCH_HORN 2009
++cpu/MUUG/54_BRASS_STAB 2091
++cpu/MUUG/55_BRASS_SWELL 2172
++cpu/MUUG/56_HORN_RIFF 2095
++cpu/MUUG/57_TROMBONE 2091
++cpu/MUUG/58_FLUGEL 1882
++cpu/MUUG/59_FANFARE 2093
++cpu/MUUG/60_PLUCK_SAW 1984
++cpu/MUUG/61_MARIMBA 1864
++cpu/MUUG/62_KALIMBA 1868
++cpu/MUUG/63_FUNK_ARP 2009
++cpu/MUUG/64_NYLON 1996
++cpu/MUUG/65_STEELDRUM 1932
++cpu/MUUG/66_8-BIT_ARP 1992
++cpu/MUUG/67_PIZZICATO 1903
++cpu/MUUG/68_POP_PLUCK 2031
++cpu/MUUG/69_HARP 1868
++cpu/MUUG/70_CLAVINETE 2175
++cpu/MUUG/71_PIPE_ORGAN 2057
++cpu/MUUG/72_SYNTH_PIANO 2086
++cpu/MUUG/73_HARPSICHORD 2069
++cpu/MUUG/74_VIBES 1864
++cpu/MUUG/75_WURLEY 2121
++cpu/MUUG/76_TUBULAR 1983
++cpu/MUUG/77_MUSIC_BOX 1933
++cpu/MUUG/78_ACCORDION 2120
++cpu/MUUG/79_FARFISAH 2120
++cpu/MUUG/80_DARK_DRONE 2110
++cpu/MUUG/81_STAR_DUST 1999
++cpu/MUUG/82_ALIEN_CHOIR 2057
++cpu/MUUG/83_GLASS_HARP 1930
++cpu/MUUG/84_OCEAN_TIDE 1810
++cpu/MUUG/85_PULSAR 1966
++cpu/MUUG/86_IRON_DRONE 2090
++cpu/MUUG/87_GHOST_SEQ 1932
++cpu/MUUG/88_HORROR 2045
++cpu/MUUG/89_SINGING_BOWL 1932
++cpu/MUUG/90_JET_SWEEP 1786
++cpu/MUUG/91_THUNDER 1998
++cpu/MUUG/92_WIND 1811
++cpu/MUUG/93_SIREN 1863
++cpu/MUUG/94_TELEPHONE 1860
++cpu/MUUG/95_POWER_UP 1929
++cpu/MUUG/96_LASER_ZAP 1898
++cpu/MUUG/97_HELICOPTER 1991
++cpu/MUUG/98_ROBOT 2010
++cpu/MUUG/99_UFO 1932
++cpu/mix/3parts_heavy_now_drums 2711
++cpu/mix/3parts_phys_noise_drums 2891
++cpu/mix/idle 587
+ cpu/mix/idle_drums 1000
+-cpu/mix/3parts_full_drums 2833
++cpu/mix/3parts_full_drums 2592
+diff --git a/tests/golden.txt b/tests/golden.txt
+index 376a518..cb04fb2 100644
+--- a/tests/golden.txt
++++ b/tests/golden.txt
+@@ -35,15 +35,14 @@ preset/DIGITAL/09_KALIMBA b6d7e2d695868e50
+ preset/DIGITAL/10_PLUGG_BELL b2a99d2ad75cd688
+ preset/DIGITAL/11_GLASS_PAD c2742b8b784fd907
+ preset/DIGITAL/12_FM_BASS 52862e1e7445f4e2
+-preset/DIGITAL/13_STEEL_DRUM d1eb74682165e643
+-preset/DIGITAL/14_GLOCKEN 0636919143151a78
+-preset/DIGITAL/15_CELESTA 1a5bad30d3f37955
+-preset/DIGITAL/16_XYLOPHONE 7e6660fa87085d14
+-preset/DIGITAL/17_HARP 5db832f89080cf58
+-preset/DIGITAL/18_BASS_GTR 9aa5cd6c12eaa870
+-preset/DIGITAL/19_TUBE_BELL 6072767f1d183b76
+-preset/DIGITAL/20_FM_PLUCK 1a82523e312bcc4d
+-preset/DIGITAL/21_FM_GRAND 6d3520e310a5265b
++preset/DIGITAL/13_GLOCKEN 0636919143151a78
++preset/DIGITAL/14_CELESTA 1a5bad30d3f37955
++preset/DIGITAL/15_XYLOPHONE 7e6660fa87085d14
++preset/DIGITAL/16_HARP 5db832f89080cf58
++preset/DIGITAL/17_BASS_GTR 9aa5cd6c12eaa870
++preset/DIGITAL/18_TUBE_BELL 6072767f1d183b76
++preset/DIGITAL/19_FM_PLUCK 1a82523e312bcc4d
++preset/DIGITAL/20_FM_GRAND 6d3520e310a5265b
+ preset/PHASE/00_CZ_BASS 0af10af70faa24f1
+ preset/PHASE/01_SOFT_KEYS 1302c3907079f4a4
+ preset/PHASE/02_CZ_STRING 09e82139f1fdcf12
+@@ -61,23 +60,21 @@ preset/LOFI/05_1BIT_BEEP e1742bf68ea67ad1
+ preset/LOFI/06_WAVE_LEAD 23a2f1e11d67dfad
+ preset/LOFI/07_CHIP_NOISE ca1058917a10b3b0
+ preset/SAMPLE/00_GRAND_PNO d923a2cd58dd6c07
+-preset/SAMPLE/01_UP_BASS ab929b7cd01d615c
+-preset/SAMPLE/02_VIBES b990857c2a729642
+-preset/SAMPLE/03_HORN_STAB f2b3917cde0d0110
+-preset/SAMPLE/04_STRING_STB 131105f7f10785fe
+-preset/SAMPLE/05_LOFI_FLUTE 79c66528bf0b1c74
+-preset/SAMPLE/06_SCRATCH e64ad5d2d779891c
+-preset/SAMPLE/07_GM_KIT 13999abe5e115815
+-preset/SAMPLE/08_DUSTY_PNO 3918c5839bb7a848
+-preset/SAMPLE/09_LOFI_KEYS 6fa2f6b1e30b1f3d
+-preset/SAMPLE/10_DEEP_BASS d68154cf4ef76038
++preset/SAMPLE/01_VIBES b990857c2a729642
++preset/SAMPLE/02_HORN_STAB f2b3917cde0d0110
++preset/SAMPLE/03_STRING_STB 131105f7f10785fe
++preset/SAMPLE/04_LOFI_FLUTE 79c66528bf0b1c74
++preset/SAMPLE/05_SCRATCH e64ad5d2d779891c
++preset/SAMPLE/06_GM_KIT 13999abe5e115815
++preset/SAMPLE/07_DUSTY_PNO 3918c5839bb7a848
++preset/SAMPLE/08_LOFI_KEYS 6fa2f6b1e30b1f3d
++preset/SAMPLE/09_DEEP_BASS d68154cf4ef76038
+ preset/VOICE/00_CHOIR_AAH d71bac99365842d0
+ preset/VOICE/01_SOUL_OOH 54efb0da8718978f
+ preset/VOICE/02_TALKBOX 21c8a39e3ffaed5a
+ preset/VOICE/03_WOW_BASS 2b3e7f74138ae8a0
+-preset/VOICE/04_HARMONICA 2b0c12b4331d68c6
+-preset/VOICE/05_ROBOT 25af475d3031ab3d
+-preset/VOICE/06_VOX_PAD f11e65a2934657c3
++preset/VOICE/04_ROBOT 25af475d3031ab3d
++preset/VOICE/05_VOX_PAD f11e65a2934657c3
+ preset/TRIO/00_FAT_BASS aae2a8d886288062
+ preset/TRIO/01_MIN_STAB eea67a68ea470e80
+ preset/TRIO/02_MIN7_STAB 3c04ebffb1f9b66b
+@@ -99,7 +96,6 @@ preset/WHEEL/03_DIRTY_B3 02ffafecc2a084b7
+ preset/WHEEL/04_HOUSE_ORGN 1e676ba00c8e2be9
+ preset/WHEEL/05_ROCK_ORGAN b1c318b9361b9cd5
+ preset/WHEEL/06_CHAPEL 05ff719df9583b1b
+-preset/WHEEL/07_REGGAE_ORG 2be04c3f7b04d4da
+ preset/GRAIN/00_LOFI_CLOUD bda40c6aad4f1319
+ preset/GRAIN/01_VIBE_HAZE 0a76ecddbe3e2211
+ preset/GRAIN/02_FLUTE_DUST 5d640471862bfabd
+@@ -121,27 +117,24 @@ preset/PHYS/01_MODAL_BAR f1efdb63f9fb7d78
+ preset/PHYS/02_STR_PLUCK 9a8d92d71a1e5361
+ preset/PHYS/03_BOWED_MTL e0b35c074ce5e89a
+ preset/PHYS/04_THUMB_PNO 2d0f1bae79e0ca6f
+-preset/PHYS/05_HAND_DRUM c63514883fe1e9df
+-preset/PHYS/06_MEMB_TOMS c4bf65287922da13
+-preset/PHYS/07_SITAR 9c5e4177782304b2
+-preset/PHYS/08_PHYS_HARP 016d601ec02d1623
+-preset/PHYS/09_NYLON_GTR 0c0c6581fccfb380
+-preset/PHYS/10_STEEL_GTR 644f4d2ed5e018d6
+-preset/PHYS/11_MUTED_GTR 9ff8ea386c541b51
+-preset/PHYS/12_PLUCK_BASS 4574b89266e09213
+-preset/PHYS/13_KOTO 35273505b119cdb7
+-preset/PHYS/14_BANJO 09002b8927701730
+-preset/PHYS/15_CELLO_BOW 42550aeaf1f47bc8
+-preset/PHYS/16_TANPURA f2b8c85ed6ffd9cb
+-preset/PHYS/17_CHIMES 1449edbcafaacf7b
+-preset/PHYS/18_BIG_BELL 9b4e849f930e3473
+-preset/PHYS/19_VIBRA_BAR 0ec323cb72fde185
+-preset/PHYS/20_GLASS_BOWL c9cf505ecea3b8f5
+-preset/PHYS/21_STEEL_PAN 50d84bb716aaa718
+-preset/PHYS/22_WOOD_BLOCK 8fe5f920d2efe9e5
+-preset/PHYS/23_TABLA 67b4b8b89b8f041b
+-preset/PHYS/24_CONGA f8da9d4b3c9bd3c7
+-preset/PHYS/25_TIMPANI b4cab8352e46bad3
++preset/PHYS/05_SITAR 9c5e4177782304b2
++preset/PHYS/06_PHYS_HARP 016d601ec02d1623
++preset/PHYS/07_NYLON_GTR 0c0c6581fccfb380
++preset/PHYS/08_STEEL_GTR 644f4d2ed5e018d6
++preset/PHYS/09_MUTED_GTR 9ff8ea386c541b51
++preset/PHYS/10_PLUCK_BASS 4574b89266e09213
++preset/PHYS/11_KOTO 35273505b119cdb7
++preset/PHYS/12_BANJO 09002b8927701730
++preset/PHYS/13_CELLO_BOW 42550aeaf1f47bc8
++preset/PHYS/14_TANPURA f2b8c85ed6ffd9cb
++preset/PHYS/15_CHIMES 1449edbcafaacf7b
++preset/PHYS/16_BIG_BELL 9b4e849f930e3473
++preset/PHYS/17_VIBRA_BAR 0ec323cb72fde185
++preset/PHYS/18_GLASS_BOWL c9cf505ecea3b8f5
++preset/PHYS/19_STEEL_PAN 50d84bb716aaa718
++preset/PHYS/20_WOOD_BLOCK 8fe5f920d2efe9e5
++preset/PHYS/21_CONGA f8da9d4b3c9bd3c7
++preset/PHYS/22_TIMPANI b4cab8352e46bad3
+ preset/NOISE/00_WIND 1b7c905854ade21e
+ preset/NOISE/01_RAIN 9baef5e15ae337cb
+ preset/NOISE/02_NZ_ARCADE 2e2d7b4eeaff3af6
+@@ -154,17 +147,17 @@ preset/NOISE/08_NZ_SNARE b0fe837467457eee
+ preset/NOISE/09_BITCRUSH 57785f07c4efb016
+ preset/NOISE/10_RADIO 7bdab4709d2209ac
+ preset/MUUG/00_MINI_LEAD 77ece9e0d40fbf7c
+-preset/MUUG/01_I_FEEL_ARP af3592558b653845
++preset/MUUG/01_SIENTO_ARP af3592558b653845
+ preset/MUUG/02_LUSH_STRINGS e9bfa230608967c5
+ preset/MUUG/03_ROTARY_ORG ee7267acafe3d80a
+ preset/MUUG/04_CRYSTAL_BELL 39d2ba6f19ca9bbd
+ preset/MUUG/05_DUB_STAB 4c5238e76ede9936
+-preset/MUUG/06_CS-80_BRASS 89feaccaa6671d16
++preset/MUUG/06_CS-80X_BRASS 89feaccaa6671d16
+ preset/MUUG/07_SPACE_DRONE 32cc5756db62550b
+-preset/MUUG/08_TANGERINE 6d882f223c301b94
++preset/MUUG/08_MANDARINA 6d882f223c301b94
+ preset/MUUG/09_E.PIANO a06b064bde57383c
+-preset/MUUG/10_EMERSON 475071fa37b78273
+-preset/MUUG/11_NUMAN 6337dace5fecd425
++preset/MUUG/10_EMMERSON 475071fa37b78273
++preset/MUUG/11_NUMANN 6337dace5fecd425
+ preset/MUUG/12_HAMMER 257713333d52ce40
+ preset/MUUG/13_FIFTHS 758b6a2027fd93f1
+ preset/MUUG/14_RAVE_ARP 1fa79c366f266ad0
+@@ -173,18 +166,18 @@ preset/MUUG/16_PULSE_HERO d5627b0a34141f0c
+ preset/MUUG/17_TITAN 7cb5e423dab508f6
+ preset/MUUG/18_FUZZ_LEAD 784f329c700fcca1
+ preset/MUUG/19_GROWL 3f215d5a285b8066
+-preset/MUUG/20_MOOG_FLUTE 19409505db476057
++preset/MUUG/20_MOOGH_FLUTE 19409505db476057
+ preset/MUUG/21_G-FUNK e16a4be10a9edfcc
+ preset/MUUG/22_SINE_SOLO 2aca0057a65a64d9
+-preset/MUUG/23_BANKS bd746a62fe468f43
++preset/MUUG/23_BANKSH bd746a62fe468f43
+ preset/MUUG/24_OBOE 4994e9dc3254af81
+ preset/MUUG/25_SOLO_VIOLIN 03d820b8eac460a7
+ preset/MUUG/26_DREAMER c7685dcd2eb527a4
+ preset/MUUG/27_WHISTLE ec20fd3303501036
+ preset/MUUG/28_MELLOW_PULSE a8a71fce6ed03e79
+ preset/MUUG/29_SAX_LEAD 97178bd746e39eba
+-preset/MUUG/30_MOOG_BASS 5603b65ba885f171
+-preset/MUUG/31_CHAMELEON 19f1f162aed99f68
++preset/MUUG/30_MOOGH_BASS 5603b65ba885f171
++preset/MUUG/31_CAMALEON 19f1f162aed99f68
+ preset/MUUG/32_SUB_BASS d1ff6809ddb85978
+ preset/MUUG/33_WOBBLE_BASS f112ae35f9a5e45b
+ preset/MUUG/34_OCTAVE_PUMP e2a4e70b2233d944
+@@ -192,10 +185,10 @@ preset/MUUG/35_SEQ_BASS 906dc2547d478284
+ preset/MUUG/36_REESE dcd945464d037328
+ preset/MUUG/37_RUBBER d94cf80caeb8eb24
+ preset/MUUG/38_FUZZ_BASS ed94cfa20d5d97c0
+-preset/MUUG/39_WONDER_BASS 3cfa34119db0e1a0
+-preset/MUUG/40_SOLINA d36cf7671402fb17
++preset/MUUG/39_WONDERS_BASS 3cfa34119db0e1a0
++preset/MUUG/40_SOLINAH d36cf7671402fb17
+ preset/MUUG/41_WARM_PAD 8d9c48bdf680d3c1
+-preset/MUUG/42_JUNO_PWM 009418e7535efae6
++preset/MUUG/42_JUNOH_PWM 009418e7535efae6
+ preset/MUUG/43_CHOIR f569d925e4232324
+ preset/MUUG/44_SWEEP_PAD ca70bbca67ec0f54
+ preset/MUUG/45_ANGELS 09c220f2c7f7c256
+@@ -203,8 +196,8 @@ preset/MUUG/46_ECLIPSE 57fd3e66c51fdab2
+ preset/MUUG/47_PULSE_PAD 760caf08cf2726db
+ preset/MUUG/48_CELLOS 53f8bd270f7faa32
+ preset/MUUG/49_AIR_PAD c741a8dbcd69b0b7
+-preset/MUUG/50_MOOG_BRASS dcbd412a3759aeee
+-preset/MUUG/51_JUMP_BRASS becbd0537fb6b882
++preset/MUUG/50_MOOGH_BRASS dcbd412a3759aeee
++preset/MUUG/51_SALTO_BRASS becbd0537fb6b882
+ preset/MUUG/52_TRUMPET 2195cd7951bbf542
+ preset/MUUG/53_FRENCH_HORN 62644a6d073cb73a
+ preset/MUUG/54_BRASS_STAB 422976e9f0c40ec4
+@@ -223,16 +216,16 @@ preset/MUUG/66_8-BIT_ARP 61c560fa54c7091b
+ preset/MUUG/67_PIZZICATO 911663e44e50dbcd
+ preset/MUUG/68_POP_PLUCK 97a5eab60e66aef2
+ preset/MUUG/69_HARP d6b43463962c55e9
+-preset/MUUG/70_CLAVINET 98f88961a85a5e3b
++preset/MUUG/70_CLAVINETE 98f88961a85a5e3b
+ preset/MUUG/71_PIPE_ORGAN 8db3c1ba42fbf2b9
+ preset/MUUG/72_SYNTH_PIANO 3a7973870181c5a8
+ preset/MUUG/73_HARPSICHORD 773dc9abc534bd40
+ preset/MUUG/74_VIBES 935583133cd2f839
+-preset/MUUG/75_WURLY 2d123a683669bfe2
++preset/MUUG/75_WURLEY 2d123a683669bfe2
+ preset/MUUG/76_TUBULAR cf6906a0866fe311
+ preset/MUUG/77_MUSIC_BOX ea12476f6d6abe28
+ preset/MUUG/78_ACCORDION 5d22aab0c96524f2
+-preset/MUUG/79_FARFISA 9e6971fc1a0faf9f
++preset/MUUG/79_FARFISAH 9e6971fc1a0faf9f
+ preset/MUUG/80_DARK_DRONE ff5e00cc105f2cd0
+ preset/MUUG/81_STAR_DUST 475f7778e09d50cf
+ preset/MUUG/82_ALIEN_CHOIR 7092ad96a9db7c23
+diff --git a/tests/hostsim.c b/tests/hostsim.c
+index 3a62e06..4e0d017 100644
+--- a/tests/hostsim.c
++++ b/tests/hostsim.c
+@@ -224,7 +224,7 @@ static int tracks_demo(const char *dir, const char *name, uint32_t solo)
+         int32_t o[2 * CTL];
+         uint32_t barn = f / bar, period = div_samples(2), q;
+         if (barn == 4u && !song.rec)
+-            song.rec = 0x0Eu;                      /* bars 5..6: tracks 2, 3, 4 armed */
++            song.rec = (uint8_t)((1u << 1) | (1u << 2) | (1u << TRK_DRUM));   /* bars 5..6: tracks 2, 3 and the drums armed (the LITE part is track 4) */
+         if (barn == 6u)
+             song.rec = 0;
+         /* (a) a clap into the drums, late in step 3: lands on step 4, sounds now, step 4 does not repeat it */
+diff --git a/tests/soak_test.c b/tests/soak_test.c
+index 9275c9e..92c829c 100644
+--- a/tests/soak_test.c
++++ b/tests/soak_test.c
+@@ -60,7 +60,7 @@ int main(int argc, char **argv)
+             case 4: TDRUM->p[P_E0] = (int16_t)rnd(DRUM_KITS); break;              /* kit */
+             case 5: punch.req = (int8_t)(rnd(3) ? -1 : (int)rnd(PUNCH_NFX)); break;
+             case 6: song.g[G_BPM] = (int16_t)(60 + rnd(140)); break;
+-            case 7: { uint32_t t = rnd(NPART), e = rnd(NENGINES);                 /* engine / preset */
++            case 7: { uint32_t t = rnd(NPART), e = eng_fit(t, rnd(NENGINES));    /* engine / preset (the LITE part plays only some) */
+                       host_preset_req(&trk[t], e, rnd(ENGINES[e]->npresets)); panic_req |= (uint8_t)(1u << t); break; }
+             case 8: trk[rnd(NTRK)].p[P_SLEN] = (int16_t)(1 + rnd(64)); break;
+             case 9: trk[rnd(NTRK)].p[P_SDIV] = (int16_t)rnd(6); break;
+diff --git a/tests/stress_test.c b/tests/stress_test.c
+index 3d50b5a..519f12e 100644
+--- a/tests/stress_test.c
++++ b/tests/stress_test.c
+@@ -199,7 +199,7 @@ static void t_fuzz(uint32_t nframes)
+         } else if (r < 54) {
+             trk[rn(NPART)].p[P_CHORD] = (int16_t)rn(6);
+         } else if (r < 55) {
+-            uint32_t t = rn(NPART), e = rn(3) ? ENGI_FM6 : rn(NENGINES);
++            uint32_t t = rn(NPART), e = eng_fit(t, rn(3) ? ENGI_FM6 : rn(NENGINES));   /* (the LITE part plays only some) */
+             host_preset_req(&trk[t], e, rn(ENGINES[e]->npresets));
+         } else if (r < 56) {
+             trk[rn(NTRK)].p[P_SDIV] = (int16_t)rn(NDIV_STEP);
+diff --git a/tools/gen_samples.py b/tools/gen_samples.py
+index a2affba..1ac56d7 100644
+--- a/tools/gen_samples.py
++++ b/tools/gen_samples.py
+@@ -52,7 +52,6 @@ MEASURED_TUNING = ()                         # sets recorded off A440 (measured
+ # sends (DIST, CHORUS, DELAY, REVERB), more (track parameter, value) pairs (preset_t.x)
+ SET_PRESETS = {
+     "PIANO": ("GRAND PNO", [0, 0, 0, 0, 127, 0, 0, 0], (0, 110, 0, 58), 0, (0, 6, 8, 24), ()),
+-    "BASS": ("UP BASS", [0, 0, 0, 0, 118, 0, 12, 0], (0, 127, 127, 26), 1, (0, 0, 0, 4), ()),
+     "VIBES": ("VIBES", [0, 0, 0, 0, 127, 0, 0, 0], (0, 127, 127, 72), 0, (0, 24, 22, 30), ("P_LD_AMP", 18, "P_LRATE", 86)),
+     "HORNS": ("HORN STAB", [0, 0, 0, 0, 120, 0, 20, 0], (0, 127, 127, 22), 0, (8, 0, 14, 18), ()),
+     "STRGS": ("STRING STB", [0, 0, 0, 0, 122, 0, 10, 0], (0, 127, 127, 26), 0, (0, 10, 12, 24), ()),
+@@ -60,6 +59,8 @@ SET_PRESETS = {
+     "SCRCH": ("SCRATCH", [0, 0, 0, 0, 127, 0, 8, 0], (0, 127, 127, 18), 0, (0, 0, 0, 0), ()),
+     "PERC": ("GM KIT", [0, 0, 0, 0, 127, 0, 0, 0], (0, 127, 127, 60), 0, (0, 0, 0, 6), ()),
+ }
++# sets that get no preset of their own (Kitten Synths: the set stays, its sound is still the one DEEP BASS plays)
++NO_SET_PRESET = {"BASS"}
+ # more presets on a set: (set, name, E[], env, mono, sends, more)
+ EXTRA_PRESETS = [
+     ("PIANO", "DUSTY PNO", [0, 0, 34, 0, 96, 0, 24, 0], (0, 98, 0, 52), 0, (0, 8, 10, 22), ()),
+@@ -396,6 +397,8 @@ class Builder:
+                     f'FX({", ".join(map(str, fx))}){", .x = {" + x + "}" if x else ""}}},')
+         for i, (name, _, _) in enumerate(named):
+             k = self.kinds.get(name, "wave")
++            if name in NO_SET_PRESET:
++                continue
+             if name in SET_PRESETS:
+                 L.append(preset(i, k, *SET_PRESETS[name]))
+             else:
+diff --git a/web/editor.html b/web/editor.html
+index 3f7664f..de9badf 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -3123,7 +3123,7 @@ function makeMockDevice(opt = {}) {
+         P("WURLI", [4, 1, 2, 3, 62, 35, 8, 0], [0, 75, 30, 45], 0), P("CLAV", [3, 1, 3, 5, 90, 25, 20, 0], [0, 50, 20, 18], 0),
+         P("TRAP BELL", [4, 8, 1, 4, 80, 70, 0, 0], [0, 92, 0, 70], 0), P("MUSIC BOX", [4, 4, 3, 9, 45, 75, 0, 0], [0, 90, 0, 75], 0),
+         P("MARIMBA", [4, 4, 1, 1, 60, 30, 0, 0], [0, 80, 0, 60], 0), P("FM BASS", [0, 1, 1, 1, 34, 40, 8, 0], [0, 60, 70, 25], 1),
+-        P("STEEL DRUM", [4, 2, 2, 2, 45, 45, 0, 0], [0, 88, 0, 66], 0), P("GLOCKEN", [4, 5, 1, 8, 40, 60, 0, 0], [0, 95, 0, 85], 0), P("CELESTA", [4, 2, 1, 4, 30, 50, 0, 0], [0, 84, 0, 70], 0), P("XYLOPHONE", [4, 4, 3, 3, 70, 18, 0, 0], [0, 77, 0, 58], 0), P("HARP", [4, 1, 1, 2, 45, 30, 10, 0], [0, 92, 0, 80], 0), P("BASS GTR", [4, 1, 1, 2, 40, 30, 6, 0], [0, 76, 40, 22], 1)] },
++        P("GLOCKEN", [4, 5, 1, 8, 40, 60, 0, 0], [0, 95, 0, 85], 0), P("CELESTA", [4, 2, 1, 4, 30, 50, 0, 0], [0, 84, 0, 70], 0), P("XYLOPHONE", [4, 4, 3, 3, 70, 18, 0, 0], [0, 77, 0, 58], 0), P("HARP", [4, 1, 1, 2, 45, 30, 10, 0], [0, 92, 0, 80], 0), P("BASS GTR", [4, 1, 1, 2, 40, 30, 6, 0], [0, 76, 40, 22], 1)] },
+     { name: "PHASE", titles: ["PHS", "LINE"], edit: [E("WAVE", ["SAW", "SQR", "PLS", "DSIN", "SPLS", "RSAW", "RTRI", "RTRP"], 0),
+         E("WAVE2", ["--", "SAW", "SQR", "PLS", "DSIN", "SPLS", "RSAW", "RTRI", "RTRP"], 0), D("DCW", F.PCT, 0, 127, 60), D("ENV", F.PCT, 0, 127, 64),
+         D("DTN", F.INT, 0, 127, 0, null, "ct"), E("LINE", ["MIX", "RING"], 0), D("SUB", F.PCT, 0, 127, 0), NONE],
+@@ -3136,16 +3136,14 @@ function makeMockDevice(opt = {}) {
+         P("8BIT ARP", [2, 0, 96, 0, 0, 0, 2, 110], [0, 60, 80, 40], 0)] },
+     { name: "SAMPLE", titles: ["SET", "TONE"], edit: [E("SET", ["PIANO", "BASS", "VIBES", "HORNS", "STRGS", "FLUTE", "SCRCH", "PERC", "USR1", "USR2", "USR3", "USR4"], 0), D("TUNE", F.SEMI, -24, 24, 0), D("BITS", F.INT, 0, 127, 0),
+         E("LOOP", NONOFF, 1), D("CUT", F.INT, 0, 127, 127), NONE, D("DRV", F.PCT, 0, 127, 0), NONE],
+-      presets: [P("DUSTY PNO", [0, 0, 20, 1, 104, 0, 14, 0], [0, 127, 127, 52], 0), P("UP BASS", [1, 0, 0, 1, 118, 0, 12, 0], [0, 127, 127, 26], 1),
+-        P("VIBES", [2, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 72], 0), P("HORN STAB", [3, 0, 0, 1, 120, 0, 20, 0], [0, 127, 127, 22], 0),
++      presets: [P("DUSTY PNO", [0, 0, 20, 1, 104, 0, 14, 0], [0, 127, 127, 52], 0), P("VIBES", [2, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 72], 0), P("HORN STAB", [3, 0, 0, 1, 120, 0, 20, 0], [0, 127, 127, 22], 0),
+         P("STRING STB", [4, 0, 0, 1, 122, 0, 10, 0], [0, 127, 127, 26], 0), P("LOFI FLUTE", [5, 0, 12, 1, 100, 0, 0, 0], [12, 80, 120, 60], 1),
+         P("SCRATCH", [6, 0, 0, 1, 127, 0, 8, 0], [0, 127, 127, 18], 0), P("GM KIT", [7, 0, 0, 0, 127, 0, 0, 0], [0, 127, 127, 60], 0),
+         P("LOFI KEYS", [0, 0, 45, 1, 78, 0, 30, 0], [0, 127, 110, 60], 0), P("DEEP BASS", [1, -12, 0, 1, 90, 0, 40, 0], [0, 127, 127, 30], 1)] },
+     { name: "VOICE", titles: ["VOWL", "TONE"], edit: [D("VOWL", F.INT, 0, 127, 0), D("VOWL2", F.INT, 0, 127, 64), D("TALK", F.TIME, 0, 127, 0),
+         D("SHIFT", F.SEMI, -12, 12, 0), D("BUZZ", F.PCT, 0, 127, 64), D("BRTH", F.PCT, 0, 127, 10), D("Q", F.PCT, 0, 127, 64), D("RAND", F.PCT, 0, 127, 0)],
+       presets: [P("CHOIR AAH", [0, 0, 0, 0, 40, 22, 60, 0], [85, 90, 115, 95], 0), P("SOUL OOH", [110, 0, 0, 0, 30, 30, 55, 0], [70, 90, 115, 90], 0),
+-        P("TALKBOX", [32, 95, 60, 0, 100, 4, 75, 0], [4, 70, 110, 40], 1), P("WOW BASS", [95, 0, 68, 0, 100, 0, 80, 0], [0, 70, 70, 30], 1),
+-        P("HARMONICA", [64, 0, 0, 0, 127, 20, 70, 0], [4, 70, 115, 25], 1)] },
++        P("TALKBOX", [32, 95, 60, 0, 100, 4, 75, 0], [4, 70, 110, 40], 1), P("WOW BASS", [95, 0, 68, 0, 100, 0, 80, 0], [0, 70, 70, 30], 1)] },
+     { name: "TRIO", titles: ["OSC", "TONE"], edit: [E("WAVE", ["SAW3", "PLS3", "PPT", "SST", "TRI3", "S&T", "P&S", "P+N", "NOIS", "SYNC", "SYNCP", "SYNC3",
+         "RING", "RING3", "R+S", "R+SP"], 0), D("INT2", F.SEMI, -24, 24, 0), D("INT3", F.SEMI, -24, 24, -12), D("DTN", F.INT, 0, 50, 6, null, "ct"),
+         E("MODE", ["LP", "BP", "HP", "NOT"], 0), D("CUT", F.CUTOFF, 0, 127, 80), D("RES", F.PCT, 0, 127, 40), D("PW", F.PCT, 0, 127, 64)],
+@@ -3181,8 +3179,6 @@ function makeMockDevice(opt = {}) {
+         P("STR PLUCK", [1, 56, 72, 84, 40, 96, 0, 0], [0, 100, 127, 58], 0),
+         P("BOWED MTL", [0, 98, 70, 112, 10, 80, 90, 0], [60, 90, 127, 90], 0),
+         P("THUMB PNO", [0, 34, 16, 56, 100, 90, 0, 48], [0, 100, 127, 60], 0),
+-        P("HAND DRUM", [2, 112, 76, 56, 44, 100, 14, 24], [0, 100, 127, 64], 0),
+-        P("MEMB TOMS", [2, 0, 52, 40, 30, 100, 40, 30], [0, 100, 127, 70], 0),
+         P("SITAR", [3, 127, 80, 88, 64, 100, 92, 0], [0, 100, 127, 90], 0),
+         P("PHYS HARP", [3, 8, 62, 74, 60, 90, 0, 0], [0, 100, 127, 80], 0),
+         P("NYLON GTR", [1, 40, 50, 80, 30, 80, 0, 10], [0, 100, 127, 50], 0),
+@@ -3199,7 +3195,6 @@ function makeMockDevice(opt = {}) {
+         P("GLASS BOWL", [0, 98, 90, 120, 6, 60, 70, 0], [70, 90, 127, 100], 0),
+         P("STEEL PAN", [0, 36, 80, 90, 30, 100, 0, 20], [0, 100, 127, 60], 0),
+         P("WOOD BLOCK", [0, 116, 30, 35, 40, 110, 0, 60], [0, 100, 127, 20], 0),
+-        P("TABLA", [2, 120, 70, 70, 50, 110, 20, 30], [0, 100, 127, 50], 0),
+         P("CONGA", [2, 90, 60, 50, 40, 100, 8, 40], [0, 100, 127, 40], 0),
+         P("TIMPANI", [2, 10, 50, 100, 20, 110, 6, 10], [0, 100, 127, 90], 0)] },
+     { name: "NOISE", titles: ["SRC", "MOVE"], edit: [E("MODE", ["ANLG", "DUST", "LFSR", "META"], 0), D("COLR", F.PCT, 0, 127, 64),
+@@ -3220,33 +3215,33 @@ function makeMockDevice(opt = {}) {
+     { name: "MUUG", titles: ["FILTER", "PATCH"], edit: [D("CUT", F.MCUT, 0, 127, 64), D("EMPH", F.MEMP, 0, 127, 40), D("CNTR", F.PCT, 0, 127, 64),
+         D("F.ATK", F.TIME, 0, 127, 0), D("F.DEC", F.TIME, 0, 127, 64), D("F.SUS", F.PCT, 0, 127, 40), D("MOD", F.PCT, 0, 127, 0), D("SLOT", F.INT, 0, 100, 0)],
+       presets: [
+-        P("MINI LEAD", [61, 44, 51, 0, 79, 70, 30, 0], [15, 81, 110, 70], 1), P("I FEEL ARP", [46, 46, 64, 0, 65, 20, 0, 1], [9, 70, 40, 55], 1), P("LUSH STRINGS", [63, 29, 0, 0, 81, 100, 14, 2], [79, 86, 118, 89], 0),
++        P("MINI LEAD", [61, 44, 51, 0, 79, 70, 30, 0], [15, 81, 110, 70], 1), P("SIENTO ARP", [46, 46, 64, 0, 65, 20, 0, 1], [9, 70, 40, 55], 1), P("LUSH STRINGS", [63, 29, 0, 0, 81, 100, 14, 2], [79, 86, 118, 89], 0),
+         P("ROTARY ORG", [70, 0, 0, 0, 62, 127, 0, 3], [24, 62, 127, 55], 0), P("CRYSTAL BELL", [47, 29, 76, 0, 99, 0, 0, 4], [0, 106, 0, 99], 0), P("DUB STAB", [47, 42, 81, 0, 70, 0, 0, 5], [9, 80, 0, 72], 0),
+-        P("CS-80 BRASS", [42, 39, 76, 75, 92, 70, 20, 6], [61, 86, 118, 84], 0), P("SPACE DRONE", [44, 48, 64, 108, 112, 60, 70, 7], [106, 108, 118, 109], 0), P("TANGERINE", [51, 55, 66, 0, 74, 10, 0, 8], [0, 78, 25, 69], 0),
+-        P("E.PIANO", [57, 32, 51, 0, 75, 10, 0, 9], [9, 101, 10, 75], 0), P("EMERSON", [59, 58, 46, 0, 86, 55, 28, 10], [9, 77, 118, 75], 1), P("NUMAN", [62, 36, 30, 0, 89, 85, 14, 11], [19, 73, 122, 78], 1),
++        P("CS-80X BRASS", [42, 39, 76, 75, 92, 70, 20, 6], [61, 86, 118, 84], 0), P("SPACE DRONE", [44, 48, 64, 108, 112, 60, 70, 7], [106, 108, 118, 109], 0), P("MANDARINA", [51, 55, 66, 0, 74, 10, 0, 8], [0, 78, 25, 69], 0),
++        P("E.PIANO", [57, 32, 51, 0, 75, 10, 0, 9], [9, 101, 10, 75], 0), P("EMMERSON", [59, 58, 46, 0, 86, 55, 28, 10], [9, 77, 118, 75], 1), P("NUMANN", [62, 36, 30, 0, 89, 85, 14, 11], [19, 73, 122, 78], 1),
+         P("HAMMER", [55, 55, 61, 50, 83, 25, 18, 12], [0, 84, 100, 65], 1), P("FIFTHS", [62, 48, 41, 0, 83, 65, 20, 13], [15, 77, 120, 77], 1), P("RAVE ARP", [63, 38, 51, 0, 72, 50, 0, 14], [0, 75, 70, 64], 0),
+         P("ACID LEAD", [37, 99, 107, 0, 69, 5, 0, 15], [0, 72, 110, 57], 1), P("PULSE HERO", [65, 39, 30, 0, 79, 55, 24, 16], [9, 75, 118, 69], 1), P("TITAN", [49, 47, 81, 57, 90, 45, 16, 17], [15, 75, 122, 81], 1),
+-        P("FUZZ LEAD", [67, 36, 23, 0, 75, 70, 20, 18], [0, 72, 120, 67], 1), P("GROWL", [47, 64, 30, 0, 77, 50, 85, 19], [15, 75, 120, 75], 1), P("MOOG FLUTE", [55, 32, 20, 0, 72, 55, 26, 20], [54, 81, 118, 75], 1),
+-        P("G-FUNK", [56, 42, 0, 0, 72, 100, 18, 21], [46, 84, 120, 79], 1), P("SINE SOLO", [45, 0, 0, 0, 72, 100, 24, 22], [28, 86, 120, 81], 1), P("BANKS", [55, 36, 36, 65, 96, 60, 22, 23], [50, 84, 118, 83], 1),
++        P("FUZZ LEAD", [67, 36, 23, 0, 75, 70, 20, 18], [0, 72, 120, 67], 1), P("GROWL", [47, 64, 30, 0, 77, 50, 85, 19], [15, 75, 120, 75], 1), P("MOOGH FLUTE", [55, 32, 20, 0, 72, 55, 26, 20], [54, 81, 118, 75], 1),
++        P("G-FUNK", [56, 42, 0, 0, 72, 100, 18, 21], [46, 84, 120, 79], 1), P("SINE SOLO", [45, 0, 0, 0, 72, 100, 24, 22], [28, 86, 120, 81], 1), P("BANKSH", [55, 36, 36, 65, 96, 60, 22, 23], [50, 84, 118, 83], 1),
+         P("OBOE", [56, 46, 20, 46, 77, 70, 22, 24], [48, 77, 118, 68], 1), P("SOLO VIOLIN", [59, 34, 20, 55, 77, 80, 40, 25], [64, 77, 120, 73], 1), P("DREAMER", [54, 34, 38, 0, 84, 25, 0, 26], [22, 89, 40, 84], 0),
+         P("WHISTLE", [60, 4, 0, 0, 72, 100, 34, 27], [59, 77, 120, 77], 1), P("MELLOW PULSE", [47, 27, 30, 0, 84, 55, 18, 28], [31, 81, 118, 77], 1), P("SAX LEAD", [54, 39, 36, 44, 75, 55, 30, 29], [44, 77, 118, 69], 1),
+-        P("MOOG BASS", [37, 38, 56, 0, 86, 35, 0, 30], [15, 81, 118, 68], 1), P("CHAMELEON", [38, 70, 99, 0, 62, 0, 0, 31], [0, 69, 45, 53], 1), P("SUB BASS", [38, 8, 13, 0, 72, 60, 0, 32], [28, 77, 118, 65], 1),
++        P("MOOGH BASS", [37, 38, 56, 0, 86, 35, 0, 30], [15, 81, 118, 68], 1), P("CAMALEON", [38, 70, 99, 0, 62, 0, 0, 31], [0, 69, 45, 53], 1), P("SUB BASS", [38, 8, 13, 0, 72, 60, 0, 32], [28, 77, 118, 65], 1),
+         P("WOBBLE BASS", [42, 65, 13, 0, 72, 60, 110, 33], [19, 77, 118, 68], 1), P("OCTAVE PUMP", [53, 32, 76, 0, 61, 0, 0, 34], [0, 69, 40, 53], 1), P("SEQ BASS", [47, 61, 71, 0, 64, 0, 0, 35], [0, 67, 0, 50], 1),
+         P("REESE", [43, 32, 20, 0, 84, 60, 30, 36], [28, 81, 120, 77], 1), P("RUBBER", [45, 47, 56, 0, 65, 0, 0, 37], [0, 84, 0, 62], 1), P("FUZZ BASS", [56, 34, 25, 0, 72, 60, 0, 38], [9, 75, 115, 62], 1),
+-        P("WONDER BASS", [42, 46, 71, 0, 75, 30, 0, 39], [15, 81, 100, 65], 1), P("SOLINA", [68, 6, 0, 0, 62, 127, 8, 40], [61, 81, 120, 81], 0), P("WARM PAD", [50, 30, 25, 92, 103, 60, 0, 41], [89, 96, 115, 99], 0),
+-        P("JUNO PWM", [63, 27, 13, 0, 86, 90, 6, 42], [65, 81, 118, 84], 0), P("CHOIR", [59, 44, 15, 72, 90, 80, 30, 43], [84, 86, 118, 92], 0), P("SWEEP PAD", [38, 48, 89, 106, 110, 40, 0, 44], [96, 99, 115, 101], 0),
++        P("WONDERS BASS", [42, 46, 71, 0, 75, 30, 0, 39], [15, 81, 100, 65], 1), P("SOLINAH", [68, 6, 0, 0, 62, 127, 8, 40], [61, 81, 120, 81], 0), P("WARM PAD", [50, 30, 25, 92, 103, 60, 0, 41], [89, 96, 115, 99], 0),
++        P("JUNOH PWM", [63, 27, 13, 0, 86, 90, 6, 42], [65, 81, 118, 84], 0), P("CHOIR", [59, 44, 15, 72, 90, 80, 30, 43], [84, 86, 118, 92], 0), P("SWEEP PAD", [38, 48, 89, 106, 110, 40, 0, 44], [96, 99, 115, 101], 0),
+         P("ANGELS", [79, 0, 0, 0, 62, 127, 14, 45], [92, 90, 110, 106], 0), P("ECLIPSE", [37, 38, 30, 99, 108, 50, 40, 46], [95, 99, 118, 104], 0), P("PULSE PAD", [56, 38, 38, 0, 81, 35, 0, 47], [46, 86, 60, 92], 0),
+-        P("CELLOS", [42, 27, 0, 0, 62, 127, 42, 48], [73, 81, 118, 84], 0), P("AIR PAD", [62, 65, 38, 99, 106, 50, 60, 49], [92, 93, 118, 101], 0), P("MOOG BRASS", [46, 38, 66, 57, 77, 50, 0, 50], [48, 77, 118, 72], 0),
+-        P("JUMP BRASS", [47, 30, 76, 44, 85, 40, 0, 51], [39, 84, 95, 77], 0), P("TRUMPET", [46, 36, 66, 51, 72, 50, 30, 52], [46, 77, 118, 67], 1), P("FRENCH HORN", [44, 30, 41, 65, 84, 60, 14, 53], [62, 81, 118, 81], 0),
++        P("CELLOS", [42, 27, 0, 0, 62, 127, 42, 48], [73, 81, 118, 84], 0), P("AIR PAD", [62, 65, 38, 99, 106, 50, 60, 49], [92, 93, 118, 101], 0), P("MOOGH BRASS", [46, 38, 66, 57, 77, 50, 0, 50], [48, 77, 118, 72], 0),
++        P("SALTO BRASS", [47, 30, 76, 44, 85, 40, 0, 51], [39, 84, 95, 77], 0), P("TRUMPET", [46, 36, 66, 51, 72, 50, 30, 52], [46, 77, 118, 67], 1), P("FRENCH HORN", [44, 30, 41, 65, 84, 60, 14, 53], [62, 81, 118, 81], 0),
+         P("BRASS STAB", [50, 36, 76, 0, 73, 0, 0, 54], [9, 75, 0, 67], 0), P("BRASS SWELL", [45, 44, 91, 88, 89, 75, 28, 55], [85, 86, 118, 89], 0), P("HORN RIFF", [48, 33, 71, 31, 75, 25, 0, 56], [28, 77, 60, 65], 0),
+         P("TROMBONE", [43, 32, 51, 55, 81, 55, 22, 57], [53, 77, 118, 73], 1), P("FLUGEL", [47, 27, 30, 50, 81, 70, 18, 58], [50, 77, 118, 77], 0), P("FANFARE", [59, 34, 41, 0, 89, 70, 0, 59], [34, 81, 120, 83], 0),
+         P("PLUCK SAW", [44, 42, 76, 0, 72, 0, 0, 60], [0, 81, 0, 72], 0), P("MARIMBA", [57, 3, 38, 0, 59, 0, 0, 61], [0, 84, 0, 75], 0), P("KALIMBA", [62, 10, 25, 0, 72, 0, 0, 62], [0, 84, 0, 81], 0),
+         P("FUNK ARP", [41, 60, 89, 46, 72, 0, 0, 63], [0, 75, 0, 62], 0), P("NYLON", [55, 29, 41, 0, 70, 0, 0, 64], [0, 89, 0, 79], 0), P("STEELDRUM", [61, 25, 30, 0, 75, 0, 0, 65], [0, 86, 0, 77], 0),
+         P("8-BIT ARP", [107, 15, 0, 0, 62, 127, 0, 66], [0, 55, 90, 44], 0), P("PIZZICATO", [45, 29, 61, 0, 65, 0, 0, 67], [0, 73, 0, 65], 0), P("POP PLUCK", [54, 39, 51, 0, 75, 10, 0, 68], [0, 82, 0, 73], 0),
+-        P("HARP", [60, 4, 25, 0, 75, 0, 0, 69], [0, 98, 0, 89], 0), P("CLAVINET", [52, 32, 71, 0, 69, 10, 0, 70], [0, 86, 0, 55], 0), P("PIPE ORGAN", [68, 6, 0, 0, 62, 127, 0, 71], [39, 62, 127, 59], 0),
++        P("HARP", [60, 4, 25, 0, 75, 0, 0, 69], [0, 98, 0, 89], 0), P("CLAVINETE", [52, 32, 71, 0, 69, 10, 0, 70], [0, 86, 0, 55], 0), P("PIPE ORGAN", [68, 6, 0, 0, 62, 127, 0, 71], [39, 62, 127, 59], 0),
+         P("SYNTH PIANO", [49, 25, 81, 0, 77, 0, 0, 72], [0, 106, 0, 77], 0), P("HARPSICHORD", [63, 32, 30, 0, 68, 0, 0, 73], [0, 93, 0, 59], 0), P("VIBES", [60, 4, 25, 0, 77, 0, 0, 74], [0, 108, 0, 96], 0),
+-        P("WURLY", [59, 29, 30, 0, 72, 15, 0, 75], [9, 98, 10, 72], 0), P("TUBULAR", [67, 0, 25, 0, 81, 0, 0, 76], [0, 115, 0, 106], 0), P("MUSIC BOX", [73, 10, 25, 0, 72, 0, 0, 77], [0, 84, 0, 84], 0),
+-        P("ACCORDION", [63, 32, 13, 0, 62, 127, 14, 78], [48, 72, 118, 61], 0), P("FARFISA", [64, 37, 13, 0, 62, 100, 16, 79], [19, 62, 120, 57], 0), P("DARK DRONE", [41, 44, 13, 108, 112, 70, 70, 80], [106, 108, 118, 109], 1),
++        P("WURLEY", [59, 29, 30, 0, 72, 15, 0, 75], [9, 98, 10, 72], 0), P("TUBULAR", [67, 0, 25, 0, 81, 0, 0, 76], [0, 115, 0, 106], 0), P("MUSIC BOX", [73, 10, 25, 0, 72, 0, 0, 77], [0, 84, 0, 84], 0),
++        P("ACCORDION", [63, 32, 13, 0, 62, 127, 14, 78], [48, 72, 118, 61], 0), P("FARFISAH", [64, 37, 13, 0, 62, 100, 16, 79], [19, 62, 120, 57], 0), P("DARK DRONE", [41, 44, 13, 108, 112, 70, 70, 80], [106, 108, 118, 109], 1),
+         P("STAR DUST", [72, 0, 0, 0, 62, 127, 0, 81], [15, 92, 0, 92], 0), P("ALIEN CHOIR", [54, 74, 25, 99, 103, 60, 60, 82], [99, 99, 118, 106], 0), P("GLASS HARP", [74, 30, 13, 0, 62, 127, 20, 83], [101, 103, 118, 110], 0),
+         P("OCEAN TIDE", [51, 42, 51, 110, 114, 20, 80, 84], [108, 112, 118, 109], 1), P("PULSAR", [51, 38, 25, 0, 86, 70, 0, 85], [72, 86, 118, 92], 0), P("IRON DRONE", [56, 93, 25, 106, 110, 50, 55, 86], [103, 106, 118, 109], 1),
+         P("GHOST SEQ", [58, 46, 46, 0, 81, 15, 0, 87], [22, 92, 15, 92], 0), P("HORROR", [49, 46, 38, 108, 112, 40, 80, 88], [106, 106, 118, 110], 0), P("SINGING BOWL", [65, 0, 0, 0, 62, 127, 0, 89], [46, 114, 0, 110], 0),
