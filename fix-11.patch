@@ -1,0 +1,13 @@
+diff --git a/firmware/src/eng_muug.c b/firmware/src/eng_muug.c
+index 85d7c87..c82f8f3 100644
+--- a/firmware/src/eng_muug.c
++++ b/firmware/src/eng_muug.c
+@@ -22,7 +22,7 @@
+ #if 0
+ #define FMINI_POLY 12             /* FMini-1: POLY mode plays 12 voices */
+ #else
+-#define FMINI_POLY 4
++#define FMINI_POLY 8              /* NVOICE: no cap beyond the shared budget */
+ #endif
+ #define FG_SIZE 32u
+ #define FMINI_NFACTORY 100u

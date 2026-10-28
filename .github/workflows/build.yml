@@ -81,6 +81,7 @@ jobs:
           python3 tools/build_demo.py && cp -r build/demo ../kitten-synths/simulator
           cp "build/felucca-$VERSION.fwsc" ../kitten-synths/
           cp ../servir.py ../kitten-synths/servir.py
+          mkdir -p ../kitten-synths/docs && cp ../*.md ../LICENSE ../kitten-synths/docs/ 2>/dev/null || true
 
       - uses: actions/upload-artifact@v4
         if: always()
