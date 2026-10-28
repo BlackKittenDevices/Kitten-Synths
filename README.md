@@ -2,7 +2,7 @@
 
 <h1 align="center">Kitten Synths</h1>
 
-<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con un sintetizador tipo Minimoog, un cuarto sinte liviano y temática de gatos negros.</b><br>
+<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con un sintetizador tipo Minimoog, un cuarto sintetizador liviano.</b><br>
 Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.com/isod89/sloop-fm1">SLOOP</a>, <a href="https://github.com/hugelton/Felucca">Felucca</a> y <a href="https://github.com/ruppert/fmini-1">FMini-1</a></p>
 
 <p align="center">
@@ -22,7 +22,6 @@ Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro
 
 - **MUUG**: un motor al estilo de los clásicos de tres osciladores de Moog, portado desde FMini-1, con **100 sonidos de fábrica**, filtro de escalera de 24 dB/oct y todas sus pantallas de edición en el propio FM-1 (no hace falta el editor web). Hasta 8 voces según el preset.
 - **Una cuarta parte sintetizadora "LITE"** (gris, antes de la batería), pensada para sumar capas sin cargar el procesador: toca los motores DIGITAL, PHASE, LOFI, SAMPLE y VOICE.
-- **Estética propia**: logo de bienvenida con el gatito, visualizador del gatito que parpadea al ritmo del tempo, colores Halloween.
 - **Instalador y editor web** que reconocen las cinco pistas y leen MIDI desde un controlador.
 
 La **compatibilidad MIDI es idéntica a la de SLOOP**: mismos canales, mismos mensajes, mismo mapa. Lo que ya funcionaba con SLOOP funciona igual.
