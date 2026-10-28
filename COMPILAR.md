@@ -7,7 +7,7 @@ Este repositorio **no contiene el código de SLOOP**: contiene los parches que l
 1. En GitHub: pestaña **Actions** → **build** → **Run workflow**. (También se dispara solo cuando se sube un cambio a los parches, a las imágenes o al flujo.)
 2. El flujo hace, en orden:
    1. Descarga SLOOP de [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1) en el commit fijo `ec9e537`.
-   2. Aplica `muug.patch` y después `fix-01.patch` … `fix-12.patch`, en ese orden.
+   2. Aplica `muug.patch` y después `fix-01.patch` … `fix-13.patch`, en ese orden.
    3. Instala las herramientas: Python, Node, Pillow, clang, la cadena de JieLi y tres archivos del SDK AC79.
    4. Revisa que el código principal compile.
    5. Compila el firmware (`build.sh --release 2.8-kitten`).
