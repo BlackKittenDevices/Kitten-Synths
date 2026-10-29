@@ -44,7 +44,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
       - run: pip install pillow fonttools
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq clang lld
+      - name: clang and lld (Ubuntu 22.04 names wasm-ld wasm-ld-14: the browser simulator's build looks for wasm-ld)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq clang lld
+          command -v wasm-ld || sudo ln -sf "$(ls /usr/bin/wasm-ld-* /usr/lib/llvm-*/bin/wasm-ld 2>/dev/null | head -1)" /usr/local/bin/wasm-ld
+          wasm-ld --version
 
       - name: JieLi toolchain
         run: cd sloop && sh tools/get_toolchain.sh
