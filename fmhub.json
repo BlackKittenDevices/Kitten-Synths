@@ -1,6 +1,8 @@
 {
-  "what": "Groovebox con el motor MUUG (tipo Minimoog, 100 sonidos), una cuarta parte sintetizadora LITE y temática de gatos negros. Basado en SLOOP.",
+  "what": "A groovebox based on SLOOP 2.8: MUUG, a Minimoog-style engine from FMini-1 with 100 sounds and its own edit pages, a fourth LITE synth part, three synth tracks and drums, a 64-step sequencer, songs, punch-in effects, your own samples, USB audio and MIDI.",
   "kinds": [
     "groove"
-  ]
+  ],
+  "play": "https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1",
+  "editor": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/"
 }

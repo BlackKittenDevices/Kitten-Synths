@@ -11,6 +11,7 @@ on:
         required: false
         default: ""
   push:
+    branches: [main]
     paths: ["muug.patch", "fix-*.patch", "splashes y logos/**", ".github/workflows/build.yml"]
 
 env:
@@ -93,6 +94,22 @@ jobs:
           cp "build/felucca-$VERSION.fwsc" ../kitten-synths/
           cp ../servir.py ../kitten-synths/servir.py
           mkdir -p ../kitten-synths/docs && cp ../*.md ../LICENSE ../kitten-synths/docs/ 2>/dev/null || true
+
+      - name: The site on GitHub Pages (The Firmware Hub's play and editor keys, fmhub.json)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          rm -rf pages && cp -r kitten-synths pages && cd pages
+          rm -f *.fwsc servir.py
+          cat > index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Kitten Synths</title>
+          <meta http-equiv="refresh" content="0; url=simulator/index.html?mock=1">
+          <a href="simulator/index.html?mock=1">Kitten Synths in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
+          HTML
+          touch .nojekyll
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "site from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
 
       - uses: actions/upload-artifact@v4
         if: always()

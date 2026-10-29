@@ -11,7 +11,10 @@ Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.
 <a href="COMPILAR.md">Compilar</a> ·
 <a href="CHANGELOG.md">Cambios</a> ·
 <a href="CREDITOS.md">Créditos</a> ·
-<a href="LICENCIA.md">Licencia</a>
+<a href="LICENCIA.md">Licencia</a> ·
+<a href="https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1"><b>▶ Probar en el navegador</b></a> ·
+<a href="https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/">Editor web</a> ·
+<a href="README.en.md">English</a>
 </p>
 
 ---
@@ -62,11 +65,11 @@ Paso a paso en el [Manual, capítulo 2](MANUAL.md#2-instalación).
 
 ## Firmware Hub
 
-Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwarehub.com/kb/): es libre (GPL-3.0), hace música, trae el cargador de actualización de Felucca en el `.fwsc` de cada Release y se identifica como **`FM-1_969`** (identidad propia, no compartida). La tarjeta usa el texto de `fmhub.json`.
+Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwarehub.com/kb/): es libre (GPL-3.0), hace música, trae el cargador de actualización de Felucca en el `.fwsc` de cada Release y se identifica como **`FM-1_969`** (identidad propia, no compartida). La tarjeta usa el texto (en inglés, como pide el Hub), el botón ▶ y el del editor de `fmhub.json`; el simulador y el editor se publican en GitHub Pages en cada compilación.
 
 ## Probar sin FM-1
 
-El paquete trae un simulador en el navegador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
+Online, sin instalar nada: [el simulador](https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1) y [el editor web](https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/). El paquete también trae el simulador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
 
 ## Qué hay en este repositorio
 
@@ -77,7 +80,8 @@ El paquete trae un simulador en el navegador, en `http://localhost:8766/simulato
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |
 | `capturas/` | Las capturas de pantalla de este README. |
-| `MANUAL.md` | Manual de uso. |
+| `MANUAL.md` / `MANUAL.en.md` | Manual de uso, en español / en inglés. |
+| `README.en.md` | Este README en inglés. |
 | `CARACTERISTICAS.md` | Ficha técnica y lista de sonidos. |
 | `COMPILAR.md` | Cómo funciona la compilación y cómo hacerla a mano. |
 | `CHANGELOG.md` | Historia de cambios. |
