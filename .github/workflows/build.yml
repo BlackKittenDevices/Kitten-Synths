@@ -22,7 +22,8 @@ env:
 jobs:
   build:
     permissions:
-      contents: write                                             # only to publish a Release (the input above)
+      contents: write                                             # to publish a Release (the input above) and the gh-pages branch
+      pages: write                                                # to turn GitHub Pages on (the Hub's play and editor keys)
     env:
       KITTEN_ART: ${{ github.workspace }}/splashes y logos          # the kitten pictures for the installer, the editor and the icons (tools/kitten_img.py)
     runs-on: ubuntu-22.04                                      # x86-64: the JieLi toolchain runs natively
@@ -121,6 +122,15 @@ jobs:
           git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "site from ${GITHUB_SHA}"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+      - name: GitHub Pages on, from gh-pages (once; if the token may not, Settings > Pages does it)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pages" > /dev/null 2>&1 && { echo "Pages already on"; exit 0; }
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages" -f build_type=legacy -f "source[branch]=gh-pages" -f "source[path]=/" \
+            && echo "::notice title=PAGES::GitHub Pages turned on" || echo "::warning title=PAGES::turn GitHub Pages on in Settings > Pages (branch gh-pages)"
 
       - uses: actions/upload-artifact@v4
         if: always()
