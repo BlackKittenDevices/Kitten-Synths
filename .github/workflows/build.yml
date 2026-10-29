@@ -90,7 +90,7 @@ jobs:
         run: |
           cd sloop
           python3 web/make_site.py "build/felucca-$VERSION.fwsc" "$VERSION" ../kitten-synths/site
-          python3 tools/build_demo.py
+          if ! python3 tools/build_demo.py > ../demo.log 2>&1; then echo "::error title=SIMULATOR::$(tail -n 8 ../demo.log | tr '\n' '|')"; exit 1; fi
           cp -r build/demo ../kitten-synths/simulator
           test -f ../kitten-synths/simulator/index.html && test -f ../kitten-synths/simulator/sloop-preview.wasm
           cp "build/felucca-$VERSION.fwsc" ../kitten-synths/
