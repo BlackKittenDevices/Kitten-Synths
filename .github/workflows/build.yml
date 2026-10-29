@@ -128,9 +128,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/pages" > /dev/null 2>&1 && { echo "Pages already on"; exit 0; }
-          gh api -X POST "repos/$GITHUB_REPOSITORY/pages" -f build_type=legacy -f "source[branch]=gh-pages" -f "source[path]=/" \
-            && echo "::notice title=PAGES::GitHub Pages turned on" || echo "::warning title=PAGES::turn GitHub Pages on in Settings > Pages (branch gh-pages)"
+          now=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '"\(.build_type) \(.source.branch)"' 2>/dev/null || echo none)
+          echo "::notice title=PAGES::was: $now"
+          if [ "$now" = "none" ]; then
+            gh api -X POST "repos/$GITHUB_REPOSITORY/pages" -f build_type=legacy -f "source[branch]=gh-pages" -f "source[path]=/" > /dev/null
+          elif [ "$now" != "legacy gh-pages" ]; then
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=legacy -f "source[branch]=gh-pages" -f "source[path]=/"
+          fi
+          echo "::notice title=PAGES::now: $(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '"\(.build_type) \(.source.branch) \(.html_url)"' 2>&1)"
 
       - uses: actions/upload-artifact@v4
         if: always()
