@@ -90,7 +90,9 @@ jobs:
         run: |
           cd sloop
           python3 web/make_site.py "build/felucca-$VERSION.fwsc" "$VERSION" ../kitten-synths/site
-          python3 tools/build_demo.py && cp -r build/demo ../kitten-synths/simulator
+          python3 tools/build_demo.py
+          cp -r build/demo ../kitten-synths/simulator
+          test -f ../kitten-synths/simulator/index.html && test -f ../kitten-synths/simulator/sloop-preview.wasm
           cp "build/felucca-$VERSION.fwsc" ../kitten-synths/
           cp ../servir.py ../kitten-synths/servir.py
           mkdir -p ../kitten-synths/docs && cp ../*.md ../LICENSE ../kitten-synths/docs/ 2>/dev/null || true
