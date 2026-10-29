@@ -96,9 +96,9 @@ jobs:
       - name: Site (installer, web editor)
         run: |
           cd sloop
-          python3 web/make_site.py "build/felucca-$VERSION.fwsc" "$VERSION" ../kitten-synths/site
           export PATH="/usr/lib/llvm-18/bin:$PATH"
           if ! python3 tools/build_preview.py > ../preview.log 2>&1; then echo "::error title=PREVIEW::$(grep -v '^ ' ../preview.log | tail -n 14 | cut -c1-200 | tr '\n' '|')"; exit 1; fi
+          python3 web/make_site.py "build/felucca-$VERSION.fwsc" "$VERSION" ../kitten-synths/site
           if ! python3 tools/build_demo.py > ../demo.log 2>&1; then echo "::error title=SIMULATOR::$(tail -n 8 ../demo.log | tr '\n' '|')"; exit 1; fi
           cp -r build/demo ../kitten-synths/simulator
           test -f ../kitten-synths/simulator/index.html && test -f ../kitten-synths/simulator/sloop-preview.wasm
