@@ -3,6 +3,6 @@
   "kinds": [
     "groove"
   ],
-  "play": "https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths&mhz=60&latency=playback",
+  "play": "https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths&mhz=60&latency=0.25",
   "editor": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/"
 }

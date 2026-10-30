@@ -7,7 +7,7 @@ By <b>Black Kitten Devices</b> · GPL-3.0 · based on <a href="https://github.co
 
 <p align="center">
 <a href="MANUAL.en.md"><b>Manual</b></a> ·
-<a href="https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths&mhz=60&latency=playback"><b>▶ Play in the browser</b></a> ·
+<a href="https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths&mhz=60&latency=0.25"><b>▶ Play in the browser</b></a> ·
 <a href="https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/">Web editor</a> ·
 <a href="CHANGELOG.md">Changes</a> ·
 <a href="LICENSE">License</a> ·

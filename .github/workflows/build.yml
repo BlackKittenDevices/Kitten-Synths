@@ -120,6 +120,10 @@ jobs:
           bash fm1-emu/web/build.sh "$PWD/play"
           rm -rf play/smk37 play/fm1-emu-report.pdf
           cp fm1-emu/LICENSE play/LICENSE-fm1-emu.txt
+          # Kitten Synths: ?latency= also takes seconds (0.25): a deeper audio buffer than "playback", so the emulator's
+          # short stalls (a busy moment, the JIT compiling) are not heard; the keys answer that much later
+          sed -i 's/latencyHint: latency })/latencyHint: Number.isFinite(Number(latency)) ? Number(latency) : latency })/' play/main.js
+          grep -q 'Number.isFinite(Number(latency))' play/main.js
           mkdir -p play/fw
           cp "sloop/build/felucca-$VERSION.fwsc" play/fw/kitten-synths.fwsc
           SHA=$(sha256sum play/fw/kitten-synths.fwsc | cut -c1-8)
@@ -148,13 +152,13 @@ jobs:
           # now; the playable editor without an FM-1 moves to simulator/playable.html
           mv simulator/index.html simulator/playable.html
           printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Kitten Synths</title>' \
-            '<meta http-equiv="refresh" content="0; url=../play/?fw=kittensynths&mhz=60&latency=playback">' \
-            '<script>location.replace("../play/?fw=kittensynths&mhz=60&latency=playback")</script>' \
-            '<a href="../play/?fw=kittensynths&mhz=60&latency=playback">Kitten Synths on an FM-1 in the browser</a> · <a href="playable.html?mock=1">the playable editor</a>' > simulator/index.html
+            '<meta http-equiv="refresh" content="0; url=../play/?fw=kittensynths&mhz=60&latency=0.25">' \
+            '<script>location.replace("../play/?fw=kittensynths&mhz=60&latency=0.25")</script>' \
+            '<a href="../play/?fw=kittensynths&mhz=60&latency=0.25">Kitten Synths on an FM-1 in the browser</a> · <a href="playable.html?mock=1">the playable editor</a>' > simulator/index.html
           cat > index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>Kitten Synths</title>
-          <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths&mhz=60&latency=playback">
-          <a href="play/?fw=kittensynths&mhz=60&latency=playback">Kitten Synths on an FM-1 in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
+          <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths&mhz=60&latency=0.25">
+          <a href="play/?fw=kittensynths&mhz=60&latency=0.25">Kitten Synths on an FM-1 in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
           HTML
           touch .nojekyll
           git init -q -b gh-pages
