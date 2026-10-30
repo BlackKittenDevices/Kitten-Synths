@@ -144,6 +144,13 @@ jobs:
           rm -rf pages && cp -r kitten-synths pages && cd pages
           rm -f *.fwsc servir.py
           cp -r ../play play                            # the FM-1 emulator running Kitten Synths (the step above)
+          # the Hub's ▶ key (its approved fmhub.json) may still link to simulator/index.html: that address opens the emulator
+          # now; the playable editor without an FM-1 moves to simulator/playable.html
+          mv simulator/index.html simulator/playable.html
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Kitten Synths</title>' \
+            '<meta http-equiv="refresh" content="0; url=../play/?fw=kittensynths">' \
+            '<script>location.replace("../play/?fw=kittensynths")</script>' \
+            '<a href="../play/?fw=kittensynths">Kitten Synths on an FM-1 in the browser</a> · <a href="playable.html?mock=1">the playable editor</a>' > simulator/index.html
           cat > index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>Kitten Synths</title>
           <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths">

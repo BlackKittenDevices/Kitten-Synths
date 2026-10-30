@@ -73,7 +73,7 @@ Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwa
 
 ## Probar sin FM-1
 
-Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths) (el firmware real corriendo en un FM-1 emulado, con su pantalla, botones y sonido, gracias a [fm1-emu](https://github.com/joakimeriksson/fm1-emu)), el [editor jugable](https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1) y [el editor web](https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/). El paquete también trae el simulador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
+Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths) (el firmware real corriendo en un FM-1 emulado, con su pantalla, botones y sonido, gracias a [fm1-emu](https://github.com/joakimeriksson/fm1-emu)), el [editor jugable](https://blackkittendevices.github.io/Kitten-Synths/simulator/playable.html?mock=1) y [el editor web](https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/). El paquete también trae el simulador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
 
 ## Qué hay en este repositorio
 
