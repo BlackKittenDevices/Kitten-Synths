@@ -78,7 +78,7 @@ index a85fd67..b5ffd3f 100644
  #if FELUCCA_CDC
                  if (i == MI_SERIAL && usb_serial != usb_cdc_now())
 diff --git a/firmware/src/usb.c b/firmware/src/usb.c
-index 6133eab..9cb5ac9 100644
+index 6133eab..69c06ad 100644
 --- a/firmware/src/usb.c
 +++ b/firmware/src/usb.c
 @@ -33,6 +33,16 @@
@@ -98,25 +98,22 @@ index 6133eab..9cb5ac9 100644
  enum { S_FADDR = 0, S_POWER = 1, S_INTRTX1 = 2, S_INTRTX2 = 3, S_INTRRX1 = 4, S_INTRRX2 = 5, S_INTRUSB = 6,
         S_INTRTX1E = 7, S_INTRTX2E = 8, S_INTRRX1E = 9, S_INTRRX2E = 10, S_INTRUSBE = 11, S_FRAME1 = 12,
         S_FRAME2 = 13, S_INDEX = 14,
-@@ -86,11 +96,15 @@ _Static_assert(UA_HI48 + UA_REND48 + UA_MAXF < UA_N, "the ring holds the band, a
+@@ -86,11 +96,11 @@ _Static_assert(UA_HI48 + UA_REND48 + UA_MAXF < UA_N, "the ring holds the band, a
  #else
  #define UA_MAXF 46u              /* frames in the largest packet */
  #endif
 -#define UAC_MAXP (UA_MAXF * 4u)
 +#define UAC_MAXP (UA_MAXF * 2u * FELUCCA_UAC_CH)
  _Static_assert(UA_HI + HALF_FRAMES + UA_MAXF < UA_N, "the ring holds the band, a render and a packet");
-+#if UA_W > 1
-+static uint32_t ua_ring[UA_N * UA_W] __attribute__((section(".pool")));   /* (8 channels: 8 KB, in the pool) */
-+#else
- static uint32_t ua_ring[UA_N];
-+#endif
+-static uint32_t ua_ring[UA_N];
++static uint32_t ua_ring[UA_N * UA_W];   /* (8 channels: 8 KB of RAM, which has room; the pool keeps its headroom) */
  static volatile uint32_t ua_w, ua_r;
 -static uint32_t ep4tx[UA_MAXF] __attribute__((aligned(4)));
 +static uint32_t ep4tx[UA_MAXF * UA_W] __attribute__((aligned(4)));
  static struct {
      volatile uint8_t alt;        /* streaming interface setting: 1 = the host records */
      volatile uint8_t r48;        /* the host's rate (SET_CUR): 1 = 48 kHz, 0 = 44.1 (bus reset) */
-@@ -103,7 +117,7 @@ static struct {
+@@ -103,7 +113,7 @@ static struct {
      uint8_t e0_rx;               /* SET_CUR sampling frequency: data stage pending */
      volatile uint32_t fill_min;  /* ring fill when the last render started */
      uint32_t acc;                /* 44.1 frames per ms: 0.1 frame steps */
@@ -125,7 +122,7 @@ index 6133eab..9cb5ac9 100644
      uint32_t starts, pkts, frames;               /* frames in packets sent from the ring */
      uint32_t underruns, overruns, missed;        /* glitches: ring empty (repeat), ring full (drop), no packet ready */
      uint32_t stalls;                             /* the host stopped reading for > 20 ms (alt still 1) */
-@@ -188,7 +202,7 @@ static const uint8_t CFG_DESC[] = {
+@@ -188,7 +198,7 @@ static const uint8_t CFG_DESC[] = {
  #define FELUCCA_USB_PID 0x0001   /* the update loader is 0x0002 */
  #endif
  static const uint8_t DEV_DESC[18] = {18, 1, 0x10, 0x01, 0, 0, 0, 64, 0x09, 0x12, FELUCCA_USB_PID & 0xFF,
@@ -134,7 +131,7 @@ index 6133eab..9cb5ac9 100644
                                       1, 2, 0, 1};
  static const uint8_t CFG_DESC[] = {
      9, 2, CFG_LEN & 0xFF, CFG_LEN >> 8, USB_NIF, 1, 0, 0x80, 50,
-@@ -202,7 +216,8 @@ static const uint8_t CFG_DESC[] = {
+@@ -202,7 +212,8 @@ static const uint8_t CFG_DESC[] = {
       * audio input appears (MIDI still works). Listed last, MIDI is dropped at the end. The class spec gives the
       * order no meaning (Windows, Linux, macOS 26 take each listed interface on its own) */
      10, 0x24, 1, 0x00, 0x01, 31, 0, 2, UAC_AS_IF, 1,
@@ -144,7 +141,7 @@ index 6133eab..9cb5ac9 100644
      9, 0x24, 3, 2, 0x01, 0x01, 0, 1, 0,                 /* output terminal 2: USB streaming, from 1 */
  #else
      9, 0x24, 1, 0x00, 0x01, 9, 0, 1, 1,
-@@ -224,7 +239,7 @@ static const uint8_t CFG_DESC[] = {
+@@ -224,7 +235,7 @@ static const uint8_t CFG_DESC[] = {
  #if FELUCCA_UAC_48K
      14, 0x24, 2, 1, 2, 2, 16, 2, 0x44, 0xAC, 0x00, 0x80, 0xBB, 0x00,   /* type I: 2 ch, 16 bit, 44100 / 48000 */
  #else
@@ -153,7 +150,7 @@ index 6133eab..9cb5ac9 100644
                                                          /* type I: 2 ch, 16 bit, one rate */
  #endif
      9, 5, 0x84, 0x05, UAC_MAXP & 0xFF, UAC_MAXP >> 8, 1, 0, 0,   /* EP4 IN isochronous async, 1 ms */
-@@ -431,7 +446,7 @@ static void uac_stream(uint32_t alt)                    /* SET_INTERFACE, config
+@@ -431,7 +442,7 @@ static void uac_stream(uint32_t alt)                    /* SET_INTERFACE, config
      RING_PUBLISH();
      uac.alt = (uint8_t)alt;
      uac.acc = 0;
@@ -162,7 +159,7 @@ index 6133eab..9cb5ac9 100644
      if (alt) {                                          /* (the fill range of the last stream stays readable) */
          uac.starts++;
          uac.fill_lo = 0xFFFFFFFFu;
-@@ -1038,8 +1053,8 @@ static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, bef
+@@ -1038,8 +1049,8 @@ static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, bef
              rs.w = rs.ph = 0;
          }
  #endif
@@ -173,7 +170,7 @@ index 6133eab..9cb5ac9 100644
          RING_PUBLISH();
          ua_w = r + prime;
          uac.fill_min = prime;
-@@ -1131,15 +1146,26 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)
+@@ -1131,15 +1142,26 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)
          static uint32_t ph;
          for (i = 0; i < n; i++, ph = ph == 99u ? 0u : ph + 1u) {
              uint32_t q = ph < 50u ? ph : 100u - ph, q2 = ph < 50u ? 50u - ph : ph - 50u;
@@ -205,7 +202,7 @@ index 6133eab..9cb5ac9 100644
  #endif
      RING_PUBLISH();
      ua_w = w + n;
-@@ -1165,7 +1191,7 @@ static uint32_t uac_packet(uint32_t *d)
+@@ -1165,7 +1187,7 @@ static uint32_t uac_packet(uint32_t *d)
          }
      }
      if (!uac.go || uac.ring48 != uac.r48) {             /* not primed (at this rate) yet */
@@ -214,7 +211,7 @@ index 6133eab..9cb5ac9 100644
              d[i] = 0;
          return n;
      }
-@@ -1180,15 +1206,15 @@ static uint32_t uac_packet(uint32_t *d)
+@@ -1180,15 +1202,15 @@ static uint32_t uac_packet(uint32_t *d)
      fill = ua_w - r;
      RING_PUBLISH();                                     /* the slots after the index */
      k = fill < n ? fill : n;
@@ -236,7 +233,7 @@ index 6133eab..9cb5ac9 100644
      RING_PUBLISH();
      ua_r = r + k;
      uac.pkts++;
-@@ -1222,7 +1248,7 @@ static void uac_service(void)
+@@ -1222,7 +1244,7 @@ static void uac_service(void)
      uac.queued = 1;
      uac.wait = 0;
      n = uac_packet(ep4tx);
