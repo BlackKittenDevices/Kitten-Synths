@@ -76,7 +76,9 @@ jobs:
 
       - name: The end of the build log (if it failed)
         if: failure()
-        run: tail -n 60 build.log || true
+        run: |
+          tail -n 60 build.log || true
+          echo "::error title=BUILD::$(grep -iE 'error|overflow|warning|undefined|exceed' build.log | tail -n 12 | cut -c1-220 | tr '\n' '|')"
 
       - name: Size of the firmware
         run: |
