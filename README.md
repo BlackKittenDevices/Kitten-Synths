@@ -19,6 +19,9 @@ Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.
 
 ---
 
+> ### 🎛️ NUEVO: grabá 7 pistas en tu DAW
+> El FM-1 es una placa de sonido USB de 8 canales: el master estéreo y cada sinte y la batería en su propio canal, sin drivers. [Cómo se usa](MANUAL.md#audio-usb).
+
 ## ¿Qué es?
 
 Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro sintetizadores y una batería**. Parte de SLOOP 2.8 (doce motores de síntesis, secuenciador de 64 pasos, modo canción, efectos de golpe, muestras propias, MIDI y audio USB) y le suma:

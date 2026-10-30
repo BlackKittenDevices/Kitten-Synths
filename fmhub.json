@@ -1,5 +1,5 @@
 {
-  "what": "A groovebox based on SLOOP 2.8: MUUG, a Minimoog-style engine from FMini-1 with 100 sounds and its own edit pages, a fourth LITE synth part, three synth tracks and drums, a 64-step sequencer, songs, punch-in effects, your own samples, USB audio and MIDI.",
+  "what": "NEW: records 7 tracks into your DAW over USB, the stereo master plus each synth track and the drums on its own channel. A SLOOP 2.8 groovebox with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth, drums, 64 steps, songs, punch-in effects and USB MIDI.",
   "kinds": [
     "groove"
   ],

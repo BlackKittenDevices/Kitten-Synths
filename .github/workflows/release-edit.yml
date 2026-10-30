@@ -1,0 +1,34 @@
+# Kitten Synths: an existing release's title and notes (.github/release/notes.md), as a full release (the latest) or a
+# pre-release. Actions > release-edit > Run workflow (Claude's session cannot edit releases itself).
+name: release-edit
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "the release's tag (v2.8-kitten.4)"
+        required: true
+      title:
+        description: "the release's title"
+        required: true
+      prerelease:
+        description: "true: pre-release; false: full release, marked latest"
+        required: false
+        default: "false"
+permissions:
+  contents: write
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TITLE: ${{ inputs.title }}
+          PRE: ${{ inputs.prerelease }}
+        run: |
+          if [ "$PRE" = "true" ]; then
+            gh release edit "$TAG" --prerelease --title "$TITLE" --notes-file .github/release/notes.md
+          else
+            gh release edit "$TAG" --prerelease=false --latest --title "$TITLE" --notes-file .github/release/notes.md
+          fi

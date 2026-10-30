@@ -16,6 +16,9 @@ By <b>Black Kitten Devices</b> · GPL-3.0 · based on <a href="https://github.co
 
 ---
 
+> ### 🎛️ NEW: record 7 tracks into your DAW
+> The FM-1 is an 8-channel USB sound card: the stereo master plus each synth track and the drums on its own channel, no drivers. [How to use it](MANUAL.en.md#usb-audio).
+
 ## What is it?
 
 Kitten Synths turns the FM-1 into a groovebox for playing live with **four synths and drums**. It starts from SLOOP 2.8 (twelve synth engines, a 64-step sequencer, song mode, punch-in effects, your own samples, MIDI and USB audio) and adds:
