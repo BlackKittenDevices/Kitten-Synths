@@ -81,7 +81,11 @@ The FM-1's program memory is almost full. To fit everything, seven SLOOP sounds 
 ### What does not change
 
 - **MIDI identical to SLOOP**: the same channels, CCs, clock, program change, bank select.
-- The 64-step sequencer, song mode, the 27 punch-in effects, your own samples, USB audio and USB rescue work the same.
+- The 64-step sequencer, song mode, the 27 punch-in effects, your own samples and USB rescue work the same.
+
+### ★ Multitrack recording over USB
+
+USB audio has **8 channels**: the master on 1-2 (as always) and each track on its own, pre-master (the 4 synths and the drums). See [chapter 14](#usb-audio).
 
 ---
 
@@ -371,7 +375,7 @@ Hold **HOME** to open the menu. SELECT moves between sections, KNOB 1–3 change
 | **NOTES** | The notes playing light their keys |
 | **SPEAKER LOWCUT** | A bass cut for the small speaker |
 | **USB AUDIO** | MASTER or FULL |
-| **USB RATE** | AUTO / 44.1 / 48 kHz |
+| **USB RATE** | ★ 8 CH 44.1 (fixed: the multitrack input runs at 44.1 kHz) |
 | **HARDWARE CALIBRATION** | Panel calibration |
 | **ABOUT** | Version and credits |
 
@@ -418,7 +422,26 @@ Also: pitch bend (range in GLO → MIDI 2 → BEND), Program Change and **Bank S
 
 ### USB audio
 
-The FM-1 is also a **USB audio input** ("Felucca"), 44.1 or 48 kHz, 16-bit stereo, no drivers. Record exactly the master output in your audio software or DAW. The level is set in HOME → USB AUDIO.
+The FM-1 is also an **8-channel USB sound card** ("Felucca"), 44.1 kHz, 16-bit, no drivers. ★ Each track comes out on its own channel, so you can record them separately in your DAW:
+
+| Channels | What they carry |
+| --- | --- |
+| 1-2 | The stereo **master**, exactly what the headphones get (as in SLOOP) |
+| 3 | Track 1 (synth) |
+| 4 | Track 2 (synth) |
+| 5 | Track 3 (synth) |
+| 6 | Track 4, LITE |
+| 7 | Drums |
+| 8 | (silent) |
+
+The tracks (3 to 7) are **mono and pre-master**: with their level, pan, mute, solo, DIST, INSERT and track filter, but **without** the shared chorus, delay and reverb and without the master effects (DUST, FILT, the MASTER knob). If you want effects on the separate tracks, add them in the DAW, or record the master too.
+
+- Most programs record channels 1-2 by default: if you only want the mix, nothing changes.
+- **Reaper, Ableton, Bitwig, Cubase, Studio One:** pick the "Felucca" input with its 8 channels and arm one track per channel (3, 4, 5, 6, 7 mono and 1-2 stereo).
+- **Audacity:** Preferences → Devices → Recording → Channels: 8.
+- **Windows:** if an app only sees 2 channels, use WASAPI exclusive mode (or ASIO4ALL) in your DAW.
+- The master's level (1-2) is set by HOME → USB AUDIO (MASTER or FULL); the tracks' don't depend on the MASTER knob.
+- After installing, **unplug and plug in** the FM-1 once: the computer has to see it as a new 8-channel device.
 
 ---
 

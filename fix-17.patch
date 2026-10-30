@@ -1,0 +1,507 @@
+diff --git a/firmware/src/felucca.c b/firmware/src/felucca.c
+index 9b0d354..eda7d43 100644
+--- a/firmware/src/felucca.c
++++ b/firmware/src/felucca.c
+@@ -18,6 +18,10 @@
+ #include "lcd.c"
+ #include "gfx.c"
+ #include "core.h"
++#ifndef FELUCCA_UAC_CH
++#define FELUCCA_UAC_CH 8         /* Kitten Synths: the USB audio input carries 8 channels (usb.c): 1-2 the master, 3-6 the
++                                  * synth tracks, 7 the drums (mono, pre-master: fx.c uac_stem), 8 silent. 44.1 kHz only */
++#endif
+ #include "cpu1.h"           /* the second core's job API (defined in cpu1.c; the host tests have their own) */
+ #include "engines.c"
+ #include "drums.c"
+diff --git a/firmware/src/fx.c b/firmware/src/fx.c
+index bfb0599..0c492fb 100644
+--- a/firmware/src/fx.c
++++ b/firmware/src/fx.c
+@@ -865,14 +865,31 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
+ }
+ 
+ /* the units of mask into the set mx, in their order */
++#if FELUCCA_UAC_CH > 2
++/* Kitten Synths, the multitrack USB input (usb.c uac_tap): each unit's own share of the dry mix this block, mono
++ * ((L + R) / 2), after its level, pan, mute and INSERT, before the shared chorus / delay / reverb, the master and
++ * its knob: what the unit added to its core's dry sums. Written by the core that renders the unit (.lowram, as acc) */
++static int32_t uac_stem[NPART + 1u][CTL] __attribute__((section(".lowram")));
++#define STEM_PRE(k) do { int32_t *s_ = uac_stem[k]; uint32_t i_; for (i_ = 0; i_ < n && i_ < CTL; i_++) s_[i_] = mx->l[i_] + mx->r[i_]; } while (0)
++#define STEM_POST(k) do { int32_t *s_ = uac_stem[k]; uint32_t i_; for (i_ = 0; i_ < n && i_ < CTL; i_++) s_[i_] = (mx->l[i_] + mx->r[i_] - s_[i_]) >> 1; } while (0)
++#else
++#define STEM_PRE(k) ((void)0)
++#define STEM_POST(k) ((void)0)
++#endif
+ static void mix_units(uint32_t mask, uint32_t n, mixacc_t *mx, int32_t *scratch)
+ {
+     uint32_t k;
+     for (k = 0; k < NPART; k++)
+-        if (mask & (1u << k))
++        if (mask & (1u << k)) {
++            STEM_PRE(k);
+             mix_part(&trk[k], n, mx, scratch);
+-    if (mask & U_DRUMS)
++            STEM_POST(k);
++        }
++    if (mask & U_DRUMS) {
++        STEM_PRE(NPART);
+         mix_drums(n, mx);
++        STEM_POST(NPART);
++    }
+ }
+ 
+ /* the load figures: core 1's time in its job and core 0's time waiting for it, in ticks over a half (cpu1.h
+diff --git a/firmware/src/ui_menu.c b/firmware/src/ui_menu.c
+index a85fd67..b5ffd3f 100644
+--- a/firmware/src/ui_menu.c
++++ b/firmware/src/ui_menu.c
+@@ -73,8 +73,12 @@ UI_SMALL static const char *mi_value(uint32_t i, uint16_t *c)
+     case MI_SERIAL: return usb_serial ? "ON" : "OFF";
+ #endif
+     case MI_RATE: {                                   /* (2.7 beta) the rates the USB audio input offers (usb.c) */
++#if FELUCCA_UAC_CH > 2
++        return "8 CH 44.1";                             /* (Kitten Synths: the multitrack input has one rate) */
++#else
+         static const char *const R[3] = {"AUTO", "44.1 KHZ", "48 KHZ"};
+         return R[usb_rate % 3u];
++#endif
+     }
+     case MI_FRESO: {                                  /* (2.7.2) the track filter's resonance, 0 (clean) .. 10 (fx.c) */
+         static char b[4];
+@@ -189,7 +193,7 @@ UI_SMALL static void draw_menu(void)
+                     for (q = 0; q < 5u; q++)
+                         cv_rect(xv + 10 + (int32_t)q * 14, y + 28, 10, 10, pal[q]);
+                 }
+-                if (i == MI_RATE && usb_rate != usb_rate_now())
++                if (i == MI_RATE && FELUCCA_UAC_CH <= 2 && usb_rate != usb_rate_now())
+                     cv_text(xv + 8, y + 30, &FONT_S, "RESTART", C_AMB);   /* (usb.c: at the next start) */
+ #if FELUCCA_CDC
+                 if (i == MI_SERIAL && usb_serial != usb_cdc_now())
+diff --git a/firmware/src/usb.c b/firmware/src/usb.c
+index 6133eab..9cb5ac9 100644
+--- a/firmware/src/usb.c
++++ b/firmware/src/usb.c
+@@ -33,6 +33,16 @@
+ #undef FELUCCA_UAC_48K
+ #define FELUCCA_UAC_48K 0
+ #endif
++#ifndef FELUCCA_UAC_CH
++#define FELUCCA_UAC_CH 2         /* channels of the USB audio input: 2 (the master), or (Kitten Synths) 8: the master, then
++                                  * the stems fx.c's uac_stem holds (see uac_tap) */
++#endif
++#if FELUCCA_UAC_CH > 2
++#undef FELUCCA_UAC_48K
++#define FELUCCA_UAC_48K 0        /* (the resampler is stereo: more channels go at 44.1 kHz only) */
++#endif
++#define UA_W (FELUCCA_UAC_CH / 2u)   /* 32-bit words a frame (two 16-bit samples each) */
++#define UA_AT(i) (((i) & (UA_N - 1u)) * UA_W)
+ enum { S_FADDR = 0, S_POWER = 1, S_INTRTX1 = 2, S_INTRTX2 = 3, S_INTRRX1 = 4, S_INTRRX2 = 5, S_INTRUSB = 6,
+        S_INTRTX1E = 7, S_INTRTX2E = 8, S_INTRRX1E = 9, S_INTRRX2E = 10, S_INTRUSBE = 11, S_FRAME1 = 12,
+        S_FRAME2 = 13, S_INDEX = 14,
+@@ -86,11 +96,15 @@ _Static_assert(UA_HI48 + UA_REND48 + UA_MAXF < UA_N, "the ring holds the band, a
+ #else
+ #define UA_MAXF 46u              /* frames in the largest packet */
+ #endif
+-#define UAC_MAXP (UA_MAXF * 4u)
++#define UAC_MAXP (UA_MAXF * 2u * FELUCCA_UAC_CH)
+ _Static_assert(UA_HI + HALF_FRAMES + UA_MAXF < UA_N, "the ring holds the band, a render and a packet");
++#if UA_W > 1
++static uint32_t ua_ring[UA_N * UA_W] __attribute__((section(".pool")));   /* (8 channels: 8 KB, in the pool) */
++#else
+ static uint32_t ua_ring[UA_N];
++#endif
+ static volatile uint32_t ua_w, ua_r;
+-static uint32_t ep4tx[UA_MAXF] __attribute__((aligned(4)));
++static uint32_t ep4tx[UA_MAXF * UA_W] __attribute__((aligned(4)));
+ static struct {
+     volatile uint8_t alt;        /* streaming interface setting: 1 = the host records */
+     volatile uint8_t r48;        /* the host's rate (SET_CUR): 1 = 48 kHz, 0 = 44.1 (bus reset) */
+@@ -103,7 +117,7 @@ static struct {
+     uint8_t e0_rx;               /* SET_CUR sampling frequency: data stage pending */
+     volatile uint32_t fill_min;  /* ring fill when the last render started */
+     uint32_t acc;                /* 44.1 frames per ms: 0.1 frame steps */
+-    uint32_t last;               /* the last frame sent, repeated on an underrun */
++    uint32_t last[UA_W];         /* the last frame sent, repeated on an underrun */
+     uint32_t starts, pkts, frames;               /* frames in packets sent from the ring */
+     uint32_t underruns, overruns, missed;        /* glitches: ring empty (repeat), ring full (drop), no packet ready */
+     uint32_t stalls;                             /* the host stopped reading for > 20 ms (alt still 1) */
+@@ -188,7 +202,7 @@ static const uint8_t CFG_DESC[] = {
+ #define FELUCCA_USB_PID 0x0001   /* the update loader is 0x0002 */
+ #endif
+ static const uint8_t DEV_DESC[18] = {18, 1, 0x10, 0x01, 0, 0, 0, 64, 0x09, 0x12, FELUCCA_USB_PID & 0xFF,
+-                                     FELUCCA_USB_PID >> 8, 0x00 + 0x10 * (FELUCCA_UAC + FELUCCA_UAC_48K) + UAC_BCD_AS, 0x03,
++                                     FELUCCA_USB_PID >> 8, 0x00 + 0x10 * (FELUCCA_UAC + FELUCCA_UAC_48K) + UAC_BCD_AS + 0x40 * (FELUCCA_UAC_CH > 2), 0x03,
+                                      1, 2, 0, 1};
+ static const uint8_t CFG_DESC[] = {
+     9, 2, CFG_LEN & 0xFF, CFG_LEN >> 8, USB_NIF, 1, 0, 0x80, 50,
+@@ -202,7 +216,8 @@ static const uint8_t CFG_DESC[] = {
+      * audio input appears (MIDI still works). Listed last, MIDI is dropped at the end. The class spec gives the
+      * order no meaning (Windows, Linux, macOS 26 take each listed interface on its own) */
+     10, 0x24, 1, 0x00, 0x01, 31, 0, 2, UAC_AS_IF, 1,
+-    12, 0x24, 2, 1, 0x03, 0x06, 0, 2, 0x03, 0x00, 0, 0, /* input terminal 1: line, 2 ch (L R) */
++    12, 0x24, 2, 1, 0x03, 0x06, 0, FELUCCA_UAC_CH, 0x03, 0x00, 0, 0,   /* input terminal 1: line, 2 ch (L R; Kitten Synths:
++                                                        * 8, L R then 6 not placed) */
+     9, 0x24, 3, 2, 0x01, 0x01, 0, 1, 0,                 /* output terminal 2: USB streaming, from 1 */
+ #else
+     9, 0x24, 1, 0x00, 0x01, 9, 0, 1, 1,
+@@ -224,7 +239,7 @@ static const uint8_t CFG_DESC[] = {
+ #if FELUCCA_UAC_48K
+     14, 0x24, 2, 1, 2, 2, 16, 2, 0x44, 0xAC, 0x00, 0x80, 0xBB, 0x00,   /* type I: 2 ch, 16 bit, 44100 / 48000 */
+ #else
+-    11, 0x24, 2, 1, 2, 2, 16, 1, UAC_RATE & 0xFF, (UAC_RATE >> 8) & 0xFF, UAC_RATE >> 16,
++    11, 0x24, 2, 1, FELUCCA_UAC_CH, 2, 16, 1, UAC_RATE & 0xFF, (UAC_RATE >> 8) & 0xFF, UAC_RATE >> 16,
+                                                         /* type I: 2 ch, 16 bit, one rate */
+ #endif
+     9, 5, 0x84, 0x05, UAC_MAXP & 0xFF, UAC_MAXP >> 8, 1, 0, 0,   /* EP4 IN isochronous async, 1 ms */
+@@ -431,7 +446,7 @@ static void uac_stream(uint32_t alt)                    /* SET_INTERFACE, config
+     RING_PUBLISH();
+     uac.alt = (uint8_t)alt;
+     uac.acc = 0;
+-    uac.last = 0;
++    memset(uac.last, 0, sizeof uac.last);
+     if (alt) {                                          /* (the fill range of the last stream stays readable) */
+         uac.starts++;
+         uac.fill_lo = 0xFFFFFFFFu;
+@@ -1038,8 +1053,8 @@ static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, bef
+             rs.w = rs.ph = 0;
+         }
+ #endif
+-        for (i = 0; i < prime; i++)
+-            ua_ring[(r + i) & (UA_N - 1u)] = 0;
++        for (i = 0; i < prime * UA_W; i++)
++            ua_ring[UA_AT(r + i / UA_W) + i % UA_W] = 0;
+         RING_PUBLISH();
+         ua_w = r + prime;
+         uac.fill_min = prime;
+@@ -1131,15 +1146,26 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)
+         static uint32_t ph;
+         for (i = 0; i < n; i++, ph = ph == 99u ? 0u : ph + 1u) {
+             uint32_t q = ph < 50u ? ph : 100u - ph, q2 = ph < 50u ? 50u - ph : ph - 50u;
+-            ua_ring[(w + i) & (UA_N - 1u)] = (uint32_t)(uint16_t)(int16_t)((int32_t)q * 1000 - 25000) |
+-                                             (uint32_t)(uint16_t)(int16_t)((int32_t)q2 * 1000 - 25000) << 16;
++            uint32_t c, v = (uint32_t)(uint16_t)(int16_t)((int32_t)q * 1000 - 25000) |
++                            (uint32_t)(uint16_t)(int16_t)((int32_t)q2 * 1000 - 25000) << 16;
++            for (c = 0; c < UA_W; c++)                  /* (every channel pair the same triangles) */
++                ua_ring[UA_AT(w + i) + c] = v;
+         }
+         (void)out;
+     }
+ #else
+-    for (i = 0; i < n; i++)
+-        ua_ring[(w + i) & (UA_N - 1u)] = (uint32_t)(uint16_t)uac_s16(out[2u * i]) |
+-                                         (uint32_t)(uint16_t)uac_s16(out[2u * i + 1u]) << 16;
++    for (i = 0; i < n; i++) {
++        uint32_t *f = &ua_ring[UA_AT(w + i)];
++        f[0] = (uint32_t)(uint16_t)uac_s16(out[2u * i]) | (uint32_t)(uint16_t)uac_s16(out[2u * i + 1u]) << 16;
++#if UA_W > 1
++        if (i < CTL) {                                  /* Kitten Synths: 3-6 the synth tracks, 7 the drums, 8 silent */
++            f[1] = (uint32_t)(uint16_t)uac_s16(uac_stem[0][i]) | (uint32_t)(uint16_t)uac_s16(uac_stem[1][i]) << 16;
++            f[2] = (uint32_t)(uint16_t)uac_s16(uac_stem[2][i]) | (uint32_t)(uint16_t)uac_s16(uac_stem[3][i]) << 16;
++            f[3] = (uint32_t)(uint16_t)uac_s16(uac_stem[NPART][i]);
++        } else
++            f[1] = f[2] = f[3] = 0;
++#endif
++    }
+ #endif
+     RING_PUBLISH();
+     ua_w = w + n;
+@@ -1165,7 +1191,7 @@ static uint32_t uac_packet(uint32_t *d)
+         }
+     }
+     if (!uac.go || uac.ring48 != uac.r48) {             /* not primed (at this rate) yet */
+-        for (i = 0; i < n; i++)
++        for (i = 0; i < n * UA_W; i++)
+             d[i] = 0;
+         return n;
+     }
+@@ -1180,15 +1206,15 @@ static uint32_t uac_packet(uint32_t *d)
+     fill = ua_w - r;
+     RING_PUBLISH();                                     /* the slots after the index */
+     k = fill < n ? fill : n;
+-    for (i = 0; i < k; i++)
+-        d[i] = ua_ring[(r + i) & (UA_N - 1u)];
++    for (i = 0; i < k * UA_W; i++)
++        d[i] = ua_ring[UA_AT(r + i / UA_W) + i % UA_W];
+     if (k < n) {
+-        uint32_t last = k ? d[k - 1u] : uac.last;
++        const uint32_t *last = k ? &d[(k - 1u) * UA_W] : uac.last;
+         uac.underruns++;
+-        for (; i < n; i++)
+-            d[i] = last;
++        for (; i < n * UA_W; i++)
++            d[i] = last[i % UA_W];
+     }
+-    uac.last = d[n - 1u];
++    memcpy(uac.last, &d[(n - 1u) * UA_W], sizeof uac.last);
+     RING_PUBLISH();
+     ua_r = r + k;
+     uac.pkts++;
+@@ -1222,7 +1248,7 @@ static void uac_service(void)
+     uac.queued = 1;
+     uac.wait = 0;
+     n = uac_packet(ep4tx);
+-    fm1_usb_ep4_send(ep4tx, n * 4u);
++    fm1_usb_ep4_send(ep4tx, n * 2u * FELUCCA_UAC_CH);
+     sie_wr(S_TXCSR1, 0x01);                             /* TxPktRdy (and UnderRun cleared) */
+ }
+ #endif
+diff --git a/tests/run_tests.sh b/tests/run_tests.sh
+index 5c24bb9..6b3d043 100644
+--- a/tests/run_tests.sh
++++ b/tests/run_tests.sh
+@@ -130,6 +130,10 @@ run "USB RATE 44.1: the descriptors of a build without 48 kHz (SLOOP 2.4), byte
+     sh -c "[ \"\$(UAC_DUMP=1 '$OUT/uac_test_441' | tail -n 2)\" = \"\$(UAC_DUMP=1 '$OUT/uac_test_no48' | tail -n 2)\" ] && echo same"
+ uac_in_app() { ${CC%% *} -E -Ibuild/gen -Ifirmware/hal -Ifirmware/src firmware/src/felucca.c 2>/dev/null | grep -q uac_service; }
+ run "USB audio input: built into the firmware (FELUCCA_UAC set before usb.c)" uac_in_app
++$CC -DHALF_FRAMES=$HALF -o "$OUT/uac8_test" tests/uac8_test.c -lm
++run "Kitten Synths: the 8-channel USB input (descriptors, ring, packets)" "$OUT/uac8_test"
++$CC -Ibuild/gen -o "$OUT/stems_test" tests/stems_test.c -lm -lpthread
++run "Kitten Synths: the multitrack stems (each track alone, all, the dry sum, the core split)" "$OUT/stems_test"
+ 
+ $CC -o "$OUT/ota_test" tests/ota_test.c
+ run "M-UPGRADE entry" "$OUT/ota_test" build/felucca.fwsc
+diff --git a/tests/stems_test.c b/tests/stems_test.c
+new file mode 100644
+index 0000000..a5606fc
+--- /dev/null
++++ b/tests/stems_test.c
+@@ -0,0 +1,128 @@
++/* SPDX-License-Identifier: GPL-3.0-only */
++/* Kitten Synths: the multitrack USB input's stems (fx.c uac_stem, FELUCCA_UAC_CH 8): each unit's own share of the dry
++ * mix, mono, pre-master.
++ *   alone     one synth part playing: its stem sounds, the other three and the drums' stay exactly 0
++ *   all       four parts and the drums: every stem sounds
++ *   sum       no sends, no TEXTURE, no master effects: twice the stems' sum is the dry mix (L + R) within rounding
++ *   split     the same stems whatever units the second core takes (cpu1_units 0, 15, -1) */
++#define FELUCCA_UAC_CH 8
++#define main hostsim_main
++#include "hostsim.c"
++#undef main
++
++static int fails;
++static void check(const char *what, int ok) { printf("%-72s %s\n", what, ok ? "ok" : "FAIL"); fails += !ok; }
++
++static void chords(track_t *t, uint32_t base)
++{
++    uint32_t i;
++    for (i = 0; i < 16u; i++) {
++        uint8_t n[3] = {(uint8_t)(base + i), (uint8_t)(base + i + 4u), (uint8_t)(base + i + 7u)};
++        int on = i % 2u == 0u;
++        put_step(t, i, on ? 3u : 0u, n, on ? ST_NOTE : ST_REST, 0u);
++    }
++}
++static void drum_steps(void)
++{
++    uint32_t i;
++    for (i = 0; i < 16u; i++) {
++        uint8_t n[1] = {(uint8_t)(i % 4u == 0u ? 36 : 42)};
++        put_step(TDRUM, i, 1u, n, ST_NOTE, 0u);
++    }
++}
++
++/* render; energy[k] = sum of |stem k|; err = the largest |L + R - 2 x stems| (sum test: dry mix only) */
++static void render_here(uint32_t parts, int with_drums, int32_t split, uint64_t *energy, int32_t *err, uint64_t *hash)
++{
++    uint32_t b, i, k;
++    cpu1_host_mode();
++    cpu1_units = split;
++    host_tracks_init();
++    song.g[G_DRREV] = song.g[G_DRDLY] = 0;
++    for (k = 0; k < NPART; k++) {
++        host_preset(&trk[k], k == NPART - 1u ? ENGI_LOFI : 0u, k);
++        trk[k].p[P_REV] = trk[k].p[P_DLY] = trk[k].p[P_CHOR] = 0;
++        if (parts & (1u << k))
++            chords(&trk[k], 48u + 5u * k);
++    }
++    if (with_drums)
++        drum_steps();
++    transport_req = 1;
++    memset(energy, 0, sizeof(uint64_t) * (NPART + 1u));
++    *err = 0;
++    *hash = 1469598103934665603ull;
++    for (b = 0; b < 1200u; b++) {
++        int32_t o[2 * CTL];
++        mix_block(o, CTL);
++        for (i = 0; i < CTL; i++) {
++            int32_t s = 0, d;
++            for (k = 0; k <= NPART; k++) {
++                int32_t v = uac_stem[k][i];
++                energy[k] += (uint64_t)(v < 0 ? -v : v);
++                s += v;
++                *hash = (*hash ^ (uint32_t)v) * 1099511628211ull;
++            }
++            d = acc[0].l[i] + acc[0].r[i] - 2 * s;
++            d = d < 0 ? -d : d;
++            if (d > *err)
++                *err = d;
++        }
++    }
++}
++
++/* each render in a fresh child (the DSP state from scratch, as tests/mix_split_test.c does) */
++typedef struct { uint64_t e[NPART + 1u], hash; int32_t err; } res_t;
++static void render(uint32_t parts, int with_drums, int32_t split, uint64_t *energy, int32_t *err, uint64_t *hash)
++{
++    int p[2], st = 0;
++    res_t r;
++    memset(&r, 0, sizeof r);
++    if (pipe(p))
++        exit(2);
++    if (!fork()) {
++        close(p[0]);
++        render_here(parts, with_drums, split, r.e, &r.err, &r.hash);
++        if (write(p[1], &r, sizeof r) != (ssize_t)sizeof r)
++            _exit(3);
++        _exit(0);
++    }
++    close(p[1]);
++    if (read(p[0], &r, sizeof r) != (ssize_t)sizeof r)
++        fails++;
++    close(p[0]);
++    wait(&st);
++    memcpy(energy, r.e, sizeof r.e);
++    *err = r.err;
++    *hash = r.hash;
++}
++
++int main(void)
++{
++    uint64_t e[NPART + 1u], h0, h1;
++    int32_t err;
++    uint32_t k;
++    char what[100];
++    for (k = 0; k < NPART; k++) {
++        uint32_t j;
++        int quiet = 1;
++        render(1u << k, 0, 0, e, &err, &h0);
++        for (j = 0; j <= NPART; j++)
++            if (j != k && e[j])
++                quiet = 0;
++        snprintf(what, sizeof what, "track %u alone: its stem sounds, every other stem is 0", k + 1u);
++        check(what, e[k] > 1000000u && quiet);
++    }
++    render(0xFu, 1, 0, e, &err, &h0);
++    for (k = 0; k <= NPART; k++) {
++        snprintf(what, sizeof what, "all playing: stem %u (%s) sounds", k + 1u, k == NPART ? "drums" : "synth");
++        check(what, e[k] > 1000000u);
++    }
++    snprintf(what, sizeof what, "dry mix = 2 x the stems' sum (largest difference %d)", (int)err);
++    check(what, err <= 2 * (NPART + 1));
++    render(0xFu, 1, 15, e, &err, &h1);
++    check("the same stems with every unit on the second core", h1 == h0);
++    render(0xFu, 1, -1, e, &err, &h1);
++    check("the same stems with the firmware's own split", h1 == h0);
++    printf(fails ? "stems: %d FAILED\n" : "stems: all ok\n", fails);
++    return fails != 0;
++}
+diff --git a/tests/uac8_test.c b/tests/uac8_test.c
+new file mode 100644
+index 0000000..d4d0ade
+--- /dev/null
++++ b/tests/uac8_test.c
+@@ -0,0 +1,105 @@
++/* SPDX-License-Identifier: GPL-3.0-only */
++/* Kitten Synths: the 8-channel USB audio input (usb.c with FELUCCA_UAC_CH 8, fx.c uac_stem):
++ *   descriptors  the input terminal and the type I format say 8 channels, one rate (44.1 kHz), the endpoint's
++ *                packet holds 46 frames of 16 bytes, bcdDevice has its own value (hosts cache per version)
++ *   ring         renders of 32-frame blocks against 1 ms packets: every frame in order, channels 1-2 the master
++ *                (L, R), 3-6 the four synth stems, 7 the drums' stem, 8 silent; a stem past 16 bits is clipped;
++ *                an underrun repeats the whole last frame */
++#include <stdint.h>
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#ifndef HALF_FRAMES
++#define HALF_FRAMES 256
++#endif
++#define RING_PUBLISH() __asm__ volatile("" ::: "memory")
++#define FELUCCA_OTA 0
++#define FELUCCA_CDC 0
++#define FELUCCA_UAC 1
++#define FELUCCA_UAC_CH 8
++#define NPART 4
++#define CTL 32
++static int32_t uac_stem[NPART + 1][CTL];          /* (fx.c's) */
++static void fm1_delay_ms(uint32_t ms) { (void)ms; }
++#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
++#include "../firmware/src/usb.c"
++
++static int fails;
++static void check(const char *what, int ok)
++{
++    printf("%-70s %s\n", what, ok ? "ok" : "FAIL");
++    fails += !ok;
++}
++
++int main(void)
++{
++    const uint8_t *c, *dv;
++    uint16_t cl, dl;
++    uint32_t off, it_ch = 0, fmt_ch = 0, fmt_rates = 0, maxp = 0, i, k, frame = 0, bad = 0, got = 0;
++    get_desc(0x0100, &dv, &dl);
++    get_desc(0x0200, &c, &cl);
++    for (off = 0; off + 2 <= cl && c[off] >= 2; off += c[off]) {
++        const uint8_t *p = c + off;
++        if (p[1] == 0x24 && p[2] == 2 && p[0] == 12)
++            it_ch = p[7];
++        if (p[1] == 0x24 && p[2] == 2 && p[3] == 1 && p[0] >= 11)
++            fmt_ch = p[4], fmt_rates = p[7];
++        if (p[1] == 5 && p[2] == 0x84)
++            maxp = p[4] | (uint32_t)p[5] << 8;
++    }
++    check("input terminal: 8 channels", it_ch == 8);
++    check("type I format: 8 channels, 16 bit, one rate", fmt_ch == 8 && fmt_rates == 1);
++    check("EP4: 46 frames x 16 bytes (736), under full speed's 1023", maxp == 736 && maxp <= 1023);
++    check("bcdDevice of its own (0x58)", dv[12] == 0x58);
++    check("44.1 kHz only (no resampler)", !FELUCCA_UAC_48K);
++
++    usb.config = 1;
++    memset(&uac, 0, sizeof uac);
++    uac_stream(1);
++    uac.flowing = 1;
++    for (k = 0; k < 400; k++) {                       /* 400 ms: a half of 256 frames every 5.8 ms, a packet a ms */
++        if (frame < (uint32_t)((k + 4) * 44.1)) {
++            int32_t out[2 * CTL];
++            uint32_t b, j;
++            uac_render_start();
++            for (b = 0; b < HALF_FRAMES / CTL; b++) {
++                for (j = 0; j < CTL; j++, frame++) {
++                    uint32_t ch;
++                    out[2 * j] = (int16_t)(frame * 8);
++                    out[2 * j + 1] = (int16_t)(frame * 8 + 1);
++                    for (ch = 0; ch < NPART + 1; ch++)
++                        uac_stem[ch][j] = (int16_t)(frame * 8 + 2 + ch);
++                }
++                if (frame == 4096 + CTL)
++                    uac_stem[1][0] = 100000;        /* (a loud stem: clipped to 32767) */
++                uac_tap(out, CTL);
++            }
++        }
++        {
++            uint32_t d[UA_MAXF * UA_W], n = uac_packet(d);
++            for (i = 0; i < n; i++) {
++                const uint16_t *s = (const uint16_t *)&d[i * UA_W];
++                uint16_t base = s[0];
++                if (!uac.go || (!base && !s[1]))
++                    continue;                       /* (the primed silence) */
++                got++;
++                if (s[1] != (uint16_t)(base + 1) || s[2] != (uint16_t)(base + 2) || s[5] != (uint16_t)(base + 5) ||
++                    s[6] != (uint16_t)(base + 6) || s[7] != 0) {
++                    if (!(s[3] == 32767 && s[2] == (uint16_t)(base + 2)))
++                        bad++;
++                }
++            }
++        }
++    }
++    check("frames arrive with all 8 channels in place (master, 4 synths, drums, silent)", got > 15000 && bad == 0);
++    {
++        uint32_t d[UA_MAXF * UA_W], n, last[UA_W];
++        memcpy(last, uac.last, sizeof last);
++        ua_r = ua_w;                                /* (the ring empty: an underrun) */
++        uac.fill_min = UA_LO;
++        n = uac_packet(d);
++        check("an underrun repeats the whole last frame", n >= 44 && !memcmp(&d[(n - 1) * UA_W], last, sizeof last));
++    }
++    printf(fails ? "uac8: %d FAILED\n" : "uac8: all ok\n", fails);
++    return fails != 0;
++}

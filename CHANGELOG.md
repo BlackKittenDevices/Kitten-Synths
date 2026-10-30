@@ -2,6 +2,14 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-17 · Grabación multipista por USB (8 canales)
+
+- La entrada de audio USB pasa de 2 a **8 canales** (16 bits, 44,1 kHz, sin drivers): 1-2 el master estéreo (como antes), 3-6 los cuatro sintes (3 = pista 1, 4 = pista 2, 5 = pista 3, 6 = LITE), 7 la batería, 8 en silencio.
+- Cada pista va en mono y pre-master: con su nivel, paneo (sumado a mono), mute, solo, DIST, INSERT y filtro de pista; sin el chorus, el delay ni la reverb compartidos, sin DUST, FILT ni la perilla MASTER. El master (1-2) lleva todo.
+- 44,1 kHz solamente: el menú USB RATE muestra "8 CH 44.1" (el remuestreo a 48 kHz no alcanza para 8 canales). Se libera su tabla en la memoria de programa.
+- La computadora lo ve como un dispositivo nuevo (bcdDevice propio): al instalar, desenchufá y enchufá el FM-1.
+- Pruebas nuevas: `tests/uac8_test.c` (descriptores, anillo y paquetes de 8 canales) y `tests/stems_test.c` (cada pista sola, todas, la suma igual a la mezcla seca, la división entre los dos núcleos).
+
 ## fix-16 · Identidad propia para el Firmware Hub
 
 - El paquete ya no usa la identidad `FM-1_928` (la tiene otro firmware en el Hub). Kitten Synths se identifica ahora como **`FM-1_969`**, tanto en el paquete como por USB (MIDI).

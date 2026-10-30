@@ -95,7 +95,7 @@ Presupuesto compartido de 8 voces entre las pistas sintetizadoras; la batería t
 - MIDI USB (clase estándar) de entrada y salida; entrada TRS de 3,5 mm; clock de entrada por USB o TRS.
 - Canales 1–3 sintes, 10 batería, 4–16 la pista elegida (configurable en GLO → MIDI).
 - CC de nivel, panorama, filtro, resonancia, envolvente, glide y envíos; ★ CC 1 para la modulación de MUUG; pedal de sustain, pitch bend, Program Change, Bank Select, MIDI LEARN.
-- Audio USB: entrada estéreo de 16 bits, 44,1 o 48 kHz, sin drivers.
+- Audio USB: entrada de 8 canales de 16 bits a 44,1 kHz, sin drivers: master estéreo (1-2), pistas 1-4 (3-6) y batería (7), pre-master y en mono.
 
 ## Interfaz
 

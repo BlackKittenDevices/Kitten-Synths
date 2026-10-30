@@ -22,10 +22,11 @@ Kitten Synths turns the FM-1 into a groovebox for playing live with **four synth
 
 - **MUUG**: an engine in the style of Moog's classic three-oscillator synths, ported from FMini-1, with **100 factory sounds**, a 24 dB/oct ladder filter and all its edit pages on the FM-1 itself (no web editor needed). Up to 8 voices, by preset.
 - **A fourth "LITE" synth part** (grey, before the drums), for extra layers without loading the processor: it plays the DIGITAL, PHASE, LOFI, SAMPLE and VOICE engines.
+- **Multitrack recording over USB**: 8 channels, the master on 1-2 and each track on its own (the 4 synths and the drums), to record them in your DAW.
 - **Its own installer and web editor**, which know the five tracks and read MIDI from a controller.
 - A Halloween look: the PUMPKIN palette (orange on black), a boot kitten and a kitten visualizer that blinks on the tempo.
 
-**MIDI compatibility is identical to SLOOP's**: the same channels, the same messages, the same map. **USB audio** works as in SLOOP: the computer sees the FM-1 as a sound card, so you can record the master in any DAW.
+**MIDI compatibility is identical to SLOOP's**: the same channels, the same messages, the same map. **USB audio**: the computer sees the FM-1 as an 8-channel sound card: the master on channels 1-2 (as in SLOOP) and each track on its own channel.
 
 > **Status:** beta. Tested on a real FM-1 by its author (editor, MIDI, CPU, saving). Installing custom firmware is still **at your own risk** and without warranty. Read [Before installing](#before-installing).
 
@@ -62,7 +63,7 @@ Kitten Synths meets the requirements of [The FM-1 Firmware Hub](https://thefirmw
 
 | File | What it is for |
 | --- | --- |
-| `muug.patch` and `fix-01.patch` … `fix-16.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
+| `muug.patch` and `fix-01.patch` … `fix-17.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
 | `.github/workflows/build.yml` | Fetches SLOOP, applies the patches, runs the tests, builds with JieLi's toolchain and publishes the site. |
 | `servir.py` | Serves the installer and the simulator on your computer. |
 | `splashes y logos/` | The kitten pictures (welcome, eyes open and closed). |

@@ -81,7 +81,11 @@ El FM-1 tiene la memoria de programa casi llena. Para que entre todo, se sacaron
 ### Lo que no cambia
 
 - **MIDI idéntico a SLOOP**: mismos canales, CC, clock, program change, bank select.
-- El secuenciador de 64 pasos, el modo canción, los 27 efectos de golpe, las muestras propias, el audio USB y el rescate USB funcionan igual.
+- El secuenciador de 64 pasos, el modo canción, los 27 efectos de golpe, las muestras propias y el rescate USB funcionan igual.
+
+### ★ Grabación multipista por USB
+
+El audio USB tiene **8 canales**: el master en 1-2 (como siempre) y cada pista por separado, pre-master (los 4 sintes y la batería). Ver el [capítulo 14](#audio-usb).
 
 ---
 
@@ -371,7 +375,7 @@ Mantené **HOME** para abrir el menú. SELECT pasa de sección, KNOB 1–3 cambi
 | **NOTES** | Las notas que suenan iluminan sus teclas |
 | **SPEAKER LOWCUT** | Corte de graves para el parlante chico |
 | **USB AUDIO** | MASTER o FULL |
-| **USB RATE** | AUTO / 44,1 / 48 kHz |
+| **USB RATE** | ★ 8 CH 44.1 (fijo: la entrada multipista va a 44,1 kHz) |
 | **HARDWARE CALIBRATION** | Calibración del panel |
 | **ABOUT** | Versión y créditos |
 
@@ -418,7 +422,26 @@ Además: pitch bend (rango en GLO → MIDI 2 → BEND), Program Change y **Bank 
 
 ### Audio USB
 
-El FM-1 también es una **entrada de audio USB** ("Felucca"), de 44,1 o 48 kHz, estéreo de 16 bits, sin drivers. Graba en tu programa de audio exactamente la salida master. El nivel lo define HOME → USB AUDIO.
+El FM-1 también es una **placa de sonido USB de 8 canales** ("Felucca"), de 44,1 kHz y 16 bits, sin drivers. ★ Cada pista sale por su propio canal, así podés grabarlas por separado en tu DAW:
+
+| Canales | Qué llevan |
+| --- | --- |
+| 1-2 | El **master** estéreo, exactamente lo que sale por los auriculares (como en SLOOP) |
+| 3 | Pista 1 (sinte) |
+| 4 | Pista 2 (sinte) |
+| 5 | Pista 3 (sinte) |
+| 6 | Pista 4, LITE |
+| 7 | Batería |
+| 8 | (en silencio) |
+
+Las pistas (3 a 7) van **en mono y pre-master**: con su nivel, paneo, mute, solo, DIST, INSERT y filtro de pista, pero **sin** el chorus, el delay ni la reverb compartidos y sin los efectos del master (DUST, FILT, perilla MASTER). Si querés los efectos en las pistas separadas, ponelos en el DAW; o grabá también el master.
+
+- Casi todos los programas graban los canales 1-2 por defecto: si solo querés la mezcla, no hace falta cambiar nada.
+- **Reaper, Ableton, Bitwig, Cubase, Studio One:** elegí la entrada "Felucca" con sus 8 canales y armá una pista por canal (3, 4, 5, 6, 7 en mono y 1-2 en estéreo).
+- **Audacity:** Preferencias → Dispositivos → Grabación → Canales: 8.
+- **Windows:** si una app ve solo 2 canales, usá en el DAW el modo WASAPI exclusivo (o ASIO4ALL).
+- El nivel del master (1-2) lo define HOME → USB AUDIO (MASTER o FULL); el de las pistas no depende de la perilla MASTER.
+- Después de instalar, **desenchufá y enchufá** el FM-1 una vez: la computadora tiene que verlo como dispositivo nuevo de 8 canales.
 
 ---
 
