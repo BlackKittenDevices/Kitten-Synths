@@ -124,6 +124,9 @@ jobs:
           # short stalls (a busy moment, the JIT compiling) are not heard; the keys answer that much later
           sed -i 's/latencyHint: latency })/latencyHint: Number.isFinite(Number(latency)) ? Number(latency) : latency })/' play/main.js
           grep -q 'Number.isFinite(Number(latency))' play/main.js
+          # the note over the emulator: it depends on the PC (two FM-1 cores on one thread), in English and Spanish
+          python3 -c "import sys; p='play/index.html'; s=open(p).read(); n=open('.github/release/emu-note.html').read(); assert '</header>' in s; open(p,'w').write(s.replace('</header>', '</header>' + n, 1))"
+          grep -q 'ks-note' play/index.html
           mkdir -p play/fw
           cp "sloop/build/felucca-$VERSION.fwsc" play/fw/kitten-synths.fwsc
           SHA=$(sha256sum play/fw/kitten-synths.fwsc | cut -c1-8)
