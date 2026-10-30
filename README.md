@@ -12,7 +12,7 @@ Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.
 <a href="CHANGELOG.md">Cambios</a> ·
 <a href="CREDITOS.md">Créditos</a> ·
 <a href="LICENCIA.md">Licencia</a> ·
-<a href="https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1"><b>▶ Probar en el navegador</b></a> ·
+<a href="https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths"><b>▶ Probar en el navegador</b></a> ·
 <a href="https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/">Editor web</a> ·
 <a href="README.en.md">English</a>
 </p>
@@ -73,7 +73,7 @@ Kitten Synths cumple los requisitos de [The FM-1 Firmware Hub](https://thefirmwa
 
 ## Probar sin FM-1
 
-Online, sin instalar nada: [el simulador](https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1) y [el editor web](https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/). El paquete también trae el simulador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
+Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths) (el firmware real corriendo en un FM-1 emulado, con su pantalla, botones y sonido, gracias a [fm1-emu](https://github.com/joakimeriksson/fm1-emu)), el [editor jugable](https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1) y [el editor web](https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/). El paquete también trae el simulador, en `http://localhost:8766/simulator/index.html?mock=1` (con `servir.py` en marcha). Sirve para escuchar los sonidos y probar el editor, pero no reemplaza al hardware.
 
 ## Qué hay en este repositorio
 

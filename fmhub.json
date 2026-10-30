@@ -3,6 +3,6 @@
   "kinds": [
     "groove"
   ],
-  "play": "https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1",
+  "play": "https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths",
   "editor": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/"
 }

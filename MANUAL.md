@@ -112,7 +112,7 @@ Tus proyectos, presets propios, muestras y ajustes se conservan al instalar.
 
 ### Probar sin el FM-1
 
-Con `servir.py` en marcha, abrí `http://localhost:8766/simulator/index.html?mock=1`. Es un simulador en el navegador: sirve para escuchar sonidos y ver las pantallas, no reemplaza al equipo real.
+**En el navegador:** https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths corre el firmware real en un FM-1 emulado (pantalla, botones, teclas y sonido; gracias a [fm1-emu](https://github.com/joakimeriksson/fm1-emu) de Joakim Eriksson). El editor jugable sin FM-1: https://blackkittendevices.github.io/Kitten-Synths/simulator/index.html?mock=1 (o, con `servir.py` en marcha, `http://localhost:8766/simulator/index.html?mock=1`). Ninguno reemplaza al equipo real.
 
 ### Si algo sale mal
 

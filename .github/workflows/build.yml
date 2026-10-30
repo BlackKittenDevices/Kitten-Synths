@@ -109,15 +109,45 @@ jobs:
           cp ../servir.py ../kitten-synths/servir.py
           mkdir -p ../kitten-synths/docs && cp ../*.md ../LICENSE ../kitten-synths/docs/ 2>/dev/null || true
 
+      - name: The FM-1 in the browser (the Hub's play key) - fm1-emu by Joakim Eriksson (MIT) running this very package
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          FM1_EMU_COMMIT: 93cb7ee3f7008b27959ba73073b864e37efd7289   # github.com/joakimeriksson/fm1-emu (master, 2026-10-29)
+        run: |
+          rustup target add wasm32-unknown-unknown
+          git clone -q https://github.com/joakimeriksson/fm1-emu.git fm1-emu
+          git -C fm1-emu checkout -q "$FM1_EMU_COMMIT"
+          bash fm1-emu/web/build.sh "$PWD/play"
+          rm -rf play/smk37 play/fm1-emu-report.pdf
+          cp fm1-emu/LICENSE play/LICENSE-fm1-emu.txt
+          mkdir -p play/fw
+          cp "sloop/build/felucca-$VERSION.fwsc" play/fw/kitten-synths.fwsc
+          SHA=$(sha256sum play/fw/kitten-synths.fwsc | cut -c1-8)
+          python3 - "$VERSION" "$SHA" <<'PY'
+          import json, sys
+          v, sha = sys.argv[1], sys.argv[2]
+          # (the id carries the package's hash: the emulator keeps a package per id in the browser, so a new build is a
+          # new id; "hub" maps ?fw=kittensynths to it)
+          cat = {"default": "kittensynths-" + sha, "firmwares": [{
+              "id": "kittensynths-" + sha, "hub": "kittensynths", "name": "Kitten Synths", "version": v + "+" + sha, "author": "Black Kitten Devices",
+              "license": "GPL-3.0",
+              "about": "SLOOP 2.8 with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and drums. On a real FM-1 it records 7 tracks into your DAW over USB.",
+              "repo": "https://github.com/BlackKittenDevices/Kitten-Synths",
+              "package": "fw/kitten-synths.fwsc?" + sha,
+              "installer": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/installer/"}]}
+          open("play/firmwares.json", "w").write(json.dumps(cat, indent=1) + "\n")
+          PY
+          test -f play/fm1_web.wasm && test -f play/index.html
       - name: The site on GitHub Pages (The Firmware Hub's play and editor keys, fmhub.json)
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           rm -rf pages && cp -r kitten-synths pages && cd pages
           rm -f *.fwsc servir.py
+          cp -r ../play play                            # the FM-1 emulator running Kitten Synths (the step above)
           cat > index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>Kitten Synths</title>
-          <meta http-equiv="refresh" content="0; url=simulator/index.html?mock=1">
-          <a href="simulator/index.html?mock=1">Kitten Synths in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
+          <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths">
+          <a href="play/?fw=kittensynths">Kitten Synths on an FM-1 in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
           HTML
           touch .nojekyll
           git init -q -b gh-pages
