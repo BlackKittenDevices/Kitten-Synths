@@ -112,7 +112,7 @@ Your projects, presets, samples and settings are kept when you install.
 
 ### Try it without the FM-1
 
-**In the browser:** https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths runs the real firmware on an emulated FM-1 (its screen, buttons, keys and sound; thanks to [fm1-emu](https://github.com/joakimeriksson/fm1-emu) by Joakim Eriksson). The playable editor without an FM-1: https://blackkittendevices.github.io/Kitten-Synths/simulator/playable.html?mock=1 (or, with `servir.py` running, `http://localhost:8766/simulator/index.html?mock=1`). Neither replaces the real device.
+**In the browser:** https://blackkittendevices.github.io/Kitten-Synths/play/?fw=kittensynths&mhz=60&latency=playback runs the real firmware on an emulated FM-1 (its screen, buttons, keys and sound; thanks to [fm1-emu](https://github.com/joakimeriksson/fm1-emu) by Joakim Eriksson). The playable editor without an FM-1: https://blackkittendevices.github.io/Kitten-Synths/simulator/playable.html?mock=1 (or, with `servir.py` running, `http://localhost:8766/simulator/index.html?mock=1`). Neither replaces the real device.
 
 ### If something goes wrong
 

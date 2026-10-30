@@ -148,13 +148,13 @@ jobs:
           # now; the playable editor without an FM-1 moves to simulator/playable.html
           mv simulator/index.html simulator/playable.html
           printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Kitten Synths</title>' \
-            '<meta http-equiv="refresh" content="0; url=../play/?fw=kittensynths">' \
-            '<script>location.replace("../play/?fw=kittensynths")</script>' \
-            '<a href="../play/?fw=kittensynths">Kitten Synths on an FM-1 in the browser</a> · <a href="playable.html?mock=1">the playable editor</a>' > simulator/index.html
+            '<meta http-equiv="refresh" content="0; url=../play/?fw=kittensynths&mhz=60&latency=playback">' \
+            '<script>location.replace("../play/?fw=kittensynths&mhz=60&latency=playback")</script>' \
+            '<a href="../play/?fw=kittensynths&mhz=60&latency=playback">Kitten Synths on an FM-1 in the browser</a> · <a href="playable.html?mock=1">the playable editor</a>' > simulator/index.html
           cat > index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>Kitten Synths</title>
-          <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths">
-          <a href="play/?fw=kittensynths">Kitten Synths on an FM-1 in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
+          <meta http-equiv="refresh" content="0; url=play/?fw=kittensynths&mhz=60&latency=playback">
+          <a href="play/?fw=kittensynths&mhz=60&latency=playback">Kitten Synths on an FM-1 in the browser</a> · <a href="site/webapp/editor/">Web editor</a> · <a href="site/webapp/installer/">Installer</a>
           HTML
           touch .nojekyll
           git init -q -b gh-pages
