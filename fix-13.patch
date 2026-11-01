@@ -1,8 +1,8 @@
 diff --git a/firmware/src/main.c b/firmware/src/main.c
-index 48d7e9e..44733cf 100644
+index f37cfdf..5bff5e0 100644
 --- a/firmware/src/main.c
 +++ b/firmware/src/main.c
-@@ -251,7 +251,13 @@ UI_SMALL static void fm1_main(void)
+@@ -247,7 +247,13 @@ UI_SMALL static void fm1_main(void)
          panel_setup();                        /* OCT- + OCT+ held at power-on */
          settings_save();
      }

@@ -1,5 +1,5 @@
 diff --git a/firmware/src/ui_input.c b/firmware/src/ui_input.c
-index 6a22008..0532749 100644
+index aa3cbd2..5989ee3 100644
 --- a/firmware/src/ui_input.c
 +++ b/firmware/src/ui_input.c
 @@ -128,17 +128,18 @@ UI_SMALL static uint32_t keys_lit(void)
@@ -29,10 +29,10 @@ index 6a22008..0532749 100644
              m |= 1u << key_of_white(15);
          return m;
 diff --git a/firmware/src/ui_layers.c b/firmware/src/ui_layers.c
-index 6bf719e..d858bff 100644
+index 710a903..997c38f 100644
 --- a/firmware/src/ui_layers.c
 +++ b/firmware/src/ui_layers.c
-@@ -337,7 +337,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+@@ -334,7 +334,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
              ui.step_held &= (uint16_t)~(1u << w);
              if (layer == LY_STEP)
                  step_up((uint32_t)w);
@@ -41,7 +41,7 @@ index 6bf719e..d858bff 100644
                  fill_held = 0;                              /* GLO + key 9 let go: the fill ends */
          }
          return;
-@@ -430,14 +430,14 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+@@ -427,14 +427,14 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
      case LY_MIX:
          if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
              ml_toggle();
@@ -62,7 +62,7 @@ index 6bf719e..d858bff 100644
              fill_arm = (uint8_t)!fill_arm;                  /* FILL NEXT BAR (again: cancelled) */
              ui_message(fill_arm ? "FILL: NEXT BAR" : "FILL BAR OFF");
          } else if (w == 15) {
-@@ -478,6 +478,10 @@ UI_SMALL static void chain_sub(char *sub, uint32_t n)
+@@ -475,6 +475,10 @@ UI_SMALL static void chain_sub(char *sub, uint32_t n)
  }
  
  /* KNOB 1..4 while a layer is held: what the layer gives them (the page does not see them) */
@@ -73,7 +73,7 @@ index 6bf719e..d858bff 100644
  UI_SMALL static void layer_knobs(uint32_t layer)
  {
      uint32_t k;
-@@ -563,7 +567,8 @@ UI_SMALL static void layer_knobs(uint32_t layer)
+@@ -560,7 +564,8 @@ UI_SMALL static void layer_knobs(uint32_t layer)
              }
              break;
          case LY_MIX: {
@@ -83,7 +83,7 @@ index 6bf719e..d858bff 100644
              *lv = (int16_t)clamp(*lv + accel(EN_K1 + k, s, 127), 0, 127);
              break;
          }
-@@ -957,37 +962,38 @@ UI_SMALL static void layer_screen_draw(void)
+@@ -954,37 +959,38 @@ UI_SMALL static void layer_screen_draw(void)
          ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
          break;
      }
@@ -141,10 +141,10 @@ index 6bf719e..d858bff 100644
              ratio[i] = (int32_t)lv * 1000 / 127;
          }
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
-index d02f357..8f0b1ed 100644
+index c9514d7..0f7de7c 100644
 --- a/tests/ui_pages_test.c
 +++ b/tests/ui_pages_test.c
-@@ -439,24 +439,28 @@ int main(int argc, char **argv)
+@@ -379,24 +379,28 @@ int main(int argc, char **argv)
      release(B_SCL);
      press(B_GLO); frames(10);
      key(0); check(trk[0].p[P_MUTE] == 1, "GLO + key 1: track 1 muted");
@@ -184,7 +184,7 @@ index d02f357..8f0b1ed 100644
      release(B_GLO);
      fm1_in.notes = 1u << key_of_white(8); frame();     /* (no layer: a plain key, no fill) */
      check(fill_held == 0u, "key 9 without GLO: no fill");
-@@ -743,6 +747,8 @@ int main(int argc, char **argv)
+@@ -683,6 +687,8 @@ int main(int argc, char **argv)
                  ui.layer = (uint8_t)L[k].ly;
                  if (L[k].lit)
                      ok = (keys_lit() >> 7 & 1u) != 0;
@@ -193,7 +193,7 @@ index d02f357..8f0b1ed 100644
                  else
                      ok = (keys_notes_dim() >> 7 & 1u) != 0 && (keys_lit() >> 7 & 1u) == 0;
                  snprintf(what, sizeof what, "NOTES on, %s layer: the sounding C4 %s", L[k].name, L[k].lit ? "lit" : "glows under the tiles");
-@@ -1916,13 +1922,13 @@ int main(int argc, char **argv)
+@@ -1856,13 +1862,13 @@ int main(int argc, char **argv)
          ok = trk[0].p[P_MUTE] && (lv_out[9] & 1u);
          live(2, LY_MIX, 0, 1); live(2, LY_MIX, 0, 0);
          ok &= !trk[0].p[P_MUTE];

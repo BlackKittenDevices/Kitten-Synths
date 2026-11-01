@@ -1,6 +1,6 @@
 # Características de Kitten Synths
 
-Ficha técnica de la versión **2.8-kitten** (basada en SLOOP 2.8.4). Lo marcado con ★ es nuevo respecto de SLOOP.
+Ficha técnica de la versión **2.8-kitten** (basada en SLOOP 2.8). Lo marcado con ★ es nuevo respecto de SLOOP.
 
 ## En una mirada
 

@@ -160,7 +160,7 @@ index 0000000..5d17a86
 +    return 0;
 +}
 diff --git a/firmware/src/project.c b/firmware/src/project.c
-index 18d64e8..a39bea6 100644
+index 64bc6c6..d1ef5dd 100644
 --- a/firmware/src/project.c
 +++ b/firmware/src/project.c
 @@ -466,6 +466,18 @@ static void drum_tw_get(const project_t *p)
@@ -299,7 +299,7 @@ index 18d64e8..a39bea6 100644
          uint32_t e = k < NPART ? eng_fit(k, s->engine % NENGINES) : 0u;
          if (k < NPART && e != s->engine % NENGINES)
              e = ENGI_SAMPLE;                            /* (a part that cannot play it: its power-on sound) */
-@@ -607,6 +659,9 @@ UI_SMALL static void proj_fetch(uint32_t slot)
+@@ -606,6 +658,9 @@ UI_SMALL static void proj_fetch(uint32_t slot)
          q->magic = 0;
  }
  #include "fm6_bank.c"                           /* the FM6 patch bank (eng_fm6.c PTCH B1..B27): staged in proj_tmp */
@@ -309,7 +309,7 @@ index 18d64e8..a39bea6 100644
  #endif
  
  static const char *const SEC_NAME[4] = {"A", "B", "C", "D"};   /* (2.7: the slots named as the song's sections) */
-@@ -621,8 +676,15 @@ UI_SMALL static void project_save(uint32_t slot)
+@@ -620,8 +675,15 @@ UI_SMALL static void project_save(uint32_t slot)
      if (flash_ok) {
          if (st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p))
              ui_message("SAVE ERROR");
@@ -327,17 +327,7 @@ index 18d64e8..a39bea6 100644
          return;
      }
  #endif
-@@ -669,7 +731,8 @@ UI_SMALL static void project_erase(uint32_t slot)
- UI_SMALL static void proj_foreign_parts(const project_t *p)
- {
-     uint32_t k;
--    for (k = 0; k < NPART; k++)
-+    for (k = 0; k < NHEAVY; k++)                   /* (Kitten Synths: a file's synth records are the heavy parts; its
-+                                                    * fourth is the drum track, the LITE part has none) */
-         if (p->t[k].preset != 0xFFu && p->t[k].engine >= NENGINES) {
-             set_engine_of(&trk[k], TRK_DEF[k][0]);
-             apply_preset_to(&trk[k], TRK_DEF[k][1]);
-@@ -714,6 +777,9 @@ UI_SMALL static void project_load(uint32_t slot)
+@@ -698,6 +760,9 @@ UI_SMALL static void project_load(uint32_t slot)
          return;
      }
      project_apply(p);
@@ -347,7 +337,7 @@ index 18d64e8..a39bea6 100644
      ui_say("LOADED SECTION ", SEC_NAME[slot & 3u]);
  }
  
-@@ -722,7 +788,6 @@ UI_SMALL static void project_load(uint32_t slot)
+@@ -706,7 +771,6 @@ UI_SMALL static void project_load(uint32_t slot)
   * ~50 ms: never while something plays); loaded at power-on (autosave_resume) */
  #define AUTOSAVE_IDLE 2500u                    /* ms without input */
  #define AUTOSAVE_GAP 20000u                    /* ms between two saves at least */
@@ -355,7 +345,7 @@ index 18d64e8..a39bea6 100644
  static uint32_t autosave_hash, autosave_ms, autosave_checked;
  
  UI_SMALL static int audio_quiet(void)
-@@ -747,10 +812,10 @@ UI_SMALL static void autosave_tick(void)                /* main loop */
+@@ -731,10 +795,10 @@ UI_SMALL static void autosave_tick(void)                /* main loop */
          return;
      autosave_checked = now;
      proj_capture(&autosave_buf);
@@ -368,10 +358,10 @@ index 18d64e8..a39bea6 100644
          autosave_hash = h;
      autosave_ms = fm1_ms;
  #endif
-@@ -778,6 +843,8 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
+@@ -761,6 +825,8 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
+     drch_seed = 0;
      proj_apply(q, 1);
      song.sel = (uint8_t)proj_trk_of(q->sel < PROJ_NTRK ? q->sel : 0u);
-     proj_foreign_parts(q);                         /* (2.8.4) Clipper's working project: its own sounds, default */
 +    ks_apply(KS_N - 1u, q);                    /* the LITE part and the own MUUG patches the project had */
 +    autosave_hash = q->sum ^ ks_hash();        /* (q->sum: the record scratch in autosave_buf is not the project any more) */
      for (n = 0; n < NPART; n++)
@@ -650,10 +640,10 @@ index c4ff0ef..8c25585 100644
      {
          uint8_t a = NPART;                                           /* the drum track: none */
 diff --git a/tests/run_tests.sh b/tests/run_tests.sh
-index ec78fae..3e0eea7 100644
+index 9ba4839..5c24bb9 100644
 --- a/tests/run_tests.sh
 +++ b/tests/run_tests.sh
-@@ -184,6 +184,9 @@ run "MUUG: patch put and clamp, MUUG_GET / MUUG_PUT, wave, range, switches, mixe
+@@ -159,6 +159,9 @@ run "MUUG: patch put and clamp, MUUG_GET / MUUG_PUT, wave, range, switches, mixe
  # the LITE part (tests/lite_part_test.c): its engines, its independence, MIDI as SLOOP's, the wire's four tracks, the project's four records
  $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/lite_part_test" tests/lite_part_test.c -lm
  run "LITE part: its engines, no arena, independent draws, MIDI OFF, the wire's four tracks, a project's four records" "$OUT/lite_part_test"

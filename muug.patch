@@ -108,7 +108,7 @@ index bc0d4c1..01a0eef 100644
      for (uint32_t i = 0; i < CTL * 2; i++) output[i] = clamp(block[i], -32768, 32767) / 32768.0f;
      return output;
 diff --git a/firmware/src/core.h b/firmware/src/core.h
-index e6b875c..7f4367c 100644
+index b204f0e..6d77f84 100644
 --- a/firmware/src/core.h
 +++ b/firmware/src/core.h
 @@ -8,9 +8,26 @@
@@ -172,10 +172,10 @@ index e6b875c..7f4367c 100644
  
  typedef struct {
 diff --git a/firmware/src/dsp.c b/firmware/src/dsp.c
-index 7c6a2d2..a6fbe0d 100644
+index 9042a9b..56c2afd 100644
 --- a/firmware/src/dsp.c
 +++ b/firmware/src/dsp.c
-@@ -123,3 +123,12 @@ static inline int32_t amp_at(const vmod_t *m, uint32_t i)
+@@ -116,3 +116,12 @@ static inline int32_t amp_at(const vmod_t *m, uint32_t i)
      int32_t x = (m->amp1 - m->amp0) * (int32_t)i;
      return m->amp0 + ((x + ((x >> 31) & (CTL - 1))) >> CTL_LOG2);
  }
@@ -555,7 +555,7 @@ index 0000000..c3ef695
 +    return 0;
 +}
 diff --git a/firmware/src/eng_fm6.c b/firmware/src/eng_fm6.c
-index c4fb384..4abda7b 100644
+index 1d29058..96a08cb 100644
 --- a/firmware/src/eng_fm6.c
 +++ b/firmware/src/eng_fm6.c
 @@ -273,7 +273,7 @@ static void fm6_sync(const track_t *t)
@@ -1587,10 +1587,10 @@ index ecabff6..419cb48 100644
      p = (uint32_t)(t - trk);
      i = (uint32_t)(v - t->v);
 diff --git a/firmware/src/engines.c b/firmware/src/engines.c
-index 23b9840..e4e6525 100644
+index a3f68a9..fe6b1d9 100644
 --- a/firmware/src/engines.c
 +++ b/firmware/src/engines.c
-@@ -36,6 +36,7 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
+@@ -28,6 +28,7 @@ static inline int32_t soft_knee(int32_t y, int32_t k)   /* linear up to k, then
  #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0); SLOOP 2.4 */
  #include "eng_phys.c"           /* PHYS: physical models, from Felucca 1.0 (DaisySP, Rings: MIT); SLOOP 2.5 */
  #include "eng_noise.c"          /* NOISE: from Felucca 1.0; SLOOP 2.5 */
@@ -1598,7 +1598,7 @@ index 23b9840..e4e6525 100644
  
  typedef union {
      gr_part_t grain;
-@@ -43,15 +44,15 @@ typedef union {
+@@ -35,15 +36,15 @@ typedef union {
      fm6_part_t fm6;                      /* eng_fm6.c: six notes and the operator buses */
      uint32_t phys[PHYS_ARENA / 4u];      /* eng_phys.c: two SYMP slots or three small ones */
  } eng_arena_t;
@@ -1617,7 +1617,7 @@ index 23b9840..e4e6525 100644
          return 0;
  #ifdef ARENA_STATS
      if (t->engine != eng)
-@@ -74,8 +75,8 @@ static int phys_render_draws(const track_t *t, int32_t model)   /* model: the MO
+@@ -66,8 +67,8 @@ static int phys_render_draws(const track_t *t, int32_t model)   /* model: the MO
  {
      uint32_t p = (uint32_t)(t - trk), md = (uint32_t)model % PM_COUNT, big = md == PM_SYMP, i;
      uint32_t sz = big ? PHYS_SLOT_BIG : PHYS_SLOT_SMALL;
@@ -1628,7 +1628,7 @@ index 23b9840..e4e6525 100644
          return 0;
      if (eng_arena_own[p] != ENGI_PHYS + 1u || phys_lay[p] != big + 1u)
          return 1;
-@@ -96,8 +97,25 @@ static const engine_t *const ENGINES[NENGINES] = {&ENG_ANALOG, &ENG_DIGITAL, &EN
+@@ -88,8 +89,25 @@ static const engine_t *const ENGINES[NENGINES] = {&ENG_ANALOG, &ENG_DIGITAL, &EN
  #if FELUCCA_SLICE
                                                      &ENG_SLICE,
  #endif
@@ -1713,10 +1713,10 @@ index 3a5637f..690a3ad 100644
  static uint32_t rng(void)
  {
 diff --git a/firmware/src/main.c b/firmware/src/main.c
-index be0702d..48d7e9e 100644
+index 7c9df5a..f37cfdf 100644
 --- a/firmware/src/main.c
 +++ b/firmware/src/main.c
-@@ -170,6 +170,7 @@ UI_SMALL static void felucca_init(void)
+@@ -166,6 +166,7 @@ UI_SMALL static void felucca_init(void)
      for (i = 0; i < G_COUNT; i++)
          song.g[i] = GP[i].def;
      fm6_init();                               /* every part's FM6 patch: the init voice */
@@ -1772,7 +1772,7 @@ index 6e26146..0f43414 100644
          if (v <= 0) {
              str_cpy(val, "OFF", 6);
 diff --git a/firmware/src/project.c b/firmware/src/project.c
-index acce904..18d64e8 100644
+index 20c4eda..64bc6c6 100644
 --- a/firmware/src/project.c
 +++ b/firmware/src/project.c
 @@ -45,6 +45,15 @@ _Static_assert(G_FXFADE == G_CLKOUT + 1u && G_COUNT == G_FXFADE + 1u, "G_FXFADE
@@ -1981,7 +1981,7 @@ index acce904..18d64e8 100644
          t->eng_req = (uint8_t)e;
          t->user = 0;                                    /* (no user preset slot is saved) */
          t->lk_n = 0;                                    /* (the locks in force: the values come from the project) */
-@@ -550,6 +579,7 @@ static void proj_apply(const project_t *p, int all)
+@@ -549,6 +578,7 @@ static void proj_apply(const project_t *p, int all)
                      st->note[j] &= 127u;
              }
          fm6_track_loaded(t);                            /* FM6: the project keeps PTCH, not the patch: its slot's */
@@ -1989,7 +1989,7 @@ index acce904..18d64e8 100644
      }
  }
  
-@@ -657,9 +687,9 @@ UI_SMALL static void project_apply(const project_t *p)
+@@ -642,9 +672,9 @@ UI_SMALL static void project_apply(const project_t *p)
          ex_off[k] = 0;                                  /* (2.7.1) MIDI EXPRESSION: full again, as after CC 121 */
      fm1_irq_off();                                      /* the audio ISR must not see half a project */
      proj_apply(p, 1);
@@ -2001,17 +2001,17 @@ index acce904..18d64e8 100644
          if (p->t[k].preset == 0xFFu) {
              apply_preset_to(&trk[k], TRK_DEF[k][1]);
              steps_clear(&trk[k]);
-@@ -746,7 +776,7 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
+@@ -730,7 +760,7 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
      }
      drch_seed = 0;
      proj_apply(q, 1);
 -    song.sel = (uint8_t)(q->sel < NTRK ? q->sel : 0u);
 +    song.sel = (uint8_t)proj_trk_of(q->sel < PROJ_NTRK ? q->sel : 0u);
-     proj_foreign_parts(q);                         /* (2.8.4) Clipper's working project: its own sounds, default */
      for (n = 0; n < NPART; n++)
          trk[n].engine = trk[n].eng_req;        /* (nothing sounds yet: no fade) */
+ #endif
 diff --git a/firmware/src/seq.c b/firmware/src/seq.c
-index 379606c..d085dd1 100644
+index cbb4201..2a53a4d 100644
 --- a/firmware/src/seq.c
 +++ b/firmware/src/seq.c
 @@ -77,7 +77,7 @@ static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
@@ -2023,7 +2023,7 @@ index 379606c..d085dd1 100644
      return c >= 1 && c <= 16 ? (uint32_t)c - 1u : 0xFFu;
  }
  /* a note on (vel > 0) / off to MIDI OUT on channel ch (trk_midi_ch: 0xFF, the track's MIDI OFF: nothing) */
-@@ -2907,7 +2907,7 @@ static track_t *midi_own(uint32_t ch)
+@@ -2604,7 +2604,7 @@ static track_t *midi_own(uint32_t ch)
      uint32_t i;
      if (song.g[G_DRCH] && ch + 1u == (uint32_t)song.g[G_DRCH])
          return TDRUM;
@@ -2032,7 +2032,7 @@ index 379606c..d085dd1 100644
          if (ch + 1u == (uint32_t)song.g[G_CH1 + i])
              return &trk[i];
      return 0;
-@@ -3065,7 +3065,7 @@ static uint32_t cc74_slot(const engine_t *e)      /* 0..7, or 8: none */
+@@ -2762,7 +2762,7 @@ static uint32_t cc74_slot(const engine_t *e)      /* 0..7, or 8: none */
  {
      static const struct { const char *name; uint8_t slot; } T[] = {
          {"ANALOG", 4}, {"PHASE", 2}, {"LOFI", 7}, {"SAMPLE", 4}, {"TRIO", 5}, {"GRAIN", 7}, {"FM6", 2}, {"PHYS", 2},
@@ -2041,7 +2041,7 @@ index 379606c..d085dd1 100644
      uint32_t i;
      for (i = 0; i < NELEM(T); i++)
          if (str_eq(e->name, T[i].name) && e->edit[T[i].slot].max > e->edit[T[i].slot].min &&
-@@ -3084,8 +3084,15 @@ static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t
+@@ -2781,8 +2781,15 @@ static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t
          sus_set(t, value >= 64u);
          return;
      }
@@ -2057,7 +2057,7 @@ index 379606c..d085dd1 100644
          return;
      }
      for (i = 0; i < NELEM(MIDI_CC_MAP); i++)
-@@ -3115,7 +3122,7 @@ static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t
+@@ -2812,7 +2819,7 @@ static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t
      } else if (id == MCC_RES) {
          const engine_t *e = ENGINES[t->eng_req % NENGINES];
          for (i = 0; i < 8u && !d; i++)
@@ -2067,10 +2067,10 @@ index 379606c..d085dd1 100644
                  slot = &t->p[P_E0 + i];
              }
 diff --git a/firmware/src/ui.c b/firmware/src/ui.c
-index 2750f0e..e149b90 100644
+index 7cb22cb..005109e 100644
 --- a/firmware/src/ui.c
 +++ b/firmware/src/ui.c
-@@ -578,8 +578,8 @@ UI_SMALL static void go_home(void)
+@@ -527,8 +527,8 @@ UI_SMALL static void go_home(void)
   * writes the sequencer: every pattern is the one the player records or enters. */
  
  /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
@@ -2081,7 +2081,7 @@ index 2750f0e..e149b90 100644
  
  UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }
  
-@@ -666,6 +666,7 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
+@@ -615,6 +615,7 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
          preset_extras(t->p, pr);                     /* glide, pitch / LFO modulation, voice mode */
      }
      fm6_track_loaded(t);                             /* FM6: the preset's patch (its PTCH) */
@@ -2089,7 +2089,7 @@ index 2750f0e..e149b90 100644
  }
  
  /* the engine's defaults and its first preset. With the audio IRQ off: the ISR sees the old engine with
-@@ -674,7 +675,7 @@ UI_SMALL static void set_engine_of(track_t *t, uint32_t ei)
+@@ -623,7 +624,7 @@ UI_SMALL static void set_engine_of(track_t *t, uint32_t ei)
  {
      const engine_t *e = ENGINES[ei % NENGINES];
      uint32_t i;
@@ -2098,7 +2098,7 @@ index 2750f0e..e149b90 100644
          return;
      fm1_irq_off();
      locks_restore(t);                                 /* (a lock in force: its base first, then the new sound) */
-@@ -719,9 +720,18 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+@@ -668,9 +669,18 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
      {BK_BASS, 5, "WOW BASS"}, {BK_BASS, 3, "GB BASS"}, {BK_BASS, 4, "UP BASS"}, {BK_BASS, 4, "DEEP BASS"},
      {BK_BASS, ENGI_FM6, "ROUND BASS"}, {BK_BASS, 1, "BASS GTR"}, {BK_BASS, 0, "MONO BASS"},
      {BK_BASS, ENGI_PHYS, "PLUCK BASS"}, {BK_BASS, 3, "NES BASS"}, {BK_BASS, 0, "SAW BASS"},
@@ -2117,7 +2117,7 @@ index 2750f0e..e149b90 100644
      {BK_ORGAN, 7, "SOUL ORGAN"}, {BK_ORGAN, 7, "GOSPEL"}, {BK_ORGAN, 7, "JAZZ ORGAN"},
      {BK_ORGAN, 7, "DIRTY B3"}, {BK_ORGAN, 7, "HOUSE ORGN"}, {BK_ORGAN, ENGI_FM6, "DRAWBARS"},
      {BK_ORGAN, 6, "ACCORDION"}, {BK_ORGAN, 7, "ROCK ORGAN"}, {BK_ORGAN, 7, "CHAPEL"},
-@@ -732,11 +742,32 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+@@ -681,11 +691,32 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
      {BK_PAD, ENGI_PHYS, "BOWED MTL"}, {BK_PAD, ENGI_NOISE, "WIND"}, {BK_PAD, ENGI_PHYS, "CELLO BOW"},
      {BK_PAD, ENGI_PHYS, "GLASS BOWL"}, {BK_PAD, ENGI_NOISE, "OCEAN"}, {BK_PAD, 2, "CZ PAD"},
      {BK_PAD, 5, "VOX PAD"}, {BK_PAD, 8, "PNO FREEZE"}, {BK_PAD, 8, "HORN CLOUD"}, {BK_PAD, 0, "SINE PAD"},
@@ -2152,7 +2152,7 @@ index 2750f0e..e149b90 100644
      {BK_PLUCK, 2, "RESO PLUCK"}, {BK_PLUCK, 1, "PLUGG BELL"}, {BK_PLUCK, 1, "TRAP BELL"},
      {BK_PLUCK, 1, "MUSIC BOX"}, {BK_PLUCK, 1, "KALIMBA"}, {BK_PLUCK, 1, "MARIMBA"}, {BK_PLUCK, 4, "VIBES"},
      {BK_PLUCK, 3, "8BIT ARP"}, {BK_PLUCK, ENGI_FM6, "GLASS BELL"}, {BK_PLUCK, ENGI_FM6, "WOOD BARS"},
-@@ -748,7 +779,12 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+@@ -697,7 +728,12 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
      {BK_PLUCK, ENGI_PHYS, "KOTO"}, {BK_PLUCK, ENGI_PHYS, "BANJO"}, {BK_PLUCK, ENGI_PHYS, "TANPURA"},
      {BK_PLUCK, ENGI_PHYS, "CHIMES"}, {BK_PLUCK, ENGI_PHYS, "BIG BELL"}, {BK_PLUCK, ENGI_PHYS, "VIBRA BAR"},
      {BK_PLUCK, ENGI_PHYS, "STEEL PAN"}, {BK_PLUCK, ENGI_PHYS, "WOOD BLOCK"}, {BK_PLUCK, 3, "1BIT BEEP"},
@@ -2166,7 +2166,7 @@ index 2750f0e..e149b90 100644
      {BK_STAB, 6, "MIN7 STAB"}, {BK_STAB, 6, "RAVE STAB"}, {BK_STAB, 6, "DUB CHORD"}, {BK_STAB, 0, "SYN BRASS"},
      {BK_STAB, 2, "CZ BRASS"}, {BK_STAB, 4, "HORN STAB"}, {BK_STAB, 4, "STRING STB"},
      {BK_STAB, ENGI_FM6, "BRASS SECT"}, {BK_STAB, 6, "80S POLY"}, {BK_STAB, 3, "CHIP CHORD"},
-@@ -758,6 +794,10 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+@@ -707,6 +743,10 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
      {BK_FX, ENGI_NOISE, "VINYL"}, {BK_FX, ENGI_NOISE, "HISS"}, {BK_FX, ENGI_NOISE, "RISER"},
      {BK_FX, ENGI_NOISE, "NZ SNARE"}, {BK_FX, ENGI_NOISE, "BITCRUSH"}, {BK_FX, ENGI_NOISE, "RADIO"},
      {BK_FX, 3, "CHIP NOISE"},
@@ -2177,7 +2177,7 @@ index 2750f0e..e149b90 100644
  #if FELUCCA_SLICE
      {BK_FX, ENGI_SLICE, "BREAK 16"}, {BK_FX, ENGI_SLICE, "CHOP 8"}, {BK_FX, ENGI_SLICE, "REVERSE"},
      {BK_FX, ENGI_SLICE, "USR SLICE"},
-@@ -1044,6 +1084,17 @@ UI_SMALL static void track_select(uint32_t i)
+@@ -991,6 +1031,17 @@ UI_SMALL static void track_select(uint32_t i)
      ui.force = 1;
  }
  
@@ -2196,7 +2196,7 @@ index 2750f0e..e149b90 100644
  /* MIDI LEARN (SLOOP 2.6, after Felucca 1.5 by Leo Kuroshita, Discussion #170; the map: seq.c ml_tab). GLO held +
   * the black key F#3 turns it on and off. On: a knob turned on a track's page (the sound's pages, HOME, TRACKS' LEVEL
 diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
-index e2f712b..c24fe41 100644
+index 537a174..72212ae 100644
 --- a/firmware/src/ui_draw.c
 +++ b/firmware/src/ui_draw.c
 @@ -82,7 +82,7 @@ UI_SMALL static void draw_head(void)
@@ -2221,8 +2221,8 @@ index e2f712b..c24fe41 100644
          const char *val[6] = {cs->flags & SF_SLIDE ? "ON" : "OFF", nu, FILL_N[step_fill(t, ui.cursor) % 3u], "", "", ""};
          fmt_int(nu, t->micro[ui.cursor]);
          if (t->micro[ui.cursor] > 0) { nu[0] = '+'; fmt_int(nu + 1, t->micro[ui.cursor]); }
--        sheet_bar(H_GRAPH - 16, SHEET_N, val, ui.sheet - 1u, TE_DIM[song.sel & 3u]);
-+        sheet_bar(H_GRAPH - 16, SHEET_N, val, ui.sheet - 1u, TE_DIM[te_slot(song.sel)]);
+-        sheet_draw(112, 6, SHEET_N, val, ui.sheet - 1u, TE_DIM[song.sel & 3u]);
++        sheet_draw(112, 6, SHEET_N, val, ui.sheet - 1u, TE_DIM[te_slot(song.sel)]);
      }
  }
  UI_SMALL static void graph_scale(const track_t *t, uint16_t c)
@@ -2322,7 +2322,7 @@ index e2f712b..c24fe41 100644
                  cv_rect(sx, 10, 1, 1, C_DIM);
              if ((song.playing && si == t->seq_idx) || (song.seq_mode && si == ui.cursor))
 diff --git a/firmware/src/ui_input.c b/firmware/src/ui_input.c
-index b25fbbf..6a22008 100644
+index 36a1888..aa3cbd2 100644
 --- a/firmware/src/ui_input.c
 +++ b/firmware/src/ui_input.c
 @@ -130,9 +130,9 @@ UI_SMALL static uint32_t keys_lit(void)
@@ -2337,7 +2337,7 @@ index b25fbbf..6a22008 100644
                  m |= 1u << key_of_white(4u + i);
          }
          if (fill_now)
-@@ -1114,6 +1114,7 @@ UI_SMALL static void ui_input(void)
+@@ -1102,6 +1102,7 @@ UI_SMALL static void ui_input(void)
      pc_poll();                                          /* MIDI Program Change: a sound (2.6, ui.c) */
      midi_chan_fix();                                    /* GLO > MIDI: no channel on two tracks (2.6, ui.c) */
      fm6_poll();                                         /* FM6: PTCH turned -> its patch */
@@ -2345,7 +2345,7 @@ index b25fbbf..6a22008 100644
      ml_poll();                                          /* MIDI LEARN: a CC came for the picked parameter (2.6) */
      page_fix();                                         /* (a page the track does not have: its neighbour, 2.6) */
      midi_entry();                                       /* (the STEP page's MIDI notes: read every frame, 2.6) */
-@@ -1277,7 +1278,7 @@ UI_SMALL static void ui_input(void)
+@@ -1253,7 +1254,7 @@ UI_SMALL static void ui_input(void)
              preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
      }
      if ((s = panel_enc(EN_ALGO)) != 0 && !ft_on)     /* ALGORITHM: the selected track, on every page (not in a take) */
@@ -2355,10 +2355,10 @@ index b25fbbf..6a22008 100644
                                                           * screen's, out of sight) do nothing */
          if ((s = panel_enc(EN_SELECT)) != 0)
 diff --git a/firmware/src/ui_layers.c b/firmware/src/ui_layers.c
-index e629aa3..6bf719e 100644
+index 7117b20..710a903 100644
 --- a/firmware/src/ui_layers.c
 +++ b/firmware/src/ui_layers.c
-@@ -430,10 +430,11 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+@@ -427,10 +427,11 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
      case LY_MIX:
          if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
              ml_toggle();
@@ -2373,7 +2373,7 @@ index e629aa3..6bf719e 100644
          } else if (w == 8) {
              fill_held = 1;                                  /* FILL while held */
          } else if (w == 9) {
-@@ -704,7 +705,7 @@ UI_SMALL static void layer_screen_draw(void)
+@@ -701,7 +702,7 @@ UI_SMALL static void layer_screen_draw(void)
      int32_t ratio[4] = {-1, -1, -1, -1};
      uint32_t i, layer = ui.layer, sel = song.sel;
      track_t *t = TSEL;
@@ -2382,7 +2382,7 @@ index e629aa3..6bf719e 100644
      if (!layer_shown) {
          lcd_fill(0, 0, 240, 240, C_BLACK);
          ui.force = 1;
-@@ -836,7 +837,7 @@ UI_SMALL static void layer_screen_draw(void)
+@@ -833,7 +834,7 @@ UI_SMALL static void layer_screen_draw(void)
              }
              if (!tl[i].lab[0])
                  fmt_int(tl[i].lab, (int32_t)idx + 1);
@@ -2391,7 +2391,7 @@ index e629aa3..6bf719e 100644
                            : TE_G1;
              tl[i].fg = on ? C_BLACK : TE_G3;
              tl[i].marks = (uint8_t)(on ? rt : 0u);
-@@ -960,7 +961,7 @@ UI_SMALL static void layer_screen_draw(void)
+@@ -957,7 +958,7 @@ UI_SMALL static void layer_screen_draw(void)
          col = C_WHITE;
          str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
          for (i = 0; i < 4u; i++) {
@@ -2400,7 +2400,7 @@ index e629aa3..6bf719e 100644
              str_cpy(tl[i].lab, "mute 1", 8);
              tl[i].lab[5] = (char)('1' + i);
              tl[i].bg = m ? TE_G2 : TE_COL[i];
-@@ -984,7 +985,7 @@ UI_SMALL static void layer_screen_draw(void)
+@@ -981,7 +982,7 @@ UI_SMALL static void layer_screen_draw(void)
          str_cpy(tl[14].lab, "tap>", 8);
          tl[14].bg = C_BLACK;
          for (i = 0; i < 4u; i++) {
@@ -2410,7 +2410,7 @@ index e629aa3..6bf719e 100644
              lab[i] = L[i];
              fmt_int(v[i], (int32_t)lv * 100 / 127);
 diff --git a/firmware/src/ui_studio.c b/firmware/src/ui_studio.c
-index cec769e..31c7d9e 100644
+index 20813ff..f876a20 100644
 --- a/firmware/src/ui_studio.c
 +++ b/firmware/src/ui_studio.c
 @@ -237,19 +237,20 @@ UI_SMALL static void studio_tracks_draw(void)
@@ -2442,7 +2442,7 @@ index cec769e..31c7d9e 100644
              te_lower(e, ENGINES[t->eng_req % NENGINES]->name, sizeof e);
          }
          b[13] = 0;
-@@ -682,7 +683,7 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
+@@ -680,7 +681,7 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
              }
      }
      if ((s = panel_enc(EN_ALGO)) && !ft_on) {
@@ -2498,7 +2498,7 @@ index 96e53c9..352f743 100644
      if (t == TSEL)
          sync_reload = 1;
 diff --git a/firmware/src/voice.c b/firmware/src/voice.c
-index 530ce2f..6fae22e 100644
+index 3c67dc3..9b64fae 100644
 --- a/firmware/src/voice.c
 +++ b/firmware/src/voice.c
 @@ -55,7 +55,7 @@ static void track_lfo_tick(track_t *t)
@@ -2510,7 +2510,7 @@ index 530ce2f..6fae22e 100644
      t->lfo_val = lfo_wave(t, t->lfo_ph);
      if (t->p[P_LPOL])                                   /* UNI: 0..+1 (the depths reach as far, one way only) */
          t->lfo_val = (t->lfo_val + 32768) >> 1;
-@@ -458,8 +458,13 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
+@@ -398,8 +398,13 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
      uint32_t any = 0, i, mode = (uint32_t)t->p[P_VOICE];
      if (trk_silent(t))
          return;                                         /* MUTE, or another track soloed */
@@ -2526,7 +2526,7 @@ index 530ce2f..6fae22e 100644
      if (is_drum(t)) {                                   /* the drum track: GM drums (drums.c) */
          if (note == 35u || note == 36u)
              vis_kick_hit = 1;
-@@ -872,7 +877,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
+@@ -792,7 +797,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
                  m.inc += (uint32_t)((int32_t)(m.inc >> 12) * m.fine);
          }
          m.cutoff = ((lfo * p[P_LD_FLT]) >> 7) + ((m.envq15 * p[P_ED_FLT]) >> 7);
@@ -2535,6 +2535,117 @@ index 530ce2f..6fae22e 100644
              m.cutoff += (m.envq15 * 24) >> 7;
          m.shape = (64 << 8) + ((lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
          e->render(t, v, out, n, &m);
+diff --git a/tests/golden.txt b/tests/golden.txt
+index 9ad58d9..376a518 100644
+--- a/tests/golden.txt
++++ b/tests/golden.txt
+@@ -153,6 +153,106 @@ preset/NOISE/07_RISER fcea3ada4f424206
+ preset/NOISE/08_NZ_SNARE b0fe837467457eee
+ preset/NOISE/09_BITCRUSH 57785f07c4efb016
+ preset/NOISE/10_RADIO 7bdab4709d2209ac
++preset/MUUG/00_MINI_LEAD 77ece9e0d40fbf7c
++preset/MUUG/01_I_FEEL_ARP af3592558b653845
++preset/MUUG/02_LUSH_STRINGS e9bfa230608967c5
++preset/MUUG/03_ROTARY_ORG ee7267acafe3d80a
++preset/MUUG/04_CRYSTAL_BELL 39d2ba6f19ca9bbd
++preset/MUUG/05_DUB_STAB 4c5238e76ede9936
++preset/MUUG/06_CS-80_BRASS 89feaccaa6671d16
++preset/MUUG/07_SPACE_DRONE 32cc5756db62550b
++preset/MUUG/08_TANGERINE 6d882f223c301b94
++preset/MUUG/09_E.PIANO a06b064bde57383c
++preset/MUUG/10_EMERSON 475071fa37b78273
++preset/MUUG/11_NUMAN 6337dace5fecd425
++preset/MUUG/12_HAMMER 257713333d52ce40
++preset/MUUG/13_FIFTHS 758b6a2027fd93f1
++preset/MUUG/14_RAVE_ARP 1fa79c366f266ad0
++preset/MUUG/15_ACID_LEAD 96a781ab7cdadf88
++preset/MUUG/16_PULSE_HERO d5627b0a34141f0c
++preset/MUUG/17_TITAN 7cb5e423dab508f6
++preset/MUUG/18_FUZZ_LEAD 784f329c700fcca1
++preset/MUUG/19_GROWL 3f215d5a285b8066
++preset/MUUG/20_MOOG_FLUTE 19409505db476057
++preset/MUUG/21_G-FUNK e16a4be10a9edfcc
++preset/MUUG/22_SINE_SOLO 2aca0057a65a64d9
++preset/MUUG/23_BANKS bd746a62fe468f43
++preset/MUUG/24_OBOE 4994e9dc3254af81
++preset/MUUG/25_SOLO_VIOLIN 03d820b8eac460a7
++preset/MUUG/26_DREAMER c7685dcd2eb527a4
++preset/MUUG/27_WHISTLE ec20fd3303501036
++preset/MUUG/28_MELLOW_PULSE a8a71fce6ed03e79
++preset/MUUG/29_SAX_LEAD 97178bd746e39eba
++preset/MUUG/30_MOOG_BASS 5603b65ba885f171
++preset/MUUG/31_CHAMELEON 19f1f162aed99f68
++preset/MUUG/32_SUB_BASS d1ff6809ddb85978
++preset/MUUG/33_WOBBLE_BASS f112ae35f9a5e45b
++preset/MUUG/34_OCTAVE_PUMP e2a4e70b2233d944
++preset/MUUG/35_SEQ_BASS 906dc2547d478284
++preset/MUUG/36_REESE dcd945464d037328
++preset/MUUG/37_RUBBER d94cf80caeb8eb24
++preset/MUUG/38_FUZZ_BASS ed94cfa20d5d97c0
++preset/MUUG/39_WONDER_BASS 3cfa34119db0e1a0
++preset/MUUG/40_SOLINA d36cf7671402fb17
++preset/MUUG/41_WARM_PAD 8d9c48bdf680d3c1
++preset/MUUG/42_JUNO_PWM 009418e7535efae6
++preset/MUUG/43_CHOIR f569d925e4232324
++preset/MUUG/44_SWEEP_PAD ca70bbca67ec0f54
++preset/MUUG/45_ANGELS 09c220f2c7f7c256
++preset/MUUG/46_ECLIPSE 57fd3e66c51fdab2
++preset/MUUG/47_PULSE_PAD 760caf08cf2726db
++preset/MUUG/48_CELLOS 53f8bd270f7faa32
++preset/MUUG/49_AIR_PAD c741a8dbcd69b0b7
++preset/MUUG/50_MOOG_BRASS dcbd412a3759aeee
++preset/MUUG/51_JUMP_BRASS becbd0537fb6b882
++preset/MUUG/52_TRUMPET 2195cd7951bbf542
++preset/MUUG/53_FRENCH_HORN 62644a6d073cb73a
++preset/MUUG/54_BRASS_STAB 422976e9f0c40ec4
++preset/MUUG/55_BRASS_SWELL a0455088788c99d3
++preset/MUUG/56_HORN_RIFF 460cc6068cb80579
++preset/MUUG/57_TROMBONE b64efc1dca1a9782
++preset/MUUG/58_FLUGEL 9ef3dcba222f63cc
++preset/MUUG/59_FANFARE 5838da5a76d62973
++preset/MUUG/60_PLUCK_SAW bc8e5b7ccb2b137d
++preset/MUUG/61_MARIMBA e8fe6f845a4041f9
++preset/MUUG/62_KALIMBA 6ee76866a492bc4f
++preset/MUUG/63_FUNK_ARP c2025cfe28e29d80
++preset/MUUG/64_NYLON fb96ba7366750c86
++preset/MUUG/65_STEELDRUM e8c7c114c03f26b1
++preset/MUUG/66_8-BIT_ARP 61c560fa54c7091b
++preset/MUUG/67_PIZZICATO 911663e44e50dbcd
++preset/MUUG/68_POP_PLUCK 97a5eab60e66aef2
++preset/MUUG/69_HARP d6b43463962c55e9
++preset/MUUG/70_CLAVINET 98f88961a85a5e3b
++preset/MUUG/71_PIPE_ORGAN 8db3c1ba42fbf2b9
++preset/MUUG/72_SYNTH_PIANO 3a7973870181c5a8
++preset/MUUG/73_HARPSICHORD 773dc9abc534bd40
++preset/MUUG/74_VIBES 935583133cd2f839
++preset/MUUG/75_WURLY 2d123a683669bfe2
++preset/MUUG/76_TUBULAR cf6906a0866fe311
++preset/MUUG/77_MUSIC_BOX ea12476f6d6abe28
++preset/MUUG/78_ACCORDION 5d22aab0c96524f2
++preset/MUUG/79_FARFISA 9e6971fc1a0faf9f
++preset/MUUG/80_DARK_DRONE ff5e00cc105f2cd0
++preset/MUUG/81_STAR_DUST 475f7778e09d50cf
++preset/MUUG/82_ALIEN_CHOIR 7092ad96a9db7c23
++preset/MUUG/83_GLASS_HARP 2698ec74a938b304
++preset/MUUG/84_OCEAN_TIDE 8b8156d3871a9f28
++preset/MUUG/85_PULSAR f1f267dbc6417aaf
++preset/MUUG/86_IRON_DRONE 04779991ef50823f
++preset/MUUG/87_GHOST_SEQ 0aa73dac81c0e17f
++preset/MUUG/88_HORROR a5052ef0b56c320e
++preset/MUUG/89_SINGING_BOWL e4aaf54bc831bc7b
++preset/MUUG/90_JET_SWEEP d6c9a6a54d8050b6
++preset/MUUG/91_THUNDER 8f7408c2d1921c4e
++preset/MUUG/92_WIND 1e09116f9a54a26b
++preset/MUUG/93_SIREN 429e3d6f539b71d1
++preset/MUUG/94_TELEPHONE 3027c006cdf8d4ec
++preset/MUUG/95_POWER_UP 52108a2f403db385
++preset/MUUG/96_LASER_ZAP 8dfbd2cb77aad8b4
++preset/MUUG/97_HELICOPTER e667e46aba3101c1
++preset/MUUG/98_ROBOT 54f2eaba45b3bdee
++preset/MUUG/99_UFO 09756026724e5119
+ drums/gm_kit 97750328f0896d25
+ mode/ANALOG/POLY 8469751e1f620a8c
+ mode/ANALOG/MONO 9583d8d67d814abc
 diff --git a/tests/hostsim.c b/tests/hostsim.c
 index f230de8..3a62e06 100644
 --- a/tests/hostsim.c
@@ -3383,13 +3494,13 @@ index 9cf4568..2b38568 100644
  static uint32_t nj;
  static job_t *add(uint32_t kind, const char *name)
 diff --git a/tests/run_tests.sh b/tests/run_tests.sh
-index 02d813d..ec78fae 100644
+index 0914c1a..9ba4839 100644
 --- a/tests/run_tests.sh
 +++ b/tests/run_tests.sh
-@@ -178,6 +178,12 @@ run "PHYS: every pitched preset in tune (+-5 cents; a curved bridge +-20), notes
- $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/unison_level_test" tests/unison_level_test.c -lm
- run "UNISON: every engine spreads its voices' phases (no stack of voices in phase over POLY)" "$OUT/unison_level_test"
- run "the editor protocol and the other inputs (USB / TRS MIDI, damaged flash) fuzzed under ASan + UBSan, and its reproducers" sh tests/editor_fuzz.sh "${EDFZ_N:-2000}" 1
+@@ -153,6 +153,12 @@ run "SLICER: no clicks, timing, sync with the sequencer, STUT, cost, demos" "$OU
+ $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fm6_test" tests/fm6_test.c -lm
+ mkdir -p build/fm6_demo
+ run "FM6: algorithms, envelopes, retrigger, DC, clipping, macros, patch formats, voices, the bank, demos" "$OUT/fm6_test" build/fm6_demo
 +# MUUG (tests/muug_test.c): the patch put and its clamp, the editor handlers (78, 79), the panel's controls, the mod wheel (CC1)
 +$CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/muug_test" tests/muug_test.c -lm
 +run "MUUG: patch put and clamp, MUUG_GET / MUUG_PUT, wave, range, switches, mixer, mod wheel, SLOT / OWN" "$OUT/muug_test"
@@ -3400,10 +3511,10 @@ index 02d813d..ec78fae 100644
  # the CPU budget: counted by the kernel on macOS; elsewhere under callgrind when valgrind is there (exact, ~45 s;
  # SKIP_CPU_VALGRIND=1 to time instead, which is only a rough check)
 diff --git a/tests/seq2_test.c b/tests/seq2_test.c
-index 5fbd044..68d2a72 100644
+index 55862df..e178dbd 100644
 --- a/tests/seq2_test.c
 +++ b/tests/seq2_test.c
-@@ -1006,7 +1006,7 @@ static void t_midifix(void)
+@@ -1004,7 +1004,7 @@ static void t_midifix(void)
      check(trk[0].bend == 0 && trk[1].bend == 0, "2.6: the wheel let go after another track was selected: the first one back too");
      mclk_push(0x0Eu | (0xE0u | 0u) << 8 | 127u << 16 | 127u << 24);
      run_block();
@@ -3412,7 +3523,7 @@ index 5fbd044..68d2a72 100644
      check(trk[0].bend == 0, "2.6: a project / NEW (every track released): the bends back to the middle");
      mf_prep();                                        /* OTHER = OFF */
      song.sel = 0, song.g[G_CHOTH] = 1;
-@@ -1023,18 +1023,18 @@ static void t_midifix(void)
+@@ -1021,18 +1021,18 @@ static void t_midifix(void)
      check(trk[0].arp_phys == 0u, "2.6: a note played again under the pedal: no key left counted by the arp");
      trk[0].p[P_AMODE] = 0, trk[0].p[P_AHOLD] = 0, trk[0].nheld = 0;
      mf_prep();                                        /* Program Change (after Felucca 1.5.1): the track the channel plays */
@@ -3436,10 +3547,10 @@ index 5fbd044..68d2a72 100644
          check(ok, "2.6: MIDI Program Change: queued for the track its channel plays (ch 2: track 2, ch 10: drums); "
                    "OTHER = OFF / IN = CLOCK: none");
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
-index 086d8fe..68118a6 100644
+index 82bf02f..52eb318 100644
 --- a/tests/ui_pages_test.c
 +++ b/tests/ui_pages_test.c
-@@ -95,6 +95,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n) { (void)off, (void
+@@ -93,6 +93,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n) { (void)off, (void
  #include "../firmware/src/storage.c"
  /* (2.7) the editor's LIVE page (firmware/src/editor_live.c): its reply captured here */
  static uint8_t lv_out[96];
@@ -3447,7 +3558,7 @@ index 086d8fe..68118a6 100644
  static uint32_t lv_n;
  static void ed_b(uint32_t v) { if (lv_n < sizeof lv_out) lv_out[lv_n++] = (uint8_t)(v & 0x7Fu); }
  static void ed_v(int32_t v) { uint32_t u = (uint32_t)(clamp(v, -8192, 8191) + 8192); ed_b(u); ed_b(u >> 7); }
-@@ -444,6 +445,10 @@ int main(int argc, char **argv)
+@@ -384,6 +385,10 @@ int main(int argc, char **argv)
      check(song.g[G_BPM] >= 95 && song.g[G_BPM] <= 105, "GLO + the last key, tapped at ~0.6 s: ~100 BPM");
      key(0); key(9);
      check(!trk[0].p[P_MUTE] && !song.solo, "again: unmuted, no solo");
@@ -3458,7 +3569,7 @@ index 086d8fe..68118a6 100644
      /* (2.4) key 9 held: a fill; key 10: the next bar is one (again: cancelled) */
      fm1_in.notes = 1u << key_of_white(8); frame(); frame();
      check(fill_held == 1u && fill_now == 1u && (keys_lit() & (1u << key_of_white(8))) != 0, "GLO + key 9 held: FILL (the key lit)");
-@@ -1407,9 +1412,16 @@ int main(int argc, char **argv)
+@@ -1347,9 +1352,16 @@ int main(int argc, char **argv)
          for (j = 0; j < NPAGES; j++) if (!strcmp(PAGES[j].title, "NOTES")) break;
          open_family(FAM_SEQ); ui.page = (uint8_t)j; ui.fam_last[FAM_SEQ] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
          b0 = ui.page;
@@ -3476,7 +3587,7 @@ index 086d8fe..68118a6 100644
          for (j = 0; j < NSTEP; j++) memset(&TDRUM->dstep[j], 0, sizeof(dstep_t));
          song.sel = 0; go_home(); frames(4);
      }
-@@ -1620,7 +1632,7 @@ int main(int argc, char **argv)
+@@ -1560,7 +1572,7 @@ int main(int argc, char **argv)
              frame();
              check(trk[1].eng_req == BANK[0].e && trk[1].preset == bank_pi[0] && !strncmp(ui.msg, "T2 PROG 0", 9),
                    "MIDI Program Change 0: track 2 takes the first sound of the PRESETS list (T2 PROG 0)");
@@ -3485,7 +3596,7 @@ index 086d8fe..68118a6 100644
              frame();
              check(TDRUM->p[P_E0] == 2, "MIDI Program Change on the drum channel: kit 2");
              pc_req[1] = (uint8_t)(tot + 1u);              /* past the end: nothing */
-@@ -1896,9 +1908,9 @@ int main(int argc, char **argv)
+@@ -1836,9 +1848,9 @@ int main(int argc, char **argv)
          song.playing = 0; transport_req = 0; song.rec = 0; rec_wait = 0; arrangement_enabled = 0; live_req = -1;
          live(0, 0, 0, 0);
          bpm = (int)(lv_out[3] | lv_out[4] << 7) - 8192;
@@ -3498,7 +3609,7 @@ index 086d8fe..68118a6 100644
          live(1, 1, 0, 0); ok = transport_req == 1u; frames(30);
          live(0, 0, 0, 0); ok &= song.playing && (lv_out[1] & 1u) && lv_out[20] < trk_len(&trk[0]) && lv_out[21] == trk_len(&trk[0]);
          check(ok, "LIVE: PLAY plays; the reply says so");
-@@ -1935,11 +1947,11 @@ int main(int argc, char **argv)
+@@ -1875,11 +1887,11 @@ int main(int argc, char **argv)
          check(ok, "LIVE: a free take shows; REC closes it, as the REC button (not only PLAY)");
          {   /* (2.7) the page's own: THROW, master, a drum sound's TUNE / DECAY, the pattern, ERASE, ROLL, a chain */
              uint32_t i, len0, any = 0, r, on = 0;

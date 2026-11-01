@@ -83,7 +83,7 @@ index 01bb71a..0b88e5a 100644
      {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
      {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_PAN, P_MUTE}},
 diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
-index 068b645..d833a68 100644
+index 9455fd6..b85732d 100644
 --- a/firmware/src/ui_draw.c
 +++ b/firmware/src/ui_draw.c
 @@ -179,10 +179,10 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
@@ -254,7 +254,7 @@ index de9badf..0dd45ba 100644
    from565: (v) => [Math.round((((v >> 11) & 31) * 255) / 31), Math.round((((v >> 5) & 63) * 255) / 63), Math.round(((v & 31) * 255) / 31)],
    /* as the FM-1 shows it: each colour through RGB565 */
 diff --git a/web/index_pkg.html b/web/index_pkg.html
-index f48aaa1..ab87066 100644
+index 76c2f49..c3a164b 100644
 --- a/web/index_pkg.html
 +++ b/web/index_pkg.html
 @@ -9,7 +9,7 @@

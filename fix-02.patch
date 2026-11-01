@@ -307,10 +307,10 @@ index 504e3e2..aa205be 100644
 +    cv_blit(0, 190);
  }
 diff --git a/firmware/src/ui.c b/firmware/src/ui.c
-index e149b90..35f0e17 100644
+index 005109e..fc970b5 100644
 --- a/firmware/src/ui.c
 +++ b/firmware/src/ui.c
-@@ -1084,10 +1084,10 @@ UI_SMALL static void track_select(uint32_t i)
+@@ -1031,10 +1031,10 @@ UI_SMALL static void track_select(uint32_t i)
      ui.force = 1;
  }
  
@@ -324,7 +324,7 @@ index e149b90..35f0e17 100644
      for (n = 0; n < (int32_t)NTRK; n++)
          if (ORDER[n] == song.sel)
 diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
-index fddd900..7056ded 100644
+index c1addf6..298fbed 100644
 --- a/firmware/src/ui_draw.c
 +++ b/firmware/src/ui_draw.c
 @@ -570,13 +570,13 @@ UI_SMALL static void draw_tracks(void)
@@ -413,7 +413,7 @@ index fddd900..7056ded 100644
              str_cpy(val, "MUTE", 12);
              unit = "";
 diff --git a/firmware/src/ui_studio.c b/firmware/src/ui_studio.c
-index 31c7d9e..0178dab 100644
+index f876a20..df64ea1 100644
 --- a/firmware/src/ui_studio.c
 +++ b/firmware/src/ui_studio.c
 @@ -237,15 +237,15 @@ UI_SMALL static void studio_tracks_draw(void)
@@ -474,7 +474,7 @@ index 31c7d9e..0178dab 100644
      }
      {   /* KNOB 1 swing (the global groove), 2 level, 3 steps, 4 pan of the selected track */
          track_t *t = TSEL;
-@@ -764,7 +764,7 @@ UI_SMALL static void te_digit(int32_t x, int32_t y, int32_t w, int32_t h, int32_
+@@ -762,7 +762,7 @@ UI_SMALL static void te_digit(int32_t x, int32_t y, int32_t w, int32_t h, int32_
  }
  
  static uint8_t rec_shown;
@@ -483,7 +483,7 @@ index 31c7d9e..0178dab 100644
  UI_SMALL static void rec_rows(uint32_t rt, uint32_t take, uint32_t y0, uint32_t *cache)
  {
      uint32_t sig = rt * 3u + rec_wait + take * 5u + drum_kit() * 977u + y0, i, j;
-@@ -782,19 +782,20 @@ UI_SMALL static void rec_rows(uint32_t rt, uint32_t take, uint32_t y0, uint32_t
+@@ -780,19 +780,20 @@ UI_SMALL static void rec_rows(uint32_t rt, uint32_t take, uint32_t y0, uint32_t
      for (i = 0; i < NTRK; i++) {
          const track_t *t = &trk[i];
          uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, 64), armed = i == rt;
@@ -509,7 +509,7 @@ index 31c7d9e..0178dab 100644
          }
      }
      cv_blit(0, y0);
-@@ -835,7 +836,7 @@ UI_SMALL static void rec_screen_draw(void)
+@@ -833,7 +834,7 @@ UI_SMALL static void rec_screen_draw(void)
              cv_rect(132, 6, 1, 54, TE_G1);
              if (bars) {
                  fmt_int(b, (int32_t)bars);
@@ -878,10 +878,10 @@ index 8ffaa4e..313bec5 100644
              }
          }
 diff --git a/firmware/src/voice.c b/firmware/src/voice.c
-index 6fae22e..78335a7 100644
+index 9b64fae..1d7a48b 100644
 --- a/firmware/src/voice.c
 +++ b/firmware/src/voice.c
-@@ -459,8 +459,8 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
+@@ -399,8 +399,8 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
      if (trk_silent(t))
          return;                                         /* MUTE, or another track soloed */
      {
@@ -893,10 +893,10 @@ index 6fae22e..78335a7 100644
              vis_note[w] = (uint8_t)note;
          }
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
-index 68118a6..d02f357 100644
+index 52eb318..c9514d7 100644
 --- a/tests/ui_pages_test.c
 +++ b/tests/ui_pages_test.c
-@@ -1412,16 +1412,14 @@ int main(int argc, char **argv)
+@@ -1352,16 +1352,14 @@ int main(int argc, char **argv)
          for (j = 0; j < NPAGES; j++) if (!strcmp(PAGES[j].title, "NOTES")) break;
          open_family(FAM_SEQ); ui.page = (uint8_t)j; ui.fam_last[FAM_SEQ] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
          b0 = ui.page;
@@ -917,7 +917,7 @@ index 68118a6..d02f357 100644
          for (j = 0; j < NSTEP; j++) memset(&TDRUM->dstep[j], 0, sizeof(dstep_t));
          song.sel = 0; go_home(); frames(4);
      }
-@@ -1447,7 +1445,7 @@ int main(int argc, char **argv)
+@@ -1387,7 +1385,7 @@ int main(int argc, char **argv)
          check(t->step[2].n == 1u && t->step[2].note[0] % 12u == 0u, "STEP page, no chord mode: one note");
          steps_clear(t); song.sel = 0; go_home(); frames(4);
      }
@@ -926,7 +926,7 @@ index 68118a6..d02f357 100644
           * shows its screen over it; the style is kept with the settings */
          uint32_t st, j, x, lit, k;
          static const uint8_t BASS[2] = {38, 34};
-@@ -1470,7 +1468,7 @@ int main(int argc, char **argv)
+@@ -1410,7 +1408,7 @@ int main(int argc, char **argv)
          tap(B_HOME); frames(2);
          check(vis_shown() && vis_on, "visualiser: HOME on HOME opens it");
          vis_style = 0; ui.force = 1;
@@ -935,7 +935,7 @@ index 68118a6..d02f357 100644
              char nm[80];
              frames(st == 0u ? 40u : 70u);           /* (past the name's second) */
              ui.force = 1; frames(2);
-@@ -1494,11 +1492,11 @@ int main(int argc, char **argv)
+@@ -1434,11 +1432,11 @@ int main(int argc, char **argv)
              check(op < 64u && pk > 2000u && lit > 1500u, "visualiser: MASTER at 0: no sound, the picture as at full volume");
              song.master_q12 = m0; frames(4);
          }

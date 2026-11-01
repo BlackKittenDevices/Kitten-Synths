@@ -1,16 +1,6 @@
 # Historial de cambios
 
-Versión **2.8-kitten** (sobre SLOOP 2.8.4). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
-
-## fix-18 · Base SLOOP 2.8.4
-
-- Kitten Synths pasa de SLOOP 2.8 a **SLOOP 2.8.4**: todos los parches se rehicieron sobre la nueva base. Trae las correcciones de SLOOP 2.8.1, 2.8.3 y 2.8.4:
-  - **Secuenciador:** en una pista POLY, una nota sostenida mientras grabás otras encima ya no se corta ni se reinicia (también en la toma libre y en overdub); LEN de una nota sigue por debajo de las siguientes; en MONO / LEGATO avisa *MONO: SET VOICE POLY*; en REC READY una perilla cambia solo su valor; la hoja del paso (OCT+) es una tira abajo y deja ver el roll.
-  - **Audio:** sin distorsión al final de las notas (salida de 3,5 mm y USB); el UNISON ya no apila sus voces en fase; cuerdas PHYS afinadas; NZ ARCADE, SAMPLE y GRAIN siguen las teclas agudas; un sample repetido arranca con su ATK, sin click.
-  - **Estabilidad:** sin notas colgadas tras una ráfaga MIDI; en un ritmo cargado el bombo ya no se pierde; el segundo núcleo ya no cuelga el FM-1 (sigue con uno).
-- **MUUG:** cada voz lee el ruido de la parte desde su propio lugar del bloque (y una de cada dos invertida): en UNISON las voces ya no apilan el mismo ruido en fase (la prueba nueva de SLOOP para todos los motores).
-- **LITE:** al cargar un proyecto de otro firmware (Clipper), los sonidos por defecto se aplican solo a las tres pistas pesadas; la LITE conserva el suyo.
-- Las pruebas de SLOOP y las de Kitten Synths pasan sobre la nueva base; las huellas de sonido (`tests/golden.txt`) se regeneraron.
+Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
 ## fix-17 · Grabación multipista por USB (8 canales)
 

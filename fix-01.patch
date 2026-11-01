@@ -49,7 +49,7 @@ index 9a29497..d8e3f2a 100644
          i += m;
      }
 diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
-index c24fe41..fddd900 100644
+index 72212ae..c1addf6 100644
 --- a/firmware/src/ui_draw.c
 +++ b/firmware/src/ui_draw.c
 @@ -571,7 +571,7 @@ UI_SMALL static void draw_tracks(void)

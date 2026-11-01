@@ -6,7 +6,7 @@ Este repositorio **no contiene el código de SLOOP**: contiene los parches que l
 
 1. En GitHub: pestaña **Actions** → **build** → **Run workflow**. (También se dispara solo cuando se sube un cambio a los parches, a las imágenes o al flujo.)
 2. El flujo hace, en orden:
-   1. Descarga SLOOP de [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1) en el commit fijo `91f3018`.
+   1. Descarga SLOOP de [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1) en el commit fijo `ec9e537`.
    2. Aplica `muug.patch` y después `fix-01.patch` … `fix-16.patch`, en ese orden.
    3. Instala las herramientas: Python, Node, Pillow, clang, la cadena de JieLi y tres archivos del SDK AC79.
    4. Revisa que el código principal compile.
@@ -34,7 +34,7 @@ Pasos:
 
 ```bash
 git clone https://github.com/isod89/sloop-fm1.git sloop
-cd sloop && git checkout 91f30182d9095e0ecdb43396554f2ce5a67df179
+cd sloop && git checkout ec9e53721cc576816a5750220391f2d0217c01cb
 for p in ../muug.patch ../fix-*.patch; do git apply --index "$p"; done
 sh tools/get_toolchain.sh
 KITTEN_ART="../splashes y logos" bash ./build.sh --release 2.8-kitten

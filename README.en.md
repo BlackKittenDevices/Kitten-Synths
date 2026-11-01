@@ -21,7 +21,7 @@ By <b>Black Kitten Devices</b> · GPL-3.0 · based on <a href="https://github.co
 
 ## What is it?
 
-Kitten Synths turns the FM-1 into a groovebox for playing live with **four synths and drums**. It starts from SLOOP 2.8.4 (twelve synth engines, a 64-step sequencer, song mode, punch-in effects, your own samples, MIDI and USB audio) and adds:
+Kitten Synths turns the FM-1 into a groovebox for playing live with **four synths and drums**. It starts from SLOOP 2.8 (twelve synth engines, a 64-step sequencer, song mode, punch-in effects, your own samples, MIDI and USB audio) and adds:
 
 - **MUUG**: an engine in the style of Moog's classic three-oscillator synths, ported from FMini-1, with **100 factory sounds**, a 24 dB/oct ladder filter and all its edit pages on the FM-1 itself (no web editor needed). Up to 8 voices, by preset.
 - **A fourth "LITE" synth part** (grey, before the drums), for extra layers without loading the processor: it plays the DIGITAL, PHASE, LOFI, SAMPLE and VOICE engines.
@@ -66,7 +66,7 @@ Kitten Synths meets the requirements of [The FM-1 Firmware Hub](https://thefirmw
 
 | File | What it is for |
 | --- | --- |
-| `muug.patch` and `fix-01.patch` … `fix-18.patch` | Everything Kitten Synths adds to SLOOP 2.8.4, in order, applied to a pinned SLOOP commit. |
+| `muug.patch` and `fix-01.patch` … `fix-17.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
 | `.github/workflows/build.yml` | Fetches SLOOP, applies the patches, runs the tests, builds with JieLi's toolchain and publishes the site. |
 | `servir.py` | Serves the installer and the simulator on your computer. |
 | `splashes y logos/` | The kitten pictures (welcome, eyes open and closed). |
