@@ -295,62 +295,10 @@ index c82f8f3..3961a1b 100644
      /* the singing pitch (MIDI x 16): the CUTOFF knob's dial, the contour, the keyboard, the modulation, the host's (LFO / matrix / ENV routings) */
      {
 diff --git a/firmware/src/eng_noise.c b/firmware/src/eng_noise.c
-index 74c4569..8a08282 100644
+index 74c4569..d130983 100644
 --- a/firmware/src/eng_noise.c
 +++ b/firmware/src/eng_noise.c
-@@ -63,6 +63,20 @@ static uint32_t noise_inc(int32_t p)
-     inc = pitch_inc((uint32_t)clamp(p, 0, 2047));
-     return sh && inc >= 0x80000000u >> (sh - 1u) ? 0xFFFFFFFFu : inc << sh;
- }
-+/* (after 2.8.3) the same, unbounded (Q32: 2^32 = one clock a sample). LFSR: a clock past the sample rate steps the
-+ * register more than once a sample (the sequence read further on, as the register would be at that time): its pitch
-+ * goes on rising with the keys. It used to stop at one step a sample, so every note above it played the same pitch
-+ * (NZ ARCADE: TONE +84 semitones, the whole upper half of the keyboard; clipper-fm1 #10) */
-+static uint64_t noise_inc64(int32_t p)
-+{
-+    uint32_t sh = 0;
-+    while (p > 2047) {
-+        p -= 192;
-+        sh++;
-+    }
-+    return (uint64_t)pitch_inc((uint32_t)clamp(p, 0, 2047)) << (sh < 20u ? sh : 20u);
-+}
-+#define NZ_STEPS_MAX 64u                              /* register steps a sample at most (64 x 44.1 kHz) */
- 
- static uint32_t isqrt32(uint32_t x)
- {
-@@ -103,6 +117,7 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
-     uint32_t ph = v->ph[0], reg = v->ph[1];         /* state in locals: out[] may alias v->s[] */
-     int32_t drift = (int32_t)v->ph[2], d16 = 0, gain = 32767, gq, colr, cut, k, a1, a2, a3, g, bpg, mix, cf, thr = 0;
-     uint32_t inc = 0, taps = NOISE_TAPS[sel];
-+    uint64_t inc64 = 0;                               /* (after 2.8.3) LFSR: its clock, Q32, past the sample rate too */
-     /* drift: a new random target every 0.7..3 s, followed with a 0.7 s lag */
-     if (drft) {
-         int32_t tg = v->s[3] >> 16, cnt = v->s[3] & 0xFFFF;
-@@ -149,7 +164,7 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
-     }
-     if (mode == NZ_LFSR) {
-         uint32_t mask = taps;                         /* the register's own bits (MODE / LEN changes) */
--        inc = noise_inc(m->pitch16 + p[P_E7] * 16 + d16);
-+        inc64 = noise_inc64(m->pitch16 + p[P_E7] * 16 + d16);
-         mask |= mask >> 1;
-         mask |= mask >> 2;
-         mask |= mask >> 4;
-@@ -175,9 +190,10 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
-             break;
-         }
-         case NZ_LFSR: {
--            uint32_t o = ph;
--            ph += inc;
--            if (ph < o)
-+            uint64_t a = (uint64_t)ph + inc64;
-+            uint32_t ns = (uint32_t)(a >> 32) < NZ_STEPS_MAX ? (uint32_t)(a >> 32) : NZ_STEPS_MAX;
-+            ph = (uint32_t)a;
-+            while (ns--)                               /* (after 2.8.3: as many steps as clocks in this sample) */
-                 reg = (reg >> 1) ^ (-(reg & 1u) & taps);
-             w = (reg & 1u) ? 12000 : -12000;
-             break;
-@@ -192,14 +208,14 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
+@@ -192,14 +192,14 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
          x = w;
          if (colr) {                                   /* pink: three leaky poles (Kellet), brown: a leaky integrator */
              int32_t pk;
@@ -368,10 +316,10 @@ index 74c4569..8a08282 100644
                  x = pk + mulq15(br - pk, cf);
              }
          }
-@@ -256,6 +272,17 @@ static const preset_t NOISE_PRESETS[] = {
-     {"RADIO", {NZ_LFSR, 20, 70, 90, 64, 0, 60, 48}, {10, 70, 120, 50}, 0, 0, FX(0, 10, 30, 40)},
- };
+@@ -239,6 +239,17 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
+ }
  
+ /* {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH / CLK} */
 +/* (after Clipper 1.2) UNISON (voice.c unison_spread): the phase moved by r (Q32) and the noise from its own
 + * seed (the note's: every voice the same noise at DTUNE 0) */
 +static void noise_spread(track_t *t, voice_t *v, uint32_t r)
@@ -383,9 +331,9 @@ index 74c4569..8a08282 100644
 +        v->s[2] = 1;
 +}
 +
- static const engine_t ENG_NOISE = {
-     .name = "NOISE",
-     .page_title = {"SRC", "MOVE"},
+ static const preset_t NOISE_PRESETS[] = {
+     {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, 0, FX(0, 30, 20, 80)},
+     {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, 0, FX(0, 0, 20, 70)},
 diff --git a/firmware/src/eng_phase.c b/firmware/src/eng_phase.c
 index cd509ae..b1826f8 100644
 --- a/firmware/src/eng_phase.c
@@ -517,7 +465,7 @@ index 74f5084..543f24c 100644
      "TRIO", {"OSC", "TONE"},
      {
 diff --git a/firmware/src/engines.c b/firmware/src/engines.c
-index fe6b1d9..e4e6525 100644
+index fe6b1d9..cb68d66 100644
 --- a/firmware/src/engines.c
 +++ b/firmware/src/engines.c
 @@ -16,6 +16,14 @@ static inline int32_t soft_knee(int32_t y, int32_t k)   /* linear up to k, then
@@ -535,6 +483,13 @@ index fe6b1d9..e4e6525 100644
  #include "eng_analog.c"
  #include "eng_digital.c"
  #include "eng_phase.c"
+@@ -115,5 +123,5 @@ _Static_assert(ENGI_GRAIN == 8u && ENGI_PHYS == 10u && ENGI_NOISE == 11u && ENGI
+ #include "preset_trim.h"
+ static int16_t preset_trim(uint32_t e, uint32_t pi)
+ {
+-    return e < PT_ENGINES && pi < PT_MAX ? PRESET_TRIM[e][pi] : 0;
++    return e < PT_ENGINES && pi < (uint32_t)(PT_OFF[e + 1u] - PT_OFF[e]) ? PRESET_TRIM[PT_OFF[e] + pi] : 0;
+ }
 diff --git a/firmware/src/fx.c b/firmware/src/fx.c
 index 0c492fb..ba47200 100644
 --- a/firmware/src/fx.c
@@ -610,6 +565,46 @@ index 3ce8dd4..d594ad6 100644
          }
      }
  }
+diff --git a/firmware/src/preset_trim.h b/firmware/src/preset_trim.h
+index 3b4f1d9..e31b5b9 100644
+--- a/firmware/src/preset_trim.h
++++ b/firmware/src/preset_trim.h
+@@ -1,19 +1,20 @@
+ /* generated by tools/level_presets.py: the level trim of each factory preset, 1/2 dB */
+ #pragma once
+ #define PT_ENGINES 13u
+-#define PT_MAX 32u
+-static const int8_t PRESET_TRIM[PT_ENGINES][PT_MAX] = {
+-    {/* 0.0 808 BOOM */ -9, /* 0.1 808 DIRTY */ -3, /* 0.2 SUB BASS */ -10, /* 0.3 808 SLIDE */ -4, /* 0.4 ACID 303 */ 23, /* 0.5 PLUGG BASS */ -6, /* 0.6 REESE */ 3, /* 0.7 WOBBLE */ 7, /* 0.8 FUNK BASS */ 16, /* 0.9 G-FUNK LD */ -10, /* 0.10 TRAP PLUCK */ 23, /* 0.11 SYN BRASS */ 23, /* 0.12 SUPERSAW */ -18, /* 0.13 WARM PAD */ -7, /* 0.14 DARK STR */ -4, /* 0.15 ATMOS PAD */ -9, /* 0.16 PAN FLUTE */ -7, /* 0.17 FAT LEAD */ -5, /* 0.18 MONO BASS */ 14, /* 0.19 PWM LEAD */ -6, /* 0.20 SAW BASS */ 17, /* 0.21 SINE PAD */ -23},
+-    {/* 1.0 RHODES */ 23, /* 1.1 DX RHODES */ 15, /* 1.2 WURLI */ 23, /* 1.3 CLAV */ 14, /* 1.4 M1 PIANO */ 17, /* 1.5 AFRO KEYS */ 18, /* 1.6 TRAP BELL */ 6, /* 1.7 MUSIC BOX */ 7, /* 1.8 MARIMBA */ 23, /* 1.9 KALIMBA */ 23, /* 1.10 PLUGG BELL */ 16, /* 1.11 GLASS PAD */ -18, /* 1.12 FM BASS */ 11, /* 1.13 GLOCKEN */ 7, /* 1.14 CELESTA */ 12, /* 1.15 XYLOPHONE */ 23, /* 1.16 HARP */ 9, /* 1.17 BASS GTR */ 17, /* 1.18 TUBE BELL */ 1, /* 1.19 FM PLUCK */ 23, /* 1.20 FM GRAND */ 9},
+-    {/* 2.0 CZ BASS */ 23, /* 2.1 SOFT KEYS */ 23, /* 2.2 CZ STRING */ -21, /* 2.3 RESO PLUCK */ 19, /* 2.4 CZ BRASS */ 8, /* 2.5 CZ LEAD */ -8, /* 2.6 CZ PAD */ -20, /* 2.7 CZ RESO */ 5},
+-    {/* 3.0 GAME LEAD */ -4, /* 3.1 GB BASS */ 15, /* 3.2 8BIT ARP */ -5, /* 3.3 NES BASS */ 13, /* 3.4 CHIP CHORD */ 4, /* 3.5 1BIT BEEP */ 2, /* 3.6 WAVE LEAD */ 0, /* 3.7 CHIP NOISE */ 23},
+-    {/* 4.0 GRAND PNO */ 17, /* 4.1 VIBES */ -4, /* 4.2 HORN STAB */ -8, /* 4.3 STRING STB */ 23, /* 4.4 LOFI FLUTE */ -1, /* 4.5 SCRATCH */ -3, /* 4.6 GM KIT */ 0, /* 4.7 DUSTY PNO */ 19, /* 4.8 LOFI KEYS */ 11, /* 4.9 DEEP BASS */ 23},
+-    {/* 5.0 CHOIR AAH */ -26, /* 5.1 SOUL OOH */ -24, /* 5.2 TALKBOX */ -7, /* 5.3 WOW BASS */ 6, /* 5.4 ROBOT */ -2, /* 5.5 VOX PAD */ -19},
+-    {/* 6.0 FAT BASS */ 23, /* 6.1 MIN STAB */ 23, /* 6.2 MIN7 STAB */ 23, /* 6.3 RAVE STAB */ 23, /* 6.4 DUB CHORD */ 23, /* 6.5 SAW PAD */ -11, /* 6.6 SYNC LEAD */ -3, /* 6.7 HOOVER */ 5, /* 6.8 ACCORDION */ 12, /* 6.9 ENSEMBLE */ -7, /* 6.10 80S POLY */ 17, /* 6.11 SQR LEAD */ -8, /* 6.12 POWER STAB */ 23, /* 6.13 PULSE PAD */ -15},
+-    {/* 7.0 SOUL ORGAN */ -14, /* 7.1 GOSPEL */ -10, /* 7.2 JAZZ ORGAN */ -8, /* 7.3 DIRTY B3 */ -10, /* 7.4 HOUSE ORGN */ -7, /* 7.5 ROCK ORGAN */ -12, /* 7.6 CHAPEL */ 10},
+-    {/* 8.0 LOFI CLOUD */ 4, /* 8.1 VIBE HAZE */ 2, /* 8.2 FLUTE DUST */ -1, /* 8.3 STR CLOUD */ 0, /* 8.4 SHIMMER */ 7, /* 8.5 DRONE */ 9, /* 8.6 PNO FREEZE */ 23, /* 8.7 HORN CLOUD */ -6},
+-    {/* 9.0 TINE EP */ -1, /* 9.1 GLASS BELL */ 4, /* 9.2 ROUND BASS */ 14, /* 9.3 BRASS SECT */ 23, /* 9.4 SOFT PAD */ 2, /* 9.5 WOOD BARS */ 23, /* 9.6 DRAWBARS */ 11, /* 9.7 NYLON PICK */ 23},
+-    {/* 10.0 BELL TREE */ -10, /* 10.1 MODAL BAR */ 23, /* 10.2 STR PLUCK */ 16, /* 10.3 BOWED MTL */ -6, /* 10.4 THUMB PNO */ 18, /* 10.5 SITAR */ 12, /* 10.6 PHYS HARP */ 10, /* 10.7 NYLON GTR */ 16, /* 10.8 STEEL GTR */ 21, /* 10.9 MUTED GTR */ 23, /* 10.10 PLUCK BASS */ 23, /* 10.11 KOTO */ 1, /* 10.12 BANJO */ 23, /* 10.13 CELLO BOW */ 3, /* 10.14 TANPURA */ -24, /* 10.15 CHIMES */ -15, /* 10.16 BIG BELL */ -12, /* 10.17 VIBRA BAR */ 2, /* 10.18 GLASS BOWL */ -7, /* 10.19 STEEL PAN */ -8, /* 10.20 WOOD BLOCK */ 23, /* 10.21 CONGA */ 7, /* 10.22 TIMPANI */ -15},
+-    {/* 11.0 WIND */ -1, /* 11.1 RAIN */ 0, /* 11.2 NZ ARCADE */ 14, /* 11.3 NZ METAL */ 23, /* 11.4 OCEAN */ 23, /* 11.5 VINYL */ 23, /* 11.6 HISS */ -12, /* 11.7 RISER */ 0, /* 11.8 NZ SNARE */ 23, /* 11.9 BITCRUSH */ 17, /* 11.10 RADIO */ -9},
+-    {/* 12.0 BREAK 16 */ 23, /* 12.1 CHOP 8 */ 23, /* 12.2 REVERSE */ 23, /* 12.3 USR SLICE */ 23},
++/* (2.8-kitten) one row after the other, PT_OFF[e] where engine e's starts: no padding to 32 a row */
++static const int8_t PRESET_TRIM[] = {
++    /* 0.0 808 BOOM */ -9, /* 0.1 808 DIRTY */ -3, /* 0.2 SUB BASS */ -10, /* 0.3 808 SLIDE */ -4, /* 0.4 ACID 303 */ 23, /* 0.5 PLUGG BASS */ -6, /* 0.6 REESE */ 3, /* 0.7 WOBBLE */ 7, /* 0.8 FUNK BASS */ 16, /* 0.9 G-FUNK LD */ -10, /* 0.10 TRAP PLUCK */ 23, /* 0.11 SYN BRASS */ 23, /* 0.12 SUPERSAW */ -18, /* 0.13 WARM PAD */ -7, /* 0.14 DARK STR */ -4, /* 0.15 ATMOS PAD */ -9, /* 0.16 PAN FLUTE */ -7, /* 0.17 FAT LEAD */ -5, /* 0.18 MONO BASS */ 14, /* 0.19 PWM LEAD */ -6, /* 0.20 SAW BASS */ 17, /* 0.21 SINE PAD */ -23,
++    /* 1.0 RHODES */ 23, /* 1.1 DX RHODES */ 15, /* 1.2 WURLI */ 23, /* 1.3 CLAV */ 14, /* 1.4 M1 PIANO */ 17, /* 1.5 AFRO KEYS */ 18, /* 1.6 TRAP BELL */ 6, /* 1.7 MUSIC BOX */ 7, /* 1.8 MARIMBA */ 23, /* 1.9 KALIMBA */ 23, /* 1.10 PLUGG BELL */ 16, /* 1.11 GLASS PAD */ -18, /* 1.12 FM BASS */ 11, /* 1.13 GLOCKEN */ 7, /* 1.14 CELESTA */ 12, /* 1.15 XYLOPHONE */ 23, /* 1.16 HARP */ 9, /* 1.17 BASS GTR */ 17, /* 1.18 TUBE BELL */ 1, /* 1.19 FM PLUCK */ 23, /* 1.20 FM GRAND */ 9,
++    /* 2.0 CZ BASS */ 23, /* 2.1 SOFT KEYS */ 23, /* 2.2 CZ STRING */ -21, /* 2.3 RESO PLUCK */ 19, /* 2.4 CZ BRASS */ 8, /* 2.5 CZ LEAD */ -8, /* 2.6 CZ PAD */ -20, /* 2.7 CZ RESO */ 5,
++    /* 3.0 GAME LEAD */ -4, /* 3.1 GB BASS */ 15, /* 3.2 8BIT ARP */ -5, /* 3.3 NES BASS */ 13, /* 3.4 CHIP CHORD */ 4, /* 3.5 1BIT BEEP */ 2, /* 3.6 WAVE LEAD */ 0, /* 3.7 CHIP NOISE */ 23,
++    /* 4.0 GRAND PNO */ 17, /* 4.1 VIBES */ -4, /* 4.2 HORN STAB */ -8, /* 4.3 STRING STB */ 23, /* 4.4 LOFI FLUTE */ -1, /* 4.5 SCRATCH */ -3, /* 4.6 GM KIT */ 0, /* 4.7 DUSTY PNO */ 19, /* 4.8 LOFI KEYS */ 11, /* 4.9 DEEP BASS */ 23,
++    /* 5.0 CHOIR AAH */ -26, /* 5.1 SOUL OOH */ -24, /* 5.2 TALKBOX */ -7, /* 5.3 WOW BASS */ 6, /* 5.4 ROBOT */ -2, /* 5.5 VOX PAD */ -19,
++    /* 6.0 FAT BASS */ 23, /* 6.1 MIN STAB */ 23, /* 6.2 MIN7 STAB */ 23, /* 6.3 RAVE STAB */ 23, /* 6.4 DUB CHORD */ 23, /* 6.5 SAW PAD */ -11, /* 6.6 SYNC LEAD */ -3, /* 6.7 HOOVER */ 5, /* 6.8 ACCORDION */ 12, /* 6.9 ENSEMBLE */ -7, /* 6.10 80S POLY */ 17, /* 6.11 SQR LEAD */ -8, /* 6.12 POWER STAB */ 23, /* 6.13 PULSE PAD */ -15,
++    /* 7.0 SOUL ORGAN */ -14, /* 7.1 GOSPEL */ -10, /* 7.2 JAZZ ORGAN */ -8, /* 7.3 DIRTY B3 */ -10, /* 7.4 HOUSE ORGN */ -7, /* 7.5 ROCK ORGAN */ -12, /* 7.6 CHAPEL */ 10,
++    /* 8.0 LOFI CLOUD */ 4, /* 8.1 VIBE HAZE */ 2, /* 8.2 FLUTE DUST */ -1, /* 8.3 STR CLOUD */ 0, /* 8.4 SHIMMER */ 7, /* 8.5 DRONE */ 9, /* 8.6 PNO FREEZE */ 23, /* 8.7 HORN CLOUD */ -6,
++    /* 9.0 TINE EP */ -1, /* 9.1 GLASS BELL */ 4, /* 9.2 ROUND BASS */ 14, /* 9.3 BRASS SECT */ 23, /* 9.4 SOFT PAD */ 2, /* 9.5 WOOD BARS */ 23, /* 9.6 DRAWBARS */ 11, /* 9.7 NYLON PICK */ 23,
++    /* 10.0 BELL TREE */ -10, /* 10.1 MODAL BAR */ 23, /* 10.2 STR PLUCK */ 16, /* 10.3 BOWED MTL */ -6, /* 10.4 THUMB PNO */ 18, /* 10.5 SITAR */ 12, /* 10.6 PHYS HARP */ 10, /* 10.7 NYLON GTR */ 16, /* 10.8 STEEL GTR */ 21, /* 10.9 MUTED GTR */ 23, /* 10.10 PLUCK BASS */ 23, /* 10.11 KOTO */ 1, /* 10.12 BANJO */ 23, /* 10.13 CELLO BOW */ 3, /* 10.14 TANPURA */ -24, /* 10.15 CHIMES */ -15, /* 10.16 BIG BELL */ -12, /* 10.17 VIBRA BAR */ 2, /* 10.18 GLASS BOWL */ -7, /* 10.19 STEEL PAN */ -8, /* 10.20 WOOD BLOCK */ 23, /* 10.21 CONGA */ 7, /* 10.22 TIMPANI */ -15,
++    /* 11.0 WIND */ -1, /* 11.1 RAIN */ 0, /* 11.2 NZ ARCADE */ 14, /* 11.3 NZ METAL */ 23, /* 11.4 OCEAN */ 23, /* 11.5 VINYL */ 23, /* 11.6 HISS */ -12, /* 11.7 RISER */ 0, /* 11.8 NZ SNARE */ 23, /* 11.9 BITCRUSH */ 17, /* 11.10 RADIO */ -9,
++    /* 12.0 BREAK 16 */ 23, /* 12.1 CHOP 8 */ 23, /* 12.2 REVERSE */ 23, /* 12.3 USR SLICE */ 23,
+ };
++static const uint8_t PT_OFF[PT_ENGINES + 1u] = {0, 22, 43, 51, 59, 69, 75, 89, 96, 104, 112, 135, 146, 150};
 diff --git a/firmware/src/seq.c b/firmware/src/seq.c
 index 2a53a4d..d085dd1 100644
 --- a/firmware/src/seq.c
@@ -1400,6 +1395,193 @@ index df64ea1..0b02acd 100644
              }
          } else {                                       /* KIT: 16 pads, lit on each hit; SOUND (2.7): the one KNOB 1 picks
                                                          * framed, a tuned or shortened / lengthened one marked */
+diff --git a/firmware/src/ui_vis.c b/firmware/src/ui_vis.c
+index fe9ee08..a7631d9 100644
+--- a/firmware/src/ui_vis.c
++++ b/firmware/src/ui_vis.c
+@@ -38,16 +38,16 @@ static struct {
+ static const uint8_t VIS_EDGE[33] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 25, 29, 35,
+                                      41, 49, 58, 69, 82, 98, 116, 138, 164, 195, 232};
+ 
+-static int vis_shown(void) { return vis_on && !ui.home && !ui.menu && cur_page()->scope == SC_TRK; }
+-static void vis_open(void)
++UI_SMALL static int vis_shown(void) { return vis_on && !ui.home && !ui.menu && cur_page()->scope == SC_TRK; }
++UI_SMALL static void vis_open(void)
+ {
+     vis_on = 1;
+     vis_name_t = 30;
+     ui.force = 1;
+ }
+-static int32_t isin(uint32_t a) { return SINE[a & 1023u]; }          /* a: 1024 a turn; Q15 */
+-static int32_t icos(uint32_t a) { return SINE[(a + 256u) & 1023u]; }
+-static uint16_t mix565(uint16_t a, uint16_t b, int32_t k)              /* a -> b, k 0..256 */
++UI_SMALL static int32_t isin(uint32_t a) { return SINE[a & 1023u]; }          /* a: 1024 a turn; Q15 */
++UI_SMALL static int32_t icos(uint32_t a) { return SINE[(a + 256u) & 1023u]; }
++UI_SMALL static uint16_t mix565(uint16_t a, uint16_t b, int32_t k)              /* a -> b, k 0..256 */
+ {
+     int32_t r = (a >> 11) + ((((b >> 11) - (a >> 11)) * k) >> 8);
+     int32_t g = ((a >> 5) & 63) + (((((b >> 5) & 63) - ((a >> 5) & 63)) * k) >> 8);
+@@ -69,7 +69,7 @@ static int32_t vis_lvl(int32_t a)
+ }
+ 
+ /* ---- drawing helpers (canvas coordinates; cv_oy picks the band) ---- */
+-static void vis_ellipse(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint16_t c)
++UI_SMALL static void vis_ellipse(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint16_t c)
+ {
+     int32_t y;
+     if (rx < 1 || ry < 1)
+@@ -82,7 +82,7 @@ static void vis_ellipse(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint16_t
+             cv_rect(cx - w + 1, cy + y, 2 * w - 1, 1, c);
+     }
+ }
+-static void vis_circle(int32_t cx, int32_t cy, int32_t r, uint16_t c)  /* an outline */
++UI_SMALL static void vis_circle(int32_t cx, int32_t cy, int32_t r, uint16_t c)  /* an outline */
+ {
+     int32_t x = r, y = 0, e = 1 - r;
+     while (x >= y) {
+@@ -95,7 +95,7 @@ static void vis_circle(int32_t cx, int32_t cy, int32_t r, uint16_t c)  /* an out
+             e += 2 * (y - --x) + 1;
+     }
+ }
+-static void vis_thick(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)   /* 2 px */
++UI_SMALL static void vis_thick(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)   /* 2 px */
+ {
+     cv_line(x0, y0, x1, y1, c);
+     cv_line(x0, y0 + 1, x1, y1 + 1, c);
+@@ -108,7 +108,7 @@ static uint32_t vis_beat_q8(void)
+         return clk_beat * 256u + clk_pos / (BEAT_U / 256u);
+     return vs.free_q8;
+ }
+-static void vis_fft(void)
++UI_SMALL static void vis_fft(void)
+ {
+     uint32_t i, j = 0, bit, len;
+     for (i = 0; i < VIS_FFT; i++) {                 /* Hann window */
+@@ -140,7 +140,7 @@ static void vis_fft(void)
+     }
+ }
+ /* the 32 bands of the last FFT, 0..1000 (60 dB under a full-scale sine) */
+-static void vis_bands(int16_t *out)
++UI_SMALL static void vis_bands(int16_t *out)
+ {
+     uint32_t k, i;
+     for (k = 0; k < 32u; k++) {
+@@ -162,7 +162,7 @@ static void vis_bands(int16_t *out)
+     }
+ }
+ 
+-static void vis_update(void)
++UI_SMALL static void vis_update(void)
+ {
+     uint32_t i, w, hit, now = fm1_ms;
+     int32_t pk[NTRK], mpk = 0;
+@@ -286,7 +286,7 @@ static void vis_update(void)
+ }
+ 
+ /* ---- the styles (each draws the whole screen; called once per band) ---- */
+-static void vis_scope(void)
++UI_SMALL static void vis_scope(void)
+ {
+     uint32_t i0 = 0, i;
+     int32_t py = 0;
+@@ -309,7 +309,7 @@ static void vis_scope(void)
+         py = y;
+     }
+ }
+-static void vis_spectrum(void)
++UI_SMALL static void vis_spectrum(void)
+ {
+     uint32_t k;
+     for (k = 0; k < 32u; k++) {
+@@ -331,7 +331,7 @@ static uint16_t vis_heat(uint32_t v)               /* 0..255: black, blue, green
+         return ST[4];
+     return mix565(ST[k - 1u], ST[k], (int32_t)((v - AT[k - 1u]) * 256u / (AT[k] - AT[k - 1u])));
+ }
+-static void vis_spectrogram(void)
++UI_SMALL static void vis_spectrogram(void)
+ {
+     uint32_t r, c;
+     for (r = 0; r < VIS_SG_H; r++) {
+@@ -347,7 +347,7 @@ static void vis_spectrogram(void)
+     cv_text(132, 2, &FONT_S, "1k", C_DIM);
+     cv_text(196, 2, &FONT_S, "4k", C_DIM);
+ }
+-static void vis_lissajous(void)
++UI_SMALL static void vis_lissajous(void)
+ {
+     uint32_t f, i;
+     static const uint16_t COLS[3] = {RGB(10, 66, 38), RGB(20, 136, 76), RGB(30, 204, 112)};
+@@ -362,7 +362,7 @@ static void vis_lissajous(void)
+     cv_text(6, 112, &FONT_S, "L", C_DIM);
+     cv_text(226, 112, &FONT_S, "R", C_DIM);
+ }
+-static void vis_meters(void)
++UI_SMALL static void vis_meters(void)
+ {
+     uint32_t i, k;
+     for (i = 0; i <= NTRK; i++) {                   /* the five tracks (the drum track last) and the master */
+@@ -379,7 +379,7 @@ static void vis_meters(void)
+         cv_text(x0 + 11, 216, &FONT_S, lab, c);
+     }
+ }
+-static void vis_ring(void)
++UI_SMALL static void vis_ring(void)
+ {
+     int32_t k = vs.kick, r0 = 52 + k * 18 / 255, rc = r0 * 6 / 10, sc = vs.peak > vs.scale ? vs.peak : vs.scale;
+     int32_t px = 0, py = 0, i;
+@@ -396,7 +396,7 @@ static void vis_ring(void)
+         px = x, py = y;
+     }
+ }
+-static void vis_tape(void)
++UI_SMALL static void vis_tape(void)
+ {
+     uint32_t bq = vis_beat_q8(), s;
+     int32_t prog = (int32_t)((song.playing ? clk_beat * 256u + clk_pos / (BEAT_U / 256u) : 0u) % (118u * 256u)) * 1000 /
+@@ -432,7 +432,7 @@ static void vis_tape(void)
+     cv_text(232 - text_w(&FONT_S, b), 24, &FONT_S, b, TE_COL[3]);
+     cv_text(8, 220, &FONT_S, "tape", C_DIM);
+ }
+-static void vis_orbit(void)
++UI_SMALL static void vis_orbit(void)
+ {
+     static const uint8_t RAD[NTRK] = {34, 50, 66, 82, 100}, PER[NTRK] = {1, 2, 4, 8, 16};
+     uint32_t bq = vis_beat_q8(), i, k;
+@@ -451,7 +451,7 @@ static void vis_orbit(void)
+     }
+     vis_ellipse(120, 120, rs, rs, C_WHITE);
+ }
+-static void vis_wires(void)
++UI_SMALL static void vis_wires(void)
+ {
+     uint32_t i, x;
+     for (i = 0; i < NTRK; i++) {
+@@ -472,14 +472,14 @@ static void vis_wires(void)
+     }
+ }
+ /* the kitten: eyes open for the first half of every beat, closed for the second (the BPM; stopped: the free count) */
+-static void vis_kitten(void)
++UI_SMALL static void vis_kitten(void)
+ {
+     uint32_t q = vis_beat_q8() & 255u;
+     kitten_draw(q < 128u ? KITTEN_OPEN : KITTEN_CLOSE, q < 128u ? sizeof KITTEN_OPEN : sizeof KITTEN_CLOSE, 14, 56);
+ }
+ 
+ /* the visualiser, every other frame: the update, then both bands */
+-static void vis_draw(void)
++UI_SMALL static void vis_draw(void)
+ {
+     uint32_t pass;
+     if (!vis_shown_last || ui.force) {
+@@ -522,7 +522,7 @@ static void vis_draw(void)
+         vis_name_t--;
+ }
+ /* SELECT on the visualiser: the next / previous style (round) */
+-static void vis_select(int32_t s)
++UI_SMALL static void vis_select(int32_t s)
+ {
+     vis_style = (uint8_t)((vis_style + (s > 0 ? 1u : VIS_N - 1u)) % VIS_N);
+     vis_name_t = 30;
 diff --git a/firmware/src/usb.c b/firmware/src/usb.c
 index 69c06ad..18a83ee 100644
 --- a/firmware/src/usb.c
@@ -1933,7 +2115,7 @@ index 0000000..eb4c8f6
 +    return fails;
 +}
 diff --git a/tests/golden.txt b/tests/golden.txt
-index cb04fb2..bafe023 100644
+index cb04fb2..2716185 100644
 --- a/tests/golden.txt
 +++ b/tests/golden.txt
 @@ -1,277 +1,277 @@
@@ -2351,7 +2533,7 @@ index cb04fb2..bafe023 100644
 +preset/PHYS/22_TIMPANI 939cb7f59f82b1e8
 +preset/NOISE/00_WIND e75c83b582bb4fbb
 +preset/NOISE/01_RAIN 2c992f744ec541b6
-+preset/NOISE/02_NZ_ARCADE 0a0be8449a37e00c
++preset/NOISE/02_NZ_ARCADE 93dc23686906a2a3
 +preset/NOISE/03_NZ_METAL 5400d750b982eaf4
 +preset/NOISE/04_OCEAN bdb5fb14db807d32
 +preset/NOISE/05_VINYL 1fedc73a6d496c62
@@ -3528,3 +3710,30 @@ index 0000000..bfbe100
 +    printf("unison: %d failed\n", fails);
 +    return fails;
 +}
+diff --git a/tools/level_presets.py b/tools/level_presets.py
+index 3fd8b34..bbde10c 100644
+--- a/tools/level_presets.py
++++ b/tools/level_presets.py
+@@ -64,12 +64,19 @@ def main(raw, rep, only=None):
+             t += int(round((TARGET + ROLE[role] - L) * 2))
+         tab[e][p] = max(-40, min(23, t))       # (LEVEL 104 + 23 = 127: the top of the table)
+     lines = ["/* generated by tools/level_presets.py: the level trim of each factory preset, 1/2 dB */",
+-             "#pragma once", f"#define PT_ENGINES {neng}u", f"#define PT_MAX {pmax}u",
+-             "static const int8_t PRESET_TRIM[PT_ENGINES][PT_MAX] = {"]
++             "#pragma once", f"#define PT_ENGINES {neng}u",
++             "/* (2.8-kitten) one row after the other, PT_OFF[e] where engine e's starts: no padding to 32 a row */",
++             "static const int8_t PRESET_TRIM[] = {"]
++    offs, n = [], 0
+     for e in range(neng):
+         cells = [f"/* {e}.{p} {names[e][p] or '-'} */ {tab[e][p]}" for p in range(pmax) if names[e][p]]
+-        lines.append("    {" + ", ".join(cells) + "},")
++        assert all(names[e][p] for p in range(len(cells))), e    # (each engine's presets from 0, none skipped)
++        offs.append(n)
++        n += len(cells)
++        if cells:
++            lines.append("    " + ", ".join(cells) + ",")
+     lines.append("};")
++    lines.append(f"static const uint8_t PT_OFF[PT_ENGINES + 1u] = {{{', '.join(str(o) for o in offs + [n])}}};")
+     OUT.write_text("\n".join(lines) + "\n")
+     print(f"{len(rows)} presets levelled -> {OUT}")
+ 
