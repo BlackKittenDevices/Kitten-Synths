@@ -56,7 +56,8 @@ The order is always **1, 2, 3, LITE, drums** (drums last). You see it on the tra
 - A boot logo with the **kitten** (2.5 seconds).
 - **PUMPKIN factory palette**: a black background and orange text, with tracks in violet, acid green, yellow, bone grey and orange. The other palettes are SLIME (green), BONE (grey), WITCH (violet) and BLOOD (red).
 - A new visualizer: **the kitten whose eyes open and close on the BPM**.
-- The BOUNCE, SLOOP (little boat) and LCD visualizers were removed.
+- The BOUNCE, SLOOP (little boat), LCD, SPECTRUM, TAPE, ORBIT and WIRES visualizers were removed. Six remain: OSCILLOSCOPE, SPECTROGRAM, LISSAJOUS, VU METERS, CIRCLE and KITTEN.
+- At power-on the kitten shows up and blinks once.
 - The installer and the web editor use Kitten Synths' identity.
 
 ### ★ Filter and envelope graphs

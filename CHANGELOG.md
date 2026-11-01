@@ -2,6 +2,12 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-19 · El gatito vuelve al arranque
+
+- Al encender aparece otra vez el dibujo del gatito, en vez de "=^.^=" en texto. Es el mismo gatito del visualizador: aparece con los ojos abiertos y parpadea una vez antes de entrar. Ya no se guarda una imagen aparte para el arranque (la de la calabaza).
+- Para hacerle lugar se quitaron cuatro visualizadores de SLOOP: SPECTRUM, TAPE, ORBIT y WIRES. Quedan seis: OSCILLOSCOPE, SPECTROGRAM, LISSAJOUS, VU METERS, CIRCLE y KITTEN. Un estilo guardado que ya no existe pasa a otro de los seis.
+- No cambia ningún sonido.
+
 ## fix-18 · Arreglos de SLOOP 2.8.1 a 2.8.4 (secuenciador, audio, unísono)
 
 Kitten Synths sigue sobre SLOOP 2.8 (la versión 2.8.4 entera no entra en la memoria del FM-1 junto con MUUG y la parte LITE). Se traen solo sus arreglos:

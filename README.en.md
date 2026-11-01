@@ -66,7 +66,7 @@ Kitten Synths meets the requirements of [The FM-1 Firmware Hub](https://thefirmw
 
 | File | What it is for |
 | --- | --- |
-| `muug.patch` and `fix-01.patch` … `fix-18.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
+| `muug.patch` and `fix-01.patch` … `fix-19.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
 | `.github/workflows/build.yml` | Fetches SLOOP, applies the patches, runs the tests, builds with JieLi's toolchain and publishes the site. |
 | `servir.py` | Serves the installer and the simulator on your computer. |
 | `splashes y logos/` | The kitten pictures (welcome, eyes open and closed). |

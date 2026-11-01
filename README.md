@@ -79,7 +79,7 @@ Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| `muug.patch` y `fix-01.patch` … `fix-18.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
+| `muug.patch` y `fix-01.patch` … `fix-19.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |

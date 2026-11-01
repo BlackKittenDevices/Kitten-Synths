@@ -99,7 +99,7 @@ Presupuesto compartido de 8 voces entre las pistas sintetizadoras; la batería t
 
 ## Interfaz
 
-- ★ Logo de bienvenida y visualizador del gatito que parpadea al tempo.
+- ★ Gatito de bienvenida que parpadea una vez al encender, y visualizador del gatito que parpadea al tempo.
 - Luces de botones y teclas, 5 paletas de color más tema propio.
 - ★ Pantallas de pistas, mezclador y visualizadores con cinco pistas.
 
@@ -112,7 +112,7 @@ Presupuesto compartido de 8 voces entre las pistas sintetizadoras; la batería t
 
 ## Lo que se sacó de SLOOP
 
-Para liberar memoria de programa: DIGITAL STEEL DRUM, SAMPLE UP BASS, VOICE HARMONICA, WHEEL REGGAE ORG, PHYS HAND DRUM, MEMB TOMS y TABLA, y los visualizadores BOUNCE, SLOOP y LCD. No se tocaron las muestras ni las tablas del filtro.
+Para liberar memoria de programa: DIGITAL STEEL DRUM, SAMPLE UP BASS, VOICE HARMONICA, WHEEL REGGAE ORG, PHYS HAND DRUM, MEMB TOMS y TABLA, y los visualizadores BOUNCE, SLOOP, LCD, SPECTRUM, TAPE, ORBIT y WIRES (estos cuatro, para que entre el gatito del arranque junto con los arreglos de SLOOP 2.8.4). No se tocaron las muestras ni las tablas del filtro.
 
 ## Límites
 

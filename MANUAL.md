@@ -56,7 +56,8 @@ El orden es siempre **1, 2, 3, LITE, batería** (la batería, última). Lo ves e
 - Logo de bienvenida con el **gatito** (dura 2,5 segundos).
 - **Paleta de fábrica PUMPKIN**: fondo negro y textos en naranja, con pistas en violeta, verde ácido, amarillo, gris hueso y naranja. Las otras paletas son SLIME (verde), BONE (gris), WITCH (violeta) y BLOOD (rojo).
 - Un visualizador nuevo: **el gatito con los ojos que se abren y cierran al ritmo del BPM**.
-- Se quitaron los visualizadores BOUNCE, SLOOP (barquito) y LCD.
+- Se quitaron los visualizadores BOUNCE, SLOOP (barquito), LCD, SPECTRUM, TAPE, ORBIT y WIRES. Quedan seis: OSCILLOSCOPE, SPECTROGRAM, LISSAJOUS, VU METERS, CIRCLE y KITTEN.
+- Al encender, el gatito aparece y parpadea una vez.
 - El instalador y el editor web usan la identidad de Kitten Synths.
 
 ### ★ Gráficos de filtro y de envolvente
