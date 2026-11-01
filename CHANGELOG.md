@@ -2,6 +2,16 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-18 · Arreglos de SLOOP 2.8.1 a 2.8.4 (secuenciador, audio, unísono)
+
+Kitten Synths sigue sobre SLOOP 2.8 (la versión 2.8.4 entera no entra en la memoria del FM-1 junto con MUUG y la parte LITE). Se traen solo sus arreglos:
+
+- **Secuenciador:** en una pista POLY, una nota sostenida mientras grabás otras encima ya no se corta ni se reinicia (en vivo, en la toma libre y en overdub). LEN de una nota sigue por debajo de las siguientes (SEQ > NOTES). En MONO / LEGATO avisa *MONO: SET VOICE POLY*. En REC READY cada perilla cambia solo su valor. La hoja del paso (OCT+) es una tira abajo y deja ver el roll.
+- **Audio:** sin distorsión al final de las notas: la mezcla redondea en vez de truncar, en la salida de 3,5 mm y en USB. El UNISON ya no apila sus voces en fase en ningún motor. En MUUG, cada voz lee el ruido desde su propio lugar del bloque, una de cada dos invertida. Un sample tocado otra vez arranca desde el silencio con su ATK, sin click. NZ ARCADE sigue las teclas agudas.
+- **Estabilidad:** sin notas colgadas tras una ráfaga MIDI. En un ritmo cargado el bombo ya no se pierde. Un toque corto de un botón ya no hace parpadear su página.
+- No se traen la protección del segundo núcleo, la afinación de PHYS ni GRAIN.
+- Pruebas nuevas de SLOOP: notas sostenidas, LEN, batería, samples, fundidos, perillas y unísono. Las huellas de sonido (`tests/golden.txt`) se regeneraron.
+
 ## fix-17 · Grabación multipista por USB (8 canales)
 
 - La entrada de audio USB pasa de 2 a **8 canales** (16 bits, 44,1 kHz, sin drivers): 1-2 el master estéreo (como antes), 3-6 los cuatro sintes (3 = pista 1, 4 = pista 2, 5 = pista 3, 6 = LITE), 7 la batería, 8 en silencio.
