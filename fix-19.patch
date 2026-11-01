@@ -1,15 +1,39 @@
 diff --git a/tools/build.py b/tools/build.py
-index 2b1ef6f..f1da113 100644
+index 2b1ef6f..0e1df92 100644
 --- a/tools/build.py
 +++ b/tools/build.py
-@@ -193,7 +193,9 @@ def build_app():
+@@ -193,8 +193,32 @@ def build_app():
             ("cc", "-c", FW / "hal" / "fm1_cpu1.S", "-o", OUT / "fm1_cpu1.o"),
             ("cc", *flags, "-c", FW / "src" / "felucca.c", "-o", OUT / "felucca.o"))
      elf = OUT / "felucca.elf"
 -    tc("pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
-+    # (2.8.4-kitten) the linker drops the functions nothing calls (one section each, -ffunction-sections), as the
-+    # loader's link does: the flash is full, and code the Kitten parts replaced stays out of the image
-+    tc("pi32v2/bin/ld", "--gc-sections", "-e", "_start", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
-        OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)
+-       OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)
++    objs = (OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o", OUT / "fm1_cpu1.o", OUT / "felucca.o")
++    try:
++        tc("pi32v2/bin/ld", "-T", FW / "app.ld", *objs, "-o", elf)
++    except SystemExit:
++        # (2.8.4-kitten) the flash is full: link anyway (an image that is not shipped) and say what is biggest
++        if "overflow" in LAST_ERR:
++            err = LAST_ERR
++            try:
++                tc("pi32v2/bin/ld", "--noinhibit-exec", "-T", FW / "app.ld", *objs, "-o", OUT / "big.elf")
++            except SystemExit:
++                pass
++            try:
++                rows = []
++                for ln in tc("common/bin/objdump", "-t", OUT / "big.elf").splitlines():
++                    f = ln.split()
++                    if len(f) >= 5 and (f[-3].startswith(".text") or f[-3].startswith(".data")):
++                        try:
++                            rows.append((int(f[-2], 16), f[-3], f[-1]))
++                        except ValueError:
++                            pass
++                rows.sort(reverse=True)
++                print("::warning title=biggest in flash::" + " ; ".join(f"{n} {name}" for n, sec, name in rows[:250]))
++            except SystemExit:
++                pass
++            globals()["LAST_ERR"] = err
++        raise
      for sect in ("text.bin", "data.bin", "ramtext.bin", "c1text.bin"):
          (OUT / sect).unlink(missing_ok=True)
+     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
