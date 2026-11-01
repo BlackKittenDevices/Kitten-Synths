@@ -28,4 +28,4 @@ Las pistas 3-7 van en mono y pre-master (con nivel, paneo, mute, INSERT y filtro
 
 **Instalar:** bajá `Kitten-Synths-instalador-2.8-kitten.zip`, descomprimilo, abrí `servir.py` (Python 3, Chrome o Edge) y apretá Instalar. Después desenchufá y enchufá el FM-1 una vez para que la compu vea los 8 canales. Hacé backup antes. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.md#audio-usb
 
-Also / además: MUUG (Minimoog-style, 100 sounds), a fourth LITE synth, 37 drum kits, 64-step sequencer, songs, 27 punch-in effects. Based on SLOOP 2.8 · GPL-3.0 · identity `FM-1_969`.
+Also / además: MUUG (Minimoog-style, 100 sounds), a fourth LITE synth, 37 drum kits, 64-step sequencer, songs, 27 punch-in effects. Based on SLOOP 2.8.4 · GPL-3.0 · identity `FM-1_969`.

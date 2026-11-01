@@ -1,0 +1,245 @@
+diff --git a/firmware/src/eng_muug.c b/firmware/src/eng_muug.c
+index c82f8f3..3961a1b 100644
+--- a/firmware/src/eng_muug.c
++++ b/firmware/src/eng_muug.c
+@@ -432,9 +432,14 @@ static void fmini_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
+         fmini_wave(g[FG_W3], &ph2, inc3, l3, mix, n);
+     else
+         ph2 += inc3 * n;
+-    if (ln)
++    if (ln) {                                               /* (2.8.4-kitten: each voice reads the part's noise from its own
++                                                     * place in the block, every other one inverted: voices that sound
++                                                     * together, UNISON's above all, no longer stack the same noise in phase) */
++        uint32_t vi = (uint32_t)(v - t->v) % NVOICE, o = (vi * 13u) % CTL;
++        int32_t lv = (vi & 1u) ? -ln : ln;
+         for (i = 0; i < n; i++)
+-            mix[i] += mulq15(fmini_nbuf[tr][i], ln);
++            mix[i] += mulq15(fmini_nbuf[tr][(i + o) % CTL], lv);
++    }
+ 
+     /* the singing pitch (MIDI x 16): the CUTOFF knob's dial, the contour, the keyboard, the modulation, the host's (LFO / matrix / ENV routings) */
+     {
+diff --git a/tests/golden.txt b/tests/golden.txt
+index 71f541f..0173423 100644
+--- a/tests/golden.txt
++++ b/tests/golden.txt
+@@ -35,15 +35,14 @@ preset/DIGITAL/09_KALIMBA ccf823e7c13606f1
+ preset/DIGITAL/10_PLUGG_BELL 974d5069bf693723
+ preset/DIGITAL/11_GLASS_PAD d61a2a8e676b02e9
+ preset/DIGITAL/12_FM_BASS fee2f20e0a867b96
+-preset/DIGITAL/13_STEEL_DRUM 87b450979d293646
+-preset/DIGITAL/14_GLOCKEN 5a7917dc6d3d57ca
+-preset/DIGITAL/15_CELESTA c286f82a0cefea6e
+-preset/DIGITAL/16_XYLOPHONE 726a89ff2ebcd209
+-preset/DIGITAL/17_HARP 1fd85ccbd81241f0
+-preset/DIGITAL/18_BASS_GTR 5b8ff67b66407afe
+-preset/DIGITAL/19_TUBE_BELL 370d0b038877010d
+-preset/DIGITAL/20_FM_PLUCK 11e18ba62acd7a68
+-preset/DIGITAL/21_FM_GRAND a25107190408a0df
++preset/DIGITAL/13_GLOCKEN 5a7917dc6d3d57ca
++preset/DIGITAL/14_CELESTA c286f82a0cefea6e
++preset/DIGITAL/15_XYLOPHONE 726a89ff2ebcd209
++preset/DIGITAL/16_HARP 1fd85ccbd81241f0
++preset/DIGITAL/17_BASS_GTR 5b8ff67b66407afe
++preset/DIGITAL/18_TUBE_BELL 370d0b038877010d
++preset/DIGITAL/19_FM_PLUCK 11e18ba62acd7a68
++preset/DIGITAL/20_FM_GRAND a25107190408a0df
+ preset/PHASE/00_CZ_BASS a109028ba9c13d54
+ preset/PHASE/01_SOFT_KEYS be302531219fcd4d
+ preset/PHASE/02_CZ_STRING 0ca6bf45690f0912
+@@ -61,23 +60,21 @@ preset/LOFI/05_1BIT_BEEP abb71c2ee4a0884b
+ preset/LOFI/06_WAVE_LEAD 23eb147f89c28417
+ preset/LOFI/07_CHIP_NOISE 22efb4c099541363
+ preset/SAMPLE/00_GRAND_PNO c5bd0a26a3076792
+-preset/SAMPLE/01_UP_BASS 9cd78d7954dd3048
+-preset/SAMPLE/02_VIBES d20fef74597b3425
+-preset/SAMPLE/03_HORN_STAB 3863c2e2aeeed5da
+-preset/SAMPLE/04_STRING_STB 1aa3f3493bcab904
+-preset/SAMPLE/05_LOFI_FLUTE 6141680de17b31e2
+-preset/SAMPLE/06_SCRATCH e273141b29f87f90
+-preset/SAMPLE/07_GM_KIT ccb7d54e9f18defb
+-preset/SAMPLE/08_DUSTY_PNO 1e9a4db62b5bfe0e
+-preset/SAMPLE/09_LOFI_KEYS fb4440a8ab2f51a2
+-preset/SAMPLE/10_DEEP_BASS ce2ced55a60f4d20
++preset/SAMPLE/01_VIBES d20fef74597b3425
++preset/SAMPLE/02_HORN_STAB 3863c2e2aeeed5da
++preset/SAMPLE/03_STRING_STB 1aa3f3493bcab904
++preset/SAMPLE/04_LOFI_FLUTE 6141680de17b31e2
++preset/SAMPLE/05_SCRATCH e273141b29f87f90
++preset/SAMPLE/06_GM_KIT ccb7d54e9f18defb
++preset/SAMPLE/07_DUSTY_PNO 1e9a4db62b5bfe0e
++preset/SAMPLE/08_LOFI_KEYS fb4440a8ab2f51a2
++preset/SAMPLE/09_DEEP_BASS ce2ced55a60f4d20
+ preset/VOICE/00_CHOIR_AAH 26fb9dea09985f7e
+ preset/VOICE/01_SOUL_OOH acae5800585911b0
+ preset/VOICE/02_TALKBOX a39aafcb80c658e2
+ preset/VOICE/03_WOW_BASS 15d362c817aa50fe
+-preset/VOICE/04_HARMONICA 7ef0da8a7838e198
+-preset/VOICE/05_ROBOT 650b63ad403bc58c
+-preset/VOICE/06_VOX_PAD fb38da0d22f38172
++preset/VOICE/04_ROBOT 650b63ad403bc58c
++preset/VOICE/05_VOX_PAD fb38da0d22f38172
+ preset/TRIO/00_FAT_BASS 55de2129707c9759
+ preset/TRIO/01_MIN_STAB 2632da5b6f5278ba
+ preset/TRIO/02_MIN7_STAB 924e16723dcbdf7a
+@@ -99,7 +96,6 @@ preset/WHEEL/03_DIRTY_B3 f89b98547cb413ed
+ preset/WHEEL/04_HOUSE_ORGN 3b6645c81426f98e
+ preset/WHEEL/05_ROCK_ORGAN e8d878966bc133e2
+ preset/WHEEL/06_CHAPEL 451598b2ab4a87f1
+-preset/WHEEL/07_REGGAE_ORG ea6c8bc9f3c4c181
+ preset/GRAIN/00_LOFI_CLOUD 034b7f18af079e20
+ preset/GRAIN/01_VIBE_HAZE 0379d917e27966f3
+ preset/GRAIN/02_FLUTE_DUST 12add7edf9162f68
+@@ -121,27 +117,24 @@ preset/PHYS/01_MODAL_BAR 5ca8061f30cac5fe
+ preset/PHYS/02_STR_PLUCK 2d57233485a869fc
+ preset/PHYS/03_BOWED_MTL 7d7d620187f27a70
+ preset/PHYS/04_THUMB_PNO 1a932cdac0ae37e4
+-preset/PHYS/05_HAND_DRUM eb9804b2da02dd61
+-preset/PHYS/06_MEMB_TOMS e857a1a9388100c0
+-preset/PHYS/07_SITAR 7a91f38db13c97d0
+-preset/PHYS/08_PHYS_HARP be266a95d2124d01
+-preset/PHYS/09_NYLON_GTR f95e828e41b4a551
+-preset/PHYS/10_STEEL_GTR 754b79d70a1bb02a
+-preset/PHYS/11_MUTED_GTR 1a32f57ee1033ad2
+-preset/PHYS/12_PLUCK_BASS b98f0da93cbaec62
+-preset/PHYS/13_KOTO 4b742f86ffaeee0f
+-preset/PHYS/14_BANJO 1a3e377c0cb47c82
+-preset/PHYS/15_CELLO_BOW 8915d724b2724143
+-preset/PHYS/16_TANPURA aa68abf882613fb3
+-preset/PHYS/17_CHIMES 9852dc7da5d6b1cf
+-preset/PHYS/18_BIG_BELL fd47d525dff22f88
+-preset/PHYS/19_VIBRA_BAR 5db1d37fb3049d54
+-preset/PHYS/20_GLASS_BOWL 70bc0b6f0132af8f
+-preset/PHYS/21_STEEL_PAN 14e57d642408270f
+-preset/PHYS/22_WOOD_BLOCK 6cfa419e4b61f9ba
+-preset/PHYS/23_TABLA 4b03983f9626197d
+-preset/PHYS/24_CONGA e9d11f7b0763ae75
+-preset/PHYS/25_TIMPANI 939cb7f59f82b1e8
++preset/PHYS/05_SITAR 7a91f38db13c97d0
++preset/PHYS/06_PHYS_HARP be266a95d2124d01
++preset/PHYS/07_NYLON_GTR f95e828e41b4a551
++preset/PHYS/08_STEEL_GTR 754b79d70a1bb02a
++preset/PHYS/09_MUTED_GTR 1a32f57ee1033ad2
++preset/PHYS/10_PLUCK_BASS b98f0da93cbaec62
++preset/PHYS/11_KOTO 4b742f86ffaeee0f
++preset/PHYS/12_BANJO 1a3e377c0cb47c82
++preset/PHYS/13_CELLO_BOW 8915d724b2724143
++preset/PHYS/14_TANPURA aa68abf882613fb3
++preset/PHYS/15_CHIMES 9852dc7da5d6b1cf
++preset/PHYS/16_BIG_BELL fd47d525dff22f88
++preset/PHYS/17_VIBRA_BAR 5db1d37fb3049d54
++preset/PHYS/18_GLASS_BOWL 70bc0b6f0132af8f
++preset/PHYS/19_STEEL_PAN 14e57d642408270f
++preset/PHYS/20_WOOD_BLOCK 6cfa419e4b61f9ba
++preset/PHYS/21_CONGA e9d11f7b0763ae75
++preset/PHYS/22_TIMPANI 939cb7f59f82b1e8
+ preset/NOISE/00_WIND e75c83b582bb4fbb
+ preset/NOISE/01_RAIN 2c992f744ec541b6
+ preset/NOISE/02_NZ_ARCADE 0a0be8449a37e00c
+@@ -153,6 +146,106 @@ preset/NOISE/07_RISER 2f998600041970eb
+ preset/NOISE/08_NZ_SNARE 2b234bbe1c868c6c
+ preset/NOISE/09_BITCRUSH f370a5d34807afbc
+ preset/NOISE/10_RADIO 34a0abd39bdabed7
++preset/MUUG/00_MINI_LEAD 91a49a7ac918a73c
++preset/MUUG/01_SIENTO_ARP 2f1c8177c5de20d0
++preset/MUUG/02_LUSH_STRINGS 7fe6886bbca23d49
++preset/MUUG/03_ROTARY_ORG 36c6ccd1afe8a2eb
++preset/MUUG/04_CRYSTAL_BELL 74fe944b933739df
++preset/MUUG/05_DUB_STAB 3e2079ce1a777ca8
++preset/MUUG/06_CS-80X_BRASS fc9275b1ff468d39
++preset/MUUG/07_SPACE_DRONE f020dad030ee753c
++preset/MUUG/08_MANDARINA 95efa2885b51d969
++preset/MUUG/09_E.PIANO b9a6cb78069d29eb
++preset/MUUG/10_EMMERSON d2aefc72c2d0336a
++preset/MUUG/11_NUMANN e2ccd29d2f740b11
++preset/MUUG/12_HAMMER d9141fe37251badf
++preset/MUUG/13_FIFTHS 240524b9932f78a9
++preset/MUUG/14_RAVE_ARP d60f7f512f66993f
++preset/MUUG/15_ACID_LEAD f5079992b49f1436
++preset/MUUG/16_PULSE_HERO f48ec129213e1152
++preset/MUUG/17_TITAN 1e84734352abf6fa
++preset/MUUG/18_FUZZ_LEAD 1ce84e5e12f588f8
++preset/MUUG/19_GROWL d2fb9e94d256f82d
++preset/MUUG/20_MOOGH_FLUTE 06ce6b5b02a454ae
++preset/MUUG/21_G-FUNK 4d7c36ab0f9c1ca5
++preset/MUUG/22_SINE_SOLO fa7d69c6014fbe6e
++preset/MUUG/23_BANKSH 22cf677f2fbf2784
++preset/MUUG/24_OBOE 27555d2f01db8524
++preset/MUUG/25_SOLO_VIOLIN 70b4205e70304a6d
++preset/MUUG/26_DREAMER 8943bc79c76b42b3
++preset/MUUG/27_WHISTLE ff591e70250bdc10
++preset/MUUG/28_MELLOW_PULSE 3e89c362526e4236
++preset/MUUG/29_SAX_LEAD 0193328a641f603f
++preset/MUUG/30_MOOGH_BASS 159d2306a8082739
++preset/MUUG/31_CAMALEON 9c385300b669c64c
++preset/MUUG/32_SUB_BASS 6ed9f6e4da9901ac
++preset/MUUG/33_WOBBLE_BASS 87c7840cc7513f43
++preset/MUUG/34_OCTAVE_PUMP 3b8288082a9b76a3
++preset/MUUG/35_SEQ_BASS 1007dfe8ebc83cf4
++preset/MUUG/36_REESE 33017ff7ebe5828d
++preset/MUUG/37_RUBBER 9825e825cc80ef00
++preset/MUUG/38_FUZZ_BASS 34cfb87ff2995229
++preset/MUUG/39_WONDERS_BASS f7770101fb6daf3d
++preset/MUUG/40_SOLINAH c6dbb9ddcd09d9bb
++preset/MUUG/41_WARM_PAD e128672c1524afbd
++preset/MUUG/42_JUNOH_PWM 83df4fe7bd767259
++preset/MUUG/43_CHOIR a0e191a945e42eed
++preset/MUUG/44_SWEEP_PAD 54a69794164eb0f5
++preset/MUUG/45_ANGELS 3a37a7cf85523fcc
++preset/MUUG/46_ECLIPSE cdba613396b1739d
++preset/MUUG/47_PULSE_PAD c45602f2fb751ffa
++preset/MUUG/48_CELLOS f542e433d0a57dfa
++preset/MUUG/49_AIR_PAD d73f448269e3430f
++preset/MUUG/50_MOOGH_BRASS 4aaea78060ad780f
++preset/MUUG/51_SALTO_BRASS 3f42aed9d64827fa
++preset/MUUG/52_TRUMPET 25c31d5d35d847af
++preset/MUUG/53_FRENCH_HORN 014cb71b921ffdbc
++preset/MUUG/54_BRASS_STAB da739c30a79a25f1
++preset/MUUG/55_BRASS_SWELL 6628ad4dcb8a4881
++preset/MUUG/56_HORN_RIFF f3de397a2c3834fc
++preset/MUUG/57_TROMBONE c8ebc35ae79b9f7f
++preset/MUUG/58_FLUGEL f05356f043a030c7
++preset/MUUG/59_FANFARE 21b1e29c689715c9
++preset/MUUG/60_PLUCK_SAW 678dd6908cc8e110
++preset/MUUG/61_MARIMBA ffa21357211c6fc0
++preset/MUUG/62_KALIMBA e51e572933dc907f
++preset/MUUG/63_FUNK_ARP a2fed62e21ff2336
++preset/MUUG/64_NYLON 5ab9b448c32333f8
++preset/MUUG/65_STEELDRUM fd1a88665151e84f
++preset/MUUG/66_8-BIT_ARP b80f17ea4bd06396
++preset/MUUG/67_PIZZICATO fd76f61e45307ff4
++preset/MUUG/68_POP_PLUCK aae6f31a4cda449f
++preset/MUUG/69_HARP 66d29cea31c00d20
++preset/MUUG/70_CLAVINETE 3ae48331c056ed30
++preset/MUUG/71_PIPE_ORGAN 415a2e402bb37b6d
++preset/MUUG/72_SYNTH_PIANO d5aaf24dac4515c0
++preset/MUUG/73_HARPSICHORD 6bcb025b635c76a2
++preset/MUUG/74_VIBES c2fcb730178f8523
++preset/MUUG/75_WURLEY d8efb9a27579d19c
++preset/MUUG/76_TUBULAR 2545b3ce7b4c82dc
++preset/MUUG/77_MUSIC_BOX 80dfebd9357cc92f
++preset/MUUG/78_ACCORDION 14a3f395cc9f2ef3
++preset/MUUG/79_FARFISAH fe0c6b5fa18e7c4c
++preset/MUUG/80_DARK_DRONE 40d17c010e2b3065
++preset/MUUG/81_STAR_DUST f81ffc025c983881
++preset/MUUG/82_ALIEN_CHOIR 536c11becc062ff3
++preset/MUUG/83_GLASS_HARP 062c04c2dfe258ef
++preset/MUUG/84_OCEAN_TIDE 7762f394a66b2676
++preset/MUUG/85_PULSAR 989cfe6301e142a2
++preset/MUUG/86_IRON_DRONE c6c8a4f82b248d65
++preset/MUUG/87_GHOST_SEQ 2c6d17a5f4ef6cec
++preset/MUUG/88_HORROR f50df37043acf85a
++preset/MUUG/89_SINGING_BOWL a1ae28ccce4180e6
++preset/MUUG/90_JET_SWEEP f379ac4b8deb44c7
++preset/MUUG/91_THUNDER 40e7f2d546a6e700
++preset/MUUG/92_WIND 1a08c0811c2b9a86
++preset/MUUG/93_SIREN 150dc9515d0a4b9d
++preset/MUUG/94_TELEPHONE 6de9282063cbc15f
++preset/MUUG/95_POWER_UP a0f2b565a2f8ed80
++preset/MUUG/96_LASER_ZAP f490ad2b71506ff7
++preset/MUUG/97_HELICOPTER 32ffa11372e76d7d
++preset/MUUG/98_ROBOT 87f6a7cbc2b20b5a
++preset/MUUG/99_UFO e1afbd4f5df3ab18
+ drums/gm_kit 51ef07025d5d8f29
+ mode/ANALOG/POLY d293ec26631dfae0
+ mode/ANALOG/MONO 18ee6950d997f284

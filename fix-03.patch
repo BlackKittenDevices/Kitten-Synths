@@ -198,7 +198,7 @@ index e61e931..02ba60a 100644
      for (const pr of pairs) {                        /* the first pair that answers (a generic name may be other gear) */
        const l = new Link((d) => pr.output.send(d), {
 diff --git a/web/index_pkg.html b/web/index_pkg.html
-index ca2eae6..76c2f49 100644
+index 1af8fe0..f48aaa1 100644
 --- a/web/index_pkg.html
 +++ b/web/index_pkg.html
 @@ -5,7 +5,7 @@
@@ -287,7 +287,7 @@ index ca2eae6..76c2f49 100644
 -    stockFinish: "FM-1 は SLOOP の書き込みモードです。先に「インストール」で SLOOP の書き込みを終えてから、公式 V15 に戻してください。",
 +    stockConfirm: "FM-1 に公式 V15 をインストールします。Kitten Synths の曲は公式ファームウェアでは開けません。バックアップは保存しましたか？",
 +    stockFinish: "FM-1 は Kitten Synths の書き込みモードです。先に「インストール」で Kitten Synths の書き込みを終えてから、公式 V15 に戻してください。",
-     back: "公式ファームウェアに戻すには、M-VAVE 公式のアップデーター M-UPGRADE（Downloads → PC Software → M-UPGRADE）と公式ファームウェアを使ってください。FM-1 が見つからない場合は、MIDI を使う他のアプリとブラウザのタブを閉じてください。",
+     back: "公式ファームウェアに戻すには、M-VAVE 公式のアップデーター M-UPGRADE（Downloads → PC Software → M-UPGRADE）と公式ファームウェアを使ってください。FM-1 が見つからない場合は、MIDI を使う他のアプリとブラウザのタブを閉じてください。それでも見つからない場合は、Clipper のインストールページを開き、その「Return to the official firmware」を使ってください（Clipper を入れる必要はありません）。",
    },
    en: {
 @@ -156,12 +158,12 @@ const TEXT = {
@@ -303,7 +303,7 @@ index ca2eae6..76c2f49 100644
 -    stockFinish: "The FM-1 is in SLOOP's update mode. Press Install to finish the SLOOP update first, then return to the official V15.",
 +    stockConfirm: "Install the official V15 on the FM-1? The official firmware cannot open Kitten Synths' music. Did you save a backup?",
 +    stockFinish: "The FM-1 is in Kitten Synths' update mode. Press Install to finish the Kitten Synths update first, then return to the official V15.",
-     back: "To return to the official firmware, use M-VAVE's own updater, M-UPGRADE (Downloads → PC Software → M-UPGRADE), with the official firmware from M-VAVE. If it does not find the FM-1, close every other app and browser tab that uses MIDI.",
+     back: "To return to the official firmware, use M-VAVE's own updater, M-UPGRADE (Downloads → PC Software → M-UPGRADE), with the official firmware from M-VAVE (PC Firmware → FM-1, V16). If it does not find the FM-1, close every other app and browser tab that uses MIDI; if it still does not, open Clipper's installer page and use its Return to the official firmware (no need to install Clipper).",
    },
  };
 @@ -176,7 +178,7 @@ function applyLang() {

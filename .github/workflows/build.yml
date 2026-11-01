@@ -15,7 +15,7 @@ on:
     paths: ["muug.patch", "fix-*.patch", "splashes y logos/**", ".github/workflows/build.yml"]
 
 env:
-  SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb     # SLOOP 2.8 (isod89/sloop-fm1)
+  SLOOP_COMMIT: 91f30182d9095e0ecdb43396554f2ce5a67df179     # SLOOP 2.8.4 (isod89/sloop-fm1)
   FM1_IDENTITY: FM-1_969                                      # identidad propia en el Firmware Hub (928 y 931 ya estan en uso)
   VERSION: 2.8-kitten                                         # one digit each, then a suffix (tools/build.py --release): the editor reads "2.8" as the SLOOP version
 
@@ -138,7 +138,7 @@ jobs:
           cat = {"default": "kittensynths-" + sha, "firmwares": [{
               "id": "kittensynths-" + sha, "hub": "kittensynths", "name": "Kitten Synths", "version": v + "+" + sha, "author": "Black Kitten Devices",
               "license": "GPL-3.0",
-              "about": "SLOOP 2.8 with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and drums. On a real FM-1 it records 7 tracks into your DAW over USB.",
+              "about": "SLOOP 2.8.4 with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and drums. On a real FM-1 it records 7 tracks into your DAW over USB.",
               "repo": "https://github.com/BlackKittenDevices/Kitten-Synths",
               "package": "fw/kitten-synths.fwsc?" + sha,
               "installer": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/installer/"}]}
@@ -206,7 +206,7 @@ jobs:
           {
             echo "# Kitten Synths $VERSION"
             echo
-            echo "Firmware para el M-VAVE FM-1 (SLOOP 2.8 + MUUG + parte LITE). **Beta: instalalo bajo tu propio riesgo.** Antes hacé una copia de seguridad."
+            echo "Firmware para el M-VAVE FM-1 (SLOOP 2.8.4 + MUUG + parte LITE). **Beta: instalalo bajo tu propio riesgo.** Antes hacé una copia de seguridad."
             echo
             echo "**Cómo instalar:** descargá \`Kitten-Synths-instalador-$VERSION.zip\`, descomprimilo y ejecutá \`servir.py\` (Python 3, Chrome o Edge). El manual está en la carpeta \`docs\` del zip y en el repositorio (\`MANUAL.md\`)."
             echo

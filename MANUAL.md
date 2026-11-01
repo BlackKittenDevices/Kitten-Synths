@@ -2,7 +2,7 @@
 
 Firmware para el **M-VAVE FM-1** · versión 2.8-kitten · Black Kitten Devices · [Read in English](MANUAL.en.md)
 
-Kitten Synths está construido sobre **SLOOP 2.8**. Todo lo que hace SLOOP lo hace igual acá (y con los mismos gestos). Este manual explica el instrumento completo en español y marca con **★ NUEVO** lo que agrega Kitten Synths. Para el detalle fino de cada página de SLOOP existe la [guía original en inglés](https://github.com/isod89/sloop-fm1/blob/ec9e53721cc576816a5750220391f2d0217c01cb/GUIDE.md).
+Kitten Synths está construido sobre **SLOOP 2.8.4**. Todo lo que hace SLOOP lo hace igual acá (y con los mismos gestos). Este manual explica el instrumento completo en español y marca con **★ NUEVO** lo que agrega Kitten Synths. Para el detalle fino de cada página de SLOOP existe la [guía original en inglés](https://github.com/isod89/sloop-fm1/blob/91f30182d9095e0ecdb43396554f2ce5a67df179/GUIDE.md).
 
 ## Contenido
 
@@ -29,7 +29,7 @@ Kitten Synths está construido sobre **SLOOP 2.8**. Todo lo que hace SLOOP lo ha
 
 ## 1. Novedades de Kitten Synths
 
-Respecto de SLOOP 2.8, Kitten Synths agrega:
+Respecto de SLOOP 2.8.4, Kitten Synths agrega:
 
 ### ★ Un motor nuevo: MUUG
 

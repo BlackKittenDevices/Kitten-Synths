@@ -4,7 +4,7 @@ Kitten Synths es obra de **Black Kitten Devices** y existe gracias al trabajo ab
 
 ## Base del proyecto
 
-- **[SLOOP](https://github.com/isod89/sloop-fm1)** de **isod89** y su comunidad (versión 2.8): la groovebox sobre la que se construye todo. Kitten Synths lo toma de su repositorio en un commit fijo (`ec9e537`) y le aplica parches.
+- **[SLOOP](https://github.com/isod89/sloop-fm1)** de **isod89** y su comunidad (versión 2.8.4): la groovebox sobre la que se construye todo. Kitten Synths lo toma de su repositorio en un commit fijo (`91f3018`) y le aplica parches.
 - **[Felucca](https://github.com/hugelton/Felucca)** de **Leo Kuroshita (@kurogedelic) / Hügelton Instruments**: el firmware base de SLOOP (motores, secuenciador, editor, instalador, audio USB, clock MIDI, motor FM6 y parches DX7, efectos INSERT, MIDI LEARN y mucho más).
 - **[FMini-1](https://github.com/ruppert/fmini-1)** de **Guilherme Ruppert**: de ahí sale el motor del sintetizador tipo Moog, que Kitten Synths llama **MUUG**, con sus 100 parches de fábrica y su filtro de escalera.
 
