@@ -1905,6 +1905,45 @@ index c9aeefe..f5665bd 100644
                              apart = 0;
              }
          bad += check("data stays in the Felucca regions (autosave too)", inside);
+diff --git a/tests/target_budget.txt b/tests/target_budget.txt
+index 1608b4e..a1a7327 100644
+--- a/tests/target_budget.txt
++++ b/tests/target_budget.txt
+@@ -7,18 +7,25 @@
+ # SLOOP 2.4: FM6 (fm6_op_run, fm6_op_fb: the per-sample operator loops; fm6_render: the voice's output loop)
+ # are in FUNCS without a budget yet: the engine was ported on a host without the pi32v2 toolchain; the
+ # next ./build.sh + BUDGET_UPDATE=1 adds their lines (until then they print "no budget", not a failure).
+-analog_render 638
++# Kitten Synths 2.8-kitten (reviewed, BUDGET_UPDATE=1 in CI): sample_render x4.7 is the 2.8.4 decode loop (a high note
++# reads several source samples an output sample: a nested loop in the count, one pass at the root pitch);
++# fm1_alnk0_irq +54 %: the mix rounded (2.8.4 MULQ12R) and the second drum track's stem; drums_mix +7 %: the
++# drum state through a pointer (two drum tracks). Measured on the FM-1: all six tracks, the heaviest sounds, <= 60 % CPU.
++analog_render 630
+ digital_render 333
+ phase_render 79
+ lofi_render 128
+-sample_render 126
++sample_render 593
+ formant_render 314
+ trio_render 341
+ trio_pass 175
+-drawbar_render 267
+-drawbar_block 102
+-grain_render 1734
+-grain_block 138
+-slicer_track 825
+-drums_mix 6153
+-fm1_alnk0_irq 174
++drawbar_render 271
++drawbar_block 103
++grain_render 1748
++grain_block 132
++slicer_track 820
++drums_mix 6560
++fm6_op_run 72
++fm6_op_fb 26
++fm6_render 362
++fm1_alnk0_irq 268
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
 index d3cc3b5..1433ed2 100644
 --- a/tests/ui_pages_test.c
