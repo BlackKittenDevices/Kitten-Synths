@@ -2,7 +2,7 @@
 
 <h1 align="center">Kitten Synths</h1>
 
-<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con cuatro sintes (uno tipo Minimoog) y dos baterías, que graba 8 canales en tu DAW.</b><br>
+<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con cuatro sintes (+ Motor Minimoog) y dos baterías, que graba 8 canales en tu DAW.</b><br>
 Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.com/isod89/sloop-fm1">SLOOP</a>, <a href="https://github.com/hugelton/Felucca">Felucca</a> y <a href="https://github.com/ruppert/fmini-1">FMini-1</a></p>
 
 <p align="center">
@@ -24,7 +24,7 @@ Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.
 
 ## ¿Qué es?
 
-Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro sintetizadores y dos baterías** a la vez. Parte de SLOOP 2.8 (con los arreglos de 2.8.4) (doce motores de síntesis, secuenciador de 64 pasos, modo canción, efectos de golpe, muestras propias, MIDI y audio USB) y le suma:
+Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro sintetizadores y dos baterías** a la vez. Parte de SLOOP 2.8 (con los arreglos de 2.8.4) (trece motores de síntesis, secuenciador de 64 pasos, modo canción, efectos de golpe, muestras propias, MIDI y audio USB) y le suma:
 
 - **MUUG**: un motor al estilo de los clásicos de tres osciladores de Moog, portado desde FMini-1, con **100 sonidos de fábrica**, filtro de escalera de 24 dB/oct y todas sus pantallas de edición en el propio FM-1 (no hace falta el editor web). Hasta 8 voces según el preset.
 - **Una cuarta parte sintetizadora "LITE"** (gris, antes de la batería), pensada para sumar capas sin cargar el procesador: toca los motores DIGITAL, PHASE, LOFI, SAMPLE y VOICE.
