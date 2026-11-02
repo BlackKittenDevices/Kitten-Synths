@@ -1787,6 +1787,25 @@ index 5dddcd1..751d203 100644
              uint32_t idx = sl[k].pos >= CTL * (uint32_t)song.g[G_BPM] ? sl[k].idx : (sl[k].idx + 15u) & 15u;
              miss += idx != trk[k].seq_idx % 16u;
          }
+diff --git a/tests/storage_test.c b/tests/storage_test.c
+index c9aeefe..f5665bd 100644
+--- a/tests/storage_test.c
++++ b/tests/storage_test.c
+@@ -126,11 +126,12 @@ int main(void)
+                 uint32_t a = st_sector(o, c);
+                 int data = a >= 0x97000u && a + 4096u <= 0xA0000u, ups = a >= 0xDC000u && a + 4096u <= 0xE0000u;
+                 int glob = a >= 0xFC000u && a + 4096u <= 0xFF000u, fm6 = a >= 0xE5000u && a + 4096u <= 0xE7000u,
+-                    kit = o == OBJ_KITTEN && a == 0xFB000u;         /* (Kitten Synths: one sector, both copies) */
++                    kit = (o == OBJ_KITTEN && a == 0xFB000u) || (o == OBJ_KITDRUM && a == 0xFA000u);   /* (Kitten Synths: one sector,
++                                                                     * both copies; 2.8-kitten: the second drum track's) */
+                 inside &= (data || ups || glob || fm6 || kit) && !(a & 0xFFFu);
+                 for (o2 = 0; o2 < OBJ_COUNT; o2++)
+                     for (c2 = 0; c2 < 2u; c2++)
+-                        if ((o2 != o || c2 != c) && o2 != OBJ_KITTEN && st_sector(o2, c2) == a)
++                        if ((o2 != o || c2 != c) && !((o2 == OBJ_KITTEN || o2 == OBJ_KITDRUM) && o2 == o) && st_sector(o2, c2) == a)
+                             apart = 0;
+             }
+         bad += check("data stays in the Felucca regions (autosave too)", inside);
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
 index d3cc3b5..d0b083c 100644
 --- a/tests/ui_pages_test.c
@@ -1857,6 +1876,24 @@ index d3cc3b5..d0b083c 100644
          ui.force = 1; frames(3); ppm("track-drum");
          encs[panel.enc[EN_ALGO]] = -1; frames(2);
          check(song.sel == NHEAVY, "the knob back: the LITE part, before the drum track");
+diff --git a/tests/userkit_test.c b/tests/userkit_test.c
+index 21637aa..e3a6c62 100644
+--- a/tests/userkit_test.c
++++ b/tests/userkit_test.c
+@@ -83,9 +83,10 @@ int main(void)
+           !strcmp(DRUM_KIT_NAMES[DRUM_PAIR], "USR3+4") && DRUM_PAIR == DRUM_SYN - 1u && !strcmp(DRUM_KIT_NAMES[DRUM_SAMPLED], "808"),
+           "KIT: USR1..USR4, USR3+4 after the synthesised kits (the old kit numbers kept)");
+     check(SMP_USER_OFF(0u) == 0xA0000u && SMP_USER_OFF(2u) == 0xC8000u && SMP_USER_OFF(3u) == 0xE7000u &&
+-          FL_STORE_OK(0xE7000u, 0x14000u) && !FL_STORE_OK(0xE7000u, 0x14001u) && FL_STORE_OK(0xFB000u, 0x1000u) && !FL_STORE_OK(0xFB000u, 0x1001u) &&
+-          SMP_USER_OFF(3u) >= FL_FM6_HI && SMP_USER_OFF(3u) + SMP_USER_SIZE <= FL_GLOB_LO && !strcmp(SMP_ALL_NAMES[SMP_NSETS + 3u], "USR4"),
+-          "USR4: 0xE7000..0xFAFFF, after the FM6 bank, before the settings; the store may write it, not past it");
++          FL_STORE_OK(0xE7000u, 0x13000u) && !FL_STORE_OK(0xE7000u, 0x13001u) && FL_STORE_OK(0xFA000u, 0x2000u) && !FL_STORE_OK(0xFA000u, 0x2001u) &&
++          SMP_USER_OFF(3u) >= FL_FM6_HI && SMP_USER_OFF(3u) + SMP_USER_LEN(3u) == 0xFA000u && SMP_USER_LEN(0u) == SMP_USER_SIZE &&
++          !strcmp(SMP_ALL_NAMES[SMP_NSETS + 3u], "USR4"),
++          "USR4: 0xE7000..0xF9FFF (2.8-kitten: 76 KiB), then the second drum track and the LITE part, before the settings");
+ 
+     TDRUM->p[P_E0] = (int16_t)DRUM_USR;                  /* USR1 */
+     quiet();
 diff --git a/web/editor.html b/web/editor.html
 index bfbeac4..dd42994 100644
 --- a/web/editor.html
