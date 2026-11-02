@@ -1462,7 +1462,7 @@ index 0b02acd..3203191 100644
      }
      cv_blit(0, y0);
 diff --git a/firmware/src/ui_vis.c b/firmware/src/ui_vis.c
-index 6a7993c..d3ab29a 100644
+index 6a7993c..2e74fe3 100644
 --- a/firmware/src/ui_vis.c
 +++ b/firmware/src/ui_vis.c
 @@ -178,8 +178,10 @@ UI_SMALL static void vis_update(void)
@@ -1478,6 +1478,29 @@ index 6a7993c..d3ab29a 100644
      hit = vis_hit;
      vis_hit = 0;
      if (vis_kick_hit) {
+@@ -332,8 +334,8 @@ UI_SMALL static void vis_lissajous(void)
+ UI_SMALL static void vis_meters(void)
+ {
+     uint32_t i, k;
+-    for (i = 0; i <= NTRK; i++) {                   /* the five tracks (the drum track last) and the master */
+-        int32_t x0 = 6 + (int32_t)i * 38, on = vs.vu[i] * 24 / 1000, pk = vs.pk[i] * 24 / 1000;
++    for (i = 0; i <= NTRK; i++) {                   /* the six tracks (the drum tracks last) and the master: 33 px each */
++        int32_t x0 = 5 + (int32_t)i * 33, on = vs.vu[i] * 24 / 1000, pk = vs.pk[i] * 24 / 1000;
+         uint16_t c = i < NTRK ? TE_COL[te_slot(i)] : C_WHITE;
+         char lab[2] = {(char)(i < NTRK ? '1' + i : 'M'), 0};
+         for (k = 0; k < 24u; k++) {
+@@ -341,9 +343,9 @@ UI_SMALL static void vis_meters(void)
+             uint16_t col = (int32_t)k < on ? (k < 18u ? c : k < 22u ? TE_COL[2] : RGB(255, 44, 52)) : TE_G1;
+             if ((int32_t)k == pk && pk > 0)
+                 col = C_WHITE;
+-            cv_rect(x0, y - 5, 30, 6, col);
++            cv_rect(x0, y - 5, 27, 6, col);
+         }
+-        cv_text(x0 + 11, 216, &FONT_S, lab, c);
++        cv_text(x0 + 9, 216, &FONT_S, lab, c);
+     }
+ }
+ UI_SMALL static void vis_ring(void)
 diff --git a/firmware/src/usb.c b/firmware/src/usb.c
 index 18a83ee..80e64a0 100644
 --- a/firmware/src/usb.c
