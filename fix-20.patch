@@ -1,0 +1,702 @@
+diff --git a/firmware/src/core.h b/firmware/src/core.h
+index 7f4367c..aef022d 100644
+--- a/firmware/src/core.h
++++ b/firmware/src/core.h
+@@ -10,16 +10,17 @@
+ #define NPOLY 8
+ #define NHEAVY 3                 /* the synth parts that play any engine (and own an engine-state arena): tracks 1..3 */
+ #define NPART 4                  /* synth parts: the NHEAVY ones, then the LITE one (track 4: engines.c eng_allowed) */
+-#define NTRK 5                   /* + the drum track */
++#define NTRK 6                   /* + the drum track, + (2.8-kitten) a second drum track */
+ #define TRK_DRUM 4
++#define TRK_DRUM2 5              /* (2.8-kitten) the second drum track: its own kit, pattern, level, MIDI channel 11 */
+ /* Two numberings outside the working one (tracks 1..3, the LITE part, the drum track last):
+  *  - the EDITOR's (protocol): the working one, as INFO says (ntrk): the drum track is the last, whatever the count (trk_wire);
+  *  - SLOOP's own four (a project file's records, the 4 pads / columns / meters of the screen): tracks 1..3, then the drum track
+  *    (trk_ui): the LITE part has no record or pad there, it is reached with the track knob. */
+ #define TRK_NOWIRE 0xFFu
+-#define TRK_WIRE_N NTRK
+-static inline uint32_t trk_wire(uint32_t k) { return k < NTRK ? k : TRK_NOWIRE; }
+-static inline uint32_t trk_of_wire(uint32_t w) { return w < NTRK ? w : TRK_NOWIRE; }
++#define TRK_WIRE_N 5u            /* (2.8-kitten: the second drum track is not on the editor's wire yet) */
++static inline uint32_t trk_wire(uint32_t k) { return k < TRK_WIRE_N ? k : TRK_NOWIRE; }
++static inline uint32_t trk_of_wire(uint32_t w) { return w < TRK_WIRE_N ? w : TRK_NOWIRE; }
+ /* the colour slot of working track k (gfx.c TE_COL: 0..3 SLOOP's four, 4 the LITE part, 5 a second drum track) */
+ static inline uint32_t te_slot(uint32_t k) { return k < NHEAVY ? k : k == TRK_DRUM ? 3u : k == NHEAVY ? 4u : 5u; }
+ #define TRK_UI_N 4u
+@@ -27,7 +28,7 @@ static inline uint32_t trk_ui(uint32_t k) { return k < NHEAVY ? k : k == TRK_DRU
+ static inline uint32_t trk_of_ui(uint32_t w) { return w < NHEAVY ? w : w == NHEAVY ? TRK_DRUM : TRK_NOWIRE; }
+ #define ED_TW(x) ((x) < NTRK && trk_wire(x) != TRK_NOWIRE ? trk_wire(x) : 0x7Fu)
+ #define ED_SELW (trk_wire(song.sel) == TRK_NOWIRE ? 0u : trk_wire(song.sel))
+-static inline uint32_t ed_wire_bits(uint32_t m) { return m & ((1u << NTRK) - 1u); }   /* a mask of working tracks: the editor's too */
++static inline uint32_t ed_wire_bits(uint32_t m) { return m & ((1u << TRK_WIRE_N) - 1u); }   /* a mask of working tracks: the editor's too */
+ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
+ #define NSTEP 64
+ #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
+@@ -419,7 +420,8 @@ static int32_t thr_rev, thr_dly;
+ static inline int32_t send_thr(int32_t s, int32_t g) { return g ? s + (((127 * 258 - s) * g) >> 15) : s; }   /* s 0..32766 */
+ #define TSEL (&trk[song.sel])    /* the selected track */
+ #define TDRUM (&trk[TRK_DRUM])
+-static int is_drum(const track_t *t) { return t == TDRUM; }
++#define TDRUM2 (&trk[TRK_DRUM2])
++static int is_drum(const track_t *t) { return t == TDRUM || t == TDRUM2; }
+ /* silent: MUTE, or another track is soloed */
+ static int trk_silent(const track_t *t)
+ {
+diff --git a/firmware/src/drums.c b/firmware/src/drums.c
+index 5f86131..df39666 100644
+--- a/firmware/src/drums.c
++++ b/firmware/src/drums.c
+@@ -33,10 +33,9 @@ static const char *const DRUM_KIT_STYLES[] = {"STUDIO", "SOFT", "PUNCHY", "BRIGH
+                                               "YOUR KIT", "YOUR KIT", "YOUR KIT", "YOUR KIT", "BIG KIT",
+                                               "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH"};
+ _Static_assert(sizeof(DRUM_KIT_NAMES) / sizeof(DRUM_KIT_NAMES[0]) == DRUM_KITS, "a name per kit");
+-static uint32_t drum_kit(void) { return (uint32_t)clamp(TDRUM->p[P_E0], 0, DRUM_KITS - 1); }
+ #define DRUM_DEFAULT_KIT DRUM_SAMPLED   /* power-on: 808 */
+ 
+-static struct {
++typedef struct {
+     voice_t v[NDRUM];
+     uint32_t age;
+     int16_t set;                 /* SMP_SETS index of "PERC" (GM map), -1 = none */
+@@ -52,7 +51,18 @@ static struct {
+     int32_t a0, a1;              /* the drum track's mute / solo attenuation over this block (fx.c), Q15, 0 = heard */
+     int32_t glv, ggl, ggr;       /* (2.7) LEVEL and PAN as last mixed: a change glides (~3 ms, fx.c mix_glide) */
+     uint8_t gon;
+-} drums = {.set = -2};
++    int8_t tune[DRUM_LANES], dec[DRUM_LANES];   /* (2.7) each sound's TUNE and DECAY (the SOUND page), below */
++} drum_st_t;
++/* (2.8-kitten) the two drum tracks' voices and state: drums is the one being played or rendered (dcur). The code that
++ * sounds a drum track sets dcur for it and puts the old one back (voice.c trk_note_on, fx.c mix_drums); the audio
++ * interrupt starts from the first (fx.c mix_block), so whatever it reaches unasked is the first drum track as before.
++ * Both drum tracks render in the one drums unit (fx.c), on one core at a time */
++static drum_st_t drum_sts[2] = {{.set = -2}, {.set = -2}};
++static drum_st_t *dcur = &drum_sts[0];
++#define drums (*dcur)
++#define DTRK (dcur == &drum_sts[0] ? TDRUM : TDRUM2)   /* the drum track it belongs to */
++#define DTRK_I (dcur == &drum_sts[0] ? TRK_DRUM : TRK_DRUM2)
++static uint32_t drum_kit(void) { return (uint32_t)clamp(DTRK->p[P_E0], 0, DRUM_KITS - 1); }
+ 
+ static int32_t ds_buf[CTL];
+ 
+@@ -103,7 +113,8 @@ static const uint8_t LANE_OF_GM[81 - 35 + 1] = {
+ #define DRUM_TUNE_MAX 7
+ #define DRUM_DEC_MIN (-4)
+ #define DRUM_DEC_MAX 3
+-static int8_t drum_tune[DRUM_LANES], drum_dec[DRUM_LANES];
++#define drum_tune (dcur->tune)                         /* (2.8-kitten: each drum track its own) */
++#define drum_dec (dcur->dec)
+ static const uint8_t DK_SMP[4] = {47, 60, 74, 87};   /* a sample's DECAY -4 .. -1: -60 dB in 60, 120, 250, 500 ms */
+ #define DRUM_CLICK(n) ((n) == 76u || (n) == 77u)    /* (the click's wood block: no lane, never tuned) */
+ static uint32_t lane_of_note(uint32_t note);
+@@ -376,9 +387,13 @@ static void drum_on(uint32_t note, uint32_t vel)
+ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, int32_t *mono, uint32_t n)
+ {
+     uint32_t k, i;
+-    int32_t lvl = expr_gain(song.g[G_DRLVL] * 200, TRK_DRUM), send = send_thr(song.g[G_DRREV] * 258, thr_rev),
+-            dsend = send_thr(song.g[G_DRDLY] * 258, thr_dly), pk = drums.peak;   /* (2.6: the THROWs) */
+-    int32_t pan = trk[TRK_DRUM].p[P_PAN], gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
++    const track_t *dt = DTRK;                       /* (2.8-kitten) the first drum track: GLO > DRUMS LVL REV DLY; the second:
++                                                     * its own LEVEL, REV and DLY, as a synth track */
++    int d2 = dt != TDRUM;
++    int32_t lvl = expr_gain((d2 ? dt->p[P_LEVEL] : song.g[G_DRLVL]) * 200, DTRK_I),
++            send = send_thr((d2 ? dt->p[P_REV] : song.g[G_DRREV]) * 258, thr_rev),
++            dsend = send_thr((d2 ? dt->p[P_DLY] : song.g[G_DRDLY]) * 258, thr_dly), pk = drums.peak;   /* (2.6: the THROWs) */
++    int32_t pan = dt->p[P_PAN], gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
+     if (!drums.gon)                                 /* (2.7) LEVEL and PAN glide, block by block (mix_glide) */
+         drums.glv = lvl, drums.ggl = gl, drums.ggr = gr, drums.gon = 1;
+     lvl = drums.glv = mix_glide(drums.glv, lvl);
+diff --git a/firmware/src/fx.c b/firmware/src/fx.c
+index ba47200..bf7d561 100644
+--- a/firmware/src/fx.c
++++ b/firmware/src/fx.c
+@@ -340,8 +340,8 @@ static void duck_block(uint32_t adv)
+     int32_t depth = song.g[G_DUCK] * 258, x;
+     uint32_t len = BEAT_U / 2u;
+     duck.g0 = duck.g1;
+-    if (drums.kick) {
+-        drums.kick = 0;
++    if (drum_sts[0].kick | drum_sts[1].kick) {          /* (2.8-kitten: either drum track's kick) */
++        drum_sts[0].kick = drum_sts[1].kick = 0;
+         duck.t = 0;
+     }
+     if (!depth || duck.t >= len) {
+@@ -842,6 +842,7 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
+     tsvf_t fc;
+     djf_t *f = &tflt[TRK_DRUM];
+     int flt;
++    dcur = &drum_sts[0];                                /* (2.8-kitten) the first drum track's drums (drums.c) */
+     drums.a0 = TDRUM->att;                              /* the drum track's mute / solo fade */
+     drums.a1 = 32767 - gain_next(TDRUM);
+     flt = n <= CTL && djf_block(f, TDRUM->p[P_TFLT], &fc, tflt_reso());   /* the drum track's FILTER */
+@@ -868,13 +869,42 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
+     }
+     click_render(mx->l, mx->r, n);                        /* the metronome: its own voice (drums.c), any kit, any mute */
+ }
++/* (2.8-kitten) the second drum track: its drums through its FILTER (no SLICER or INSERT of its own) */
++static void mix_drums2(uint32_t n, mixacc_t *mx)
++{
++    uint32_t i;
++    tsvf_t fc;
++    djf_t *f = &tflt[TRK_DRUM2];
++    dcur = &drum_sts[1];
++    drums.a0 = TDRUM2->att;
++    drums.a1 = 32767 - gain_next(TDRUM2);
++    if (n <= CTL && djf_block(f, TDRUM2->p[P_TFLT], &fc, tflt_reso())) {
++        int32_t *dl = drum_buf[0], *dr = drum_buf[1], *dv = drum_buf[2], *dd = drum_buf[3];
++        for (i = 0; i < n; i++)
++            dl[i] = dr[i] = dv[i] = dd[i] = 0;
++        drums_render(dl, dr, dv, dd, n);
++        tflt_run(f, &fc, dl, n, 0);
++        tflt_run(f, &fc, dr, n, 1);
++        tflt_run(f, &fc, dv, n, 2);
++        tflt_run(f, &fc, dd, n, 3);
++        for (i = 0; i < n; i++) {
++            mx->l[i] += dl[i];
++            mx->r[i] += dr[i];
++            mx->sr[i] += dv[i];
++            mx->sd[i] += dd[i];
++        }
++    } else {
++        drums_render(mx->l, mx->r, mx->sr, mx->sd, n);
++    }
++    dcur = &drum_sts[0];
++}
+ 
+ /* the units of mask into the set mx, in their order */
+ #if FELUCCA_UAC_CH > 2
+ /* Kitten Synths, the multitrack USB input (usb.c uac_tap): each unit's own share of the dry mix this block, mono
+  * ((L + R) / 2), after its level, pan, mute and INSERT, before the shared chorus / delay / reverb, the master and
+  * its knob: what the unit added to its core's dry sums. Written by the core that renders the unit (.lowram, as acc) */
+-static int32_t uac_stem[NPART + 1u][CTL] __attribute__((section(".lowram")));
++static int32_t uac_stem[NPART + 2u][CTL] __attribute__((section(".lowram")));   /* (+ the second drum track) */
+ #define STEM_PRE(k) do { int32_t *s_ = uac_stem[k]; uint32_t i_; for (i_ = 0; i_ < n && i_ < CTL; i_++) s_[i_] = mx->l[i_] + mx->r[i_]; } while (0)
+ #define STEM_POST(k) do { int32_t *s_ = uac_stem[k]; uint32_t i_; for (i_ = 0; i_ < n && i_ < CTL; i_++) s_[i_] = (mx->l[i_] + mx->r[i_] - s_[i_]) >> 1; } while (0)
+ #else
+@@ -890,10 +920,13 @@ static void mix_units(uint32_t mask, uint32_t n, mixacc_t *mx, int32_t *scratch)
+             mix_part(&trk[k], n, mx, scratch);
+             STEM_POST(k);
+         }
+-    if (mask & U_DRUMS) {
++    if (mask & U_DRUMS) {                           /* (2.8-kitten: both drum tracks, one after the other) */
+         STEM_PRE(NPART);
+         mix_drums(n, mx);
+         STEM_POST(NPART);
++        STEM_PRE(NPART + 1u);
++        mix_drums2(n, mx);
++        STEM_POST(NPART + 1u);
+     }
+ }
+ 
+@@ -1204,6 +1237,7 @@ static void mix_block(int32_t *out, uint32_t n)
+         thr_rev = (q & 1u) ? (thr_rev + 1928 > 32767 ? 32767 : thr_rev + 1928) : (thr_rev > 1928 ? thr_rev - 1928 : 0);
+         thr_dly = (q & 2u) ? (thr_dly + 1928 > 32767 ? 32767 : thr_dly + 1928) : (thr_dly > 1928 ? thr_dly - 1928 : 0);
+     }
++    dcur = &drum_sts[0];                                /* (2.8-kitten) the first drum track's drums, unless asked */
+     events_block(n);
+     duck_block(n * (uint32_t)song.g[G_BPM]);
+     c1 = cpu1_on() ? units_split() : 0;                 /* core 1's units this block */
+diff --git a/firmware/src/main.c b/firmware/src/main.c
+index 032a446..4ae5c2b 100644
+--- a/firmware/src/main.c
++++ b/firmware/src/main.c
+@@ -178,6 +178,7 @@ UI_SMALL static void felucca_init(void)
+         track_defaults_steps(t);              /* the sequencers start empty */
+     }
+     TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;        /* the 808 kit */
++    TDRUM2->p[P_E0] = 0;                      /* (2.8-kitten) the second drum track: the ACOUSTIC kit */
+     song.sel = 0;
+     song.master_q12 = 2048;
+     autosave_resume();                        /* the project as it was left (project.c) */
+diff --git a/firmware/src/seq.c b/firmware/src/seq.c
+index d085dd1..ad96b38 100644
+--- a/firmware/src/seq.c
++++ b/firmware/src/seq.c
+@@ -77,7 +77,8 @@ static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
+ 
+ static uint32_t trk_midi_ch(uint32_t i)    /* MIDI channel 0..15 of track i (keys -> MIDI out); 2.6: GLO > MIDI */
+ {                                          /* (2.6: OFF is OFF, in and out: 0xFF, nothing sent) */
+-    int32_t c = i < NHEAVY ? song.g[G_CH1 + i] : i == TRK_DRUM ? song.g[G_DRCH] : 0;   /* (the LITE part: OFF, no setting of its own yet) */
++    int32_t c = i < NHEAVY ? song.g[G_CH1 + i] : i == TRK_DRUM ? song.g[G_DRCH] : i == TRK_DRUM2 ? 11 : 0;   /* (the LITE part: OFF,
++                                                         * no setting of its own yet; 2.8-kitten: the second drum track, 11) */
+     return c >= 1 && c <= 16 ? (uint32_t)c - 1u : 0xFFu;
+ }
+ /* a note on (vel > 0) / off to MIDI OUT on channel ch (trk_midi_ch: 0xFF, the track's MIDI OFF: nothing) */
+@@ -1791,7 +1792,7 @@ static void arm_start(track_t *t)
+     }
+ }
+ 
+-static void drum_input(uint32_t lane, uint32_t lvl, uint32_t rat, int rec);
++static void drum_input(track_t *t, uint32_t lane, uint32_t lvl, uint32_t rat, int rec);
+ /* SLOOP 2.7, GLO > MIDI 3 > DR MAP: the drum sound a MIDI note plays. GM: the General MIDI note of each sound (the nearest
+  * one for the others, drums.c lane_of_note), as before; 1-16: 16 notes in a row are the 16 sounds in order, from note 36
+  * (KICK, KICK 2, SNARE, CLAP, HAT…) and again every 16 notes, so any keyboard or row of pads plays them all */
+@@ -1889,7 +1890,7 @@ static void kh_release(track_t *t)                  /* every held note ends */
+ static void input_on(track_t *t, uint32_t note, uint32_t vel)
+ {
+     if (is_drum(t)) {                             /* (a GM note on the drum track: its lane) */
+-        drum_input(midi_drum_lane(note), vel_lvl(vel), 0, 1);
++        drum_input(t, midi_drum_lane(note), vel_lvl(vel), 0, 1);
+         return;
+     }
+     last_note = (uint8_t)note;
+@@ -1937,7 +1938,7 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
+ static void input_off(track_t *t, uint32_t note)
+ {
+     if (is_drum(t)) {
+-        if (ft_on && ft_trk == TRK_DRUM)
++        if (ft_on && ft_trk == trk_index(t))
+             ft_note_off(midi_drum_lane(note));
+         return;
+     }
+@@ -1965,15 +1966,14 @@ static void input_off_now(track_t *t, uint32_t note)
+ 
+ /* a drum hit from a key, MIDI or a roll: lane, level; rat: its ratchet when recorded (rolls); rec: it
+  * may be recorded (a roll records one hit a step) */
+-static void drum_input(uint32_t lane, uint32_t lvl, uint32_t rat, int rec)
++static void drum_input(track_t *t, uint32_t lane, uint32_t lvl, uint32_t rat, int rec)   /* (2.8-kitten: either drum track) */
+ {
+-    track_t *t = TDRUM;
+     lane &= 15u;
+     pen_lane = (uint8_t)lane;
+     arm_start(t);
+-    if (ft_on && ft_trk == TRK_DRUM)
++    if (ft_on && ft_trk == trk_index(t))
+         ft_note_on(lane, lvl);
+-    if (rec && ((song.rec >> TRK_DRUM) & 1u) && song.playing)
++    if (rec && ((song.rec >> trk_index(t)) & 1u) && song.playing)
+         rec_hit(t, lane, lvl, rat);
+     trk_note_on(t, LANE_NOTE[lane], lvl_vel(lvl, 100));
+ }
+@@ -2023,7 +2023,7 @@ static void roll_hit(uint32_t r)
+     }
+     if (is_drum(t)) {
+         roll_rec = 1;
+-        drum_input(roll[r].note, roll[r].lvl, rat, rec || !armed);
++        drum_input(t, roll[r].note, roll[r].lvl, rat, rec || !armed);
+         roll_rec = 0;
+         seq_out_on(t, LANE_NOTE[roll[r].note & 15u], lvl_vel(roll[r].lvl, 100));
+         return;
+@@ -2067,12 +2067,12 @@ static void roll_start(uint32_t k, track_t *t, uint32_t note, uint32_t lvl)
+ 
+ static void roll_end(uint32_t r)
+ {
+-    if (roll[r].on && roll[r].off && roll[r].trk != TRK_DRUM) {
++    if (roll[r].on && roll[r].off && !is_drum(&trk[roll[r].trk % NTRK])) {
+         trk_note_off(&trk[roll[r].trk % NTRK], roll[r].note);
+         seq_out_off(&trk[roll[r].trk % NTRK], roll[r].note);
+     }
+-    if (roll[r].on && roll[r].trk == TRK_DRUM)
+-        seq_out_off(&trk[TRK_DRUM], LANE_NOTE[roll[r].note & 15u]);
++    if (roll[r].on && is_drum(&trk[roll[r].trk % NTRK]))
++        seq_out_off(&trk[roll[r].trk % NTRK], LANE_NOTE[roll[r].note & 15u]);
+     roll[r].on = 0;
+ }
+ 
+@@ -2270,7 +2270,7 @@ static void key_down(uint32_t k)
+             return;
+         }
+         kb_kind[k] = KS_DRUM;
+-        drum_input(lane, lvl, 0, 1);
++        drum_input(t, lane, lvl, 0, 1);
+         mc = trk_midi_ch(sel);
+         midi_out_note(mc, (uint32_t)LANE_NOTE[lane], lvl_vel(lvl, 100));
+         return;
+@@ -2363,9 +2363,9 @@ static void key_up(uint32_t k)
+         }
+         return;
+     case KS_DRUM:
+-        if (ft_on && ft_trk == TRK_DRUM)
++        if (ft_on && ft_trk == kb_trk[k])
+             ft_note_off(kb_nt[k][0]);
+-        mc = trk_midi_ch(TRK_DRUM);
++        mc = trk_midi_ch(kb_trk[k]);
+         midi_out_note(mc, (uint32_t)LANE_NOTE[kb_nt[k][0] & 15u], 0);
+         return;
+     default:
+@@ -2400,7 +2400,7 @@ static void audition_block(void)
+     aud_lanes = 0;
+     for (l = 0; m; l++, m >>= 1)
+         if (m & 1u)
+-            trk_note_on(TDRUM, LANE_NOTE[l], lvl_vel((lv >> (2u * l)) & 3u, 100));
++            trk_note_on(is_drum(TSEL) ? TSEL : TDRUM, LANE_NOTE[l], lvl_vel((lv >> (2u * l)) & 3u, 100));   /* (2.8-kitten) */
+ }
+ 
+ static void keyboard_block(void)
+@@ -2910,6 +2910,9 @@ static track_t *midi_own(uint32_t ch)
+     for (i = 0; i < NHEAVY; i++)
+         if (ch + 1u == (uint32_t)song.g[G_CH1 + i])
+             return &trk[i];
++    if (ch == trk_midi_ch(TRK_DRUM2))                  /* (2.8-kitten) the second drum track: channel 11 (a synth
++                                                         * track set to 11 keeps it) */
++        return TDRUM2;
+     return 0;
+ }
+ /* the track a channel plays: its own, or (GLO > MIDI > OTHER = SEL) the selected one; 0: none (OTHER = OFF) */
+@@ -3533,7 +3536,7 @@ static void events_block(uint32_t n)
+         }
+         if (is_drum(t)) {
+             if (st == 0x90u && d2)
+-                drum_input(midi_drum_lane(d1), vel_lvl(d2), 0, 1);
++                drum_input(t, midi_drum_lane(d1), vel_lvl(d2), 0, 1);
+         } else if (st == 0x90u && d2) {
+             if (t == TSEL) {                          /* the SEQ layer's pen: this note, or the chord held (2.6) */
+                 if (!(mi_pen[0] | mi_pen[1] | mi_pen[2] | mi_pen[3]) || pen_n >= 4u)
+diff --git a/firmware/src/ui.c b/firmware/src/ui.c
+index 8364ae7..c8e0894 100644
+--- a/firmware/src/ui.c
++++ b/firmware/src/ui.c
+@@ -1087,7 +1087,7 @@ UI_SMALL static void track_select(uint32_t i)
+ /* The knob's order of tracks, as on screen: 1, 2, 3, the LITE part, the drum track last. s steps (> 0 on, < 0 back), held at the ends */
+ UI_SMALL static uint32_t ui_track_step(int32_t s)
+ {
+-    static const uint8_t ORDER[NTRK] = {0, 1, 2, NHEAVY, TRK_DRUM};
++    static const uint8_t ORDER[NTRK] = {0, 1, 2, NHEAVY, TRK_DRUM, TRK_DRUM2};
+     int32_t p = 0, n;
+     for (n = 0; n < (int32_t)NTRK; n++)
+         if (ORDER[n] == song.sel)
+diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
+index d833a68..dc8493f 100644
+--- a/firmware/src/ui_draw.c
++++ b/firmware/src/ui_draw.c
+@@ -612,9 +612,9 @@ UI_SMALL static void draw_tracks(void)
+         uint32_t len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u, row = 0xFFFFu;
+         int32_t pk, m;
+         char b[16];
+-        if (c == TRK_DRUM) {
+-            pk = drums.peak;
+-            drums.peak = 0;
++        if (is_drum(t)) {                               /* (2.8-kitten: either drum track's own drums) */
++            pk = drum_sts[c == TRK_DRUM2].peak;
++            drum_sts[c == TRK_DRUM2].peak = 0;
+         } else {
+             pk = t->peak;
+             t->peak = 0;
+diff --git a/firmware/src/ui_layers.c b/firmware/src/ui_layers.c
+index d858bff..a5f91b7 100644
+--- a/firmware/src/ui_layers.c
++++ b/firmware/src/ui_layers.c
+@@ -430,11 +430,11 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
+     case LY_MIX:
+         if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
+             ml_toggle();
+-        } else if (w >= 0 && w < (int)NTRK) {              /* mute 1..5: the tracks as the screen has them (LITE before the drums) */
++        } else if (w >= 0 && w < (int)TRK_WIRE_N) {              /* mute 1..5: the tracks as the screen has them (LITE before the drums) */
+             uint32_t k = (uint32_t)w;
+             trk[k].p[P_MUTE] = (int16_t)!trk[k].p[P_MUTE];
+-        } else if (w >= (int)NTRK && w < (int)(2u * NTRK)) {   /* solo 1..5 */
+-            song.solo ^= (uint8_t)(1u << (uint32_t)(w - (int)NTRK));
++        } else if (w >= (int)TRK_WIRE_N && w < (int)(2u * TRK_WIRE_N)) {   /* solo 1..5 */
++            song.solo ^= (uint8_t)(1u << (uint32_t)(w - (int)TRK_WIRE_N));
+         } else if (w == 10) {
+             fill_held = 1;                                  /* FILL while held */
+         } else if (w == 11) {
+@@ -965,17 +965,17 @@ UI_SMALL static void layer_screen_draw(void)
+     case LY_MIX: {                                      /* mute 1..5, solo 1..5, fill / fill bar, tap */
+         col = C_WHITE;
+         str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
+-        for (i = 0; i < NTRK; i++) {                     /* mute 1..5, solo 1..5: the screen's order (LITE before the drums) */
++        for (i = 0; i < TRK_WIRE_N; i++) {                     /* mute 1..5, solo 1..5: the screen's order (LITE before the drums) */
+             int m = trk[i].p[P_MUTE] != 0, so = (song.solo >> i) & 1u;
+             str_cpy(tl[i].lab, "mute 1", 8);
+             tl[i].lab[5] = (char)('1' + i);
+             tl[i].bg = m ? TE_G2 : TE_COL[te_slot(i)];
+             tl[i].fg = m ? TE_G3 : C_BLACK;
+-            str_cpy(tl[NTRK + i].lab, "solo 1", 8);
+-            tl[NTRK + i].lab[5] = (char)('1' + i);
+-            tl[NTRK + i].bg = so ? C_WHITE : TE_G1;
+-            tl[NTRK + i].fg = so ? C_BLACK : TE_G3;
+-            tl[NTRK + i].top = TE_DIM[te_slot(i)];
++            str_cpy(tl[TRK_WIRE_N + i].lab, "solo 1", 8);
++            tl[TRK_WIRE_N + i].lab[5] = (char)('1' + i);
++            tl[TRK_WIRE_N + i].bg = so ? C_WHITE : TE_G1;
++            tl[TRK_WIRE_N + i].fg = so ? C_BLACK : TE_G3;
++            tl[TRK_WIRE_N + i].top = TE_DIM[te_slot(i)];
+         }
+         str_cpy(tl[10].lab, "fill", 8);                 /* key 11: held = a fill; key 12: the next bar is one */
+         tl[10].bg = fill_now ? C_WHITE : TE_G1;
+diff --git a/firmware/src/ui_vis.c b/firmware/src/ui_vis.c
+index 6a7993c..d3ab29a 100644
+--- a/firmware/src/ui_vis.c
++++ b/firmware/src/ui_vis.c
+@@ -178,8 +178,10 @@ UI_SMALL static void vis_update(void)
+     }
+     pk[NHEAVY] = trk[NHEAVY].peak;                  /* the LITE part */
+     trk[NHEAVY].peak = 0;
+-    pk[TRK_DRUM] = drums.peak;
+-    drums.peak = 0;
++    pk[TRK_DRUM] = drum_sts[0].peak;
++    drum_sts[0].peak = 0;
++    pk[TRK_DRUM2] = drum_sts[1].peak;                /* (2.8-kitten) the second drum track */
++    drum_sts[1].peak = 0;
+     hit = vis_hit;
+     vis_hit = 0;
+     if (vis_kick_hit) {
+diff --git a/firmware/src/usb.c b/firmware/src/usb.c
+index 18a83ee..80e64a0 100644
+--- a/firmware/src/usb.c
++++ b/firmware/src/usb.c
+@@ -1158,10 +1158,10 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)
+         uint32_t *f = &ua_ring[UA_AT(w + i)];
+         f[0] = (uint32_t)(uint16_t)uac_s16(out[2u * i]) | (uint32_t)(uint16_t)uac_s16(out[2u * i + 1u]) << 16;
+ #if UA_W > 1
+-        if (i < CTL) {                                  /* Kitten Synths: 3-6 the synth tracks, 7 the drums, 8 silent */
++        if (i < CTL) {                                  /* Kitten Synths: 3-6 the synth tracks, 7 the drums, 8 the second drums */
+             f[1] = (uint32_t)(uint16_t)uac_s16(uac_stem[0][i]) | (uint32_t)(uint16_t)uac_s16(uac_stem[1][i]) << 16;
+             f[2] = (uint32_t)(uint16_t)uac_s16(uac_stem[2][i]) | (uint32_t)(uint16_t)uac_s16(uac_stem[3][i]) << 16;
+-            f[3] = (uint32_t)(uint16_t)uac_s16(uac_stem[NPART][i]);
++            f[3] = (uint32_t)(uint16_t)uac_s16(uac_stem[NPART][i]) | (uint32_t)(uint16_t)uac_s16(uac_stem[NPART + 1u][i]) << 16;
+         } else
+             f[1] = f[2] = f[3] = 0;
+ #endif
+diff --git a/firmware/src/voice.c b/firmware/src/voice.c
+index 78335a7..a4ec7d4 100644
+--- a/firmware/src/voice.c
++++ b/firmware/src/voice.c
+@@ -466,9 +466,12 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
+         }
+     }
+     if (is_drum(t)) {                                   /* the drum track: GM drums (drums.c) */
++        drum_st_t *o = dcur;
+         if (note == 35u || note == 36u)
+             vis_kick_hit = 1;
++        dcur = &drum_sts[t == TDRUM2];                  /* (2.8-kitten) its own drums (drums.c) */
+         drum_on(note, vel);
++        dcur = o;
+         return;
+     }
+     if ((uint32_t)(t - trk) < NPART && note < 128u)
+diff --git a/tests/drum2_test.c b/tests/drum2_test.c
+new file mode 100644
+index 0000000..05db2a5
+--- /dev/null
++++ b/tests/drum2_test.c
+@@ -0,0 +1,101 @@
++/* SPDX-License-Identifier: GPL-3.0-only */
++/* Kitten Synths 2.8-kitten: the second drum track (TRK_DRUM2: its own kit, pattern, level, pan, mute, MIDI channel 11, the
++ * USB input's channel 8).
++ *   alone      the second drum track's pattern: its stem sounds, the first drum track's stays exactly 0, and the reverse
++ *   apart      both together, different kits: the first drum track's stem bit for bit as when it plays alone
++ *   level      its own LEVEL (P_LEVEL), not GLO > DRUMS: lower, quieter; MUTE: silent
++ *   MIDI       a note on channel 11 plays the second drum track; on 10 the first, as in SLOOP
++ *   split      the same stems whatever units the second core takes */
++#define FELUCCA_UAC_CH 8
++#define main hostsim_main
++#include "hostsim.c"
++#undef main
++
++static int fails;
++static void check(const char *what, int ok) { printf("%-100s %s\n", what, ok ? "ok" : "FAIL"); fails += !ok; }
++
++static void beat(track_t *t, int busy)
++{
++    uint32_t i;
++    for (i = 0; i < 16u; i++) {
++        uint8_t n[1] = {(uint8_t)(i % 4u == 0u ? 36 : busy ? (i % 4u == 2u ? 38 : 42) : 42)};
++        put_step(t, i, 1u, n, ST_NOTE, 0u);
++    }
++}
++
++typedef struct { uint64_t e1, e2, h1, h2, mix; } res_t;
++/* d: bit 0 the first drum track's beat, bit 1 the second's; midi: 0, or a channel (1..16) each beat's kick comes in on */
++static res_t render(uint32_t d, int32_t split, int16_t lvl2, int mute2, uint32_t midi)
++{
++    res_t r;
++    uint32_t b, i;
++    memset(&r, 0, sizeof r);
++    r.h1 = r.h2 = 1469598103934665603ull;
++    cpu1_host_mode();
++    cpu1_units = split;
++    rng_state = 0x1234567u;                            /* (the noise of the hats: the same draws each render) */
++    host_tracks_init();
++    memset(drum_sts, 0, sizeof drum_sts);
++    drum_sts[0].set = drum_sts[1].set = -2;
++    song.g[G_DRREV] = song.g[G_DRDLY] = 0;
++    song.g[G_DRCH] = 10;
++    TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;                 /* the 808 */
++    TDRUM2->p[P_E0] = 0;                               /* ACOUSTIC */
++    TDRUM2->p[P_REV] = TDRUM2->p[P_DLY] = 0;
++    TDRUM2->p[P_LEVEL] = lvl2;
++    TDRUM2->p[P_MUTE] = (int16_t)mute2;
++    if (d & 1u)
++        beat(TDRUM, 0);
++    if (d & 2u)
++        beat(TDRUM2, 1);
++    if (!midi)
++        transport_req = 1;
++    for (b = 0; b < 1200u; b++) {
++        int32_t o[2 * CTL];
++        if (midi && b % 100u == 10u)
++            midi_in_event(0x09u | (0x90u | (midi - 1u)) << 8 | 36u << 16 | 110u << 24);
++        mix_block(o, CTL);
++        for (i = 0; i < CTL; i++) {
++            int32_t v1 = uac_stem[NPART][i], v2 = uac_stem[NPART + 1u][i];
++            r.e1 += (uint64_t)(v1 < 0 ? -v1 : v1);
++            r.e2 += (uint64_t)(v2 < 0 ? -v2 : v2);
++            r.h1 = (r.h1 ^ (uint32_t)v1) * 1099511628211ull;
++            r.h2 = (r.h2 ^ (uint32_t)v2) * 1099511628211ull;
++            r.mix += (uint64_t)(o[2u * i] < 0 ? -o[2u * i] : o[2u * i]);
++        }
++    }
++    return r;
++}
++
++int main(void)
++{
++    res_t a1, a2, both, lo, mu, m10, m11, sp;
++    check("the second drum track: track 6 (after the drum track), a drum track, channel 11, USB channel 8",
++          TRK_DRUM2 == 5u && NTRK == 6u && is_drum(TDRUM2) && is_drum(TDRUM) && !is_drum(&trk[NHEAVY]) && trk_midi_ch(TRK_DRUM2) == 10u);
++    a1 = render(1u, 0, 104, 0, 0);
++    a2 = render(2u, 0, 104, 0, 0);
++    check("alone: the first drum track's beat sounds on its stem (7), the second's stem silent", a1.e1 > 1000000u && a1.e2 == 0u);
++    check("alone: the second drum track's beat sounds on its stem (8), the first's stem silent", a2.e2 > 1000000u && a2.e1 == 0u);
++    both = render(3u, 0, 104, 0, 0);
++    printf("  stems alone / together: first %llu / %llu, second %llu / %llu\n", (unsigned long long)a1.e1, (unsigned long long)both.e1,
++           (unsigned long long)a2.e2, (unsigned long long)both.e2);
++    check("apart: both together, each drum track's stem as when it plays alone (within 3 %: the hats' noise draws interleave)",
++          both.e1 * 100u > a1.e1 * 97u && both.e1 * 100u < a1.e1 * 103u && both.e2 * 100u > a2.e2 * 97u &&
++          both.e2 * 100u < a2.e2 * 103u);
++    lo = render(2u, 0, 60, 0, 0);
++    mu = render(2u, 0, 104, 1, 0);
++    printf("  second drum track's stem: LEVEL 104 %llu, LEVEL 60 %llu, MUTE %llu\n", (unsigned long long)a2.e2,
++           (unsigned long long)lo.e2, (unsigned long long)mu.e2);
++    check("level: its own LEVEL (60 under 104: quieter); MUTE: silent", lo.e2 > 0u && lo.e2 * 10u < a2.e2 * 7u && mu.e2 == 0u);
++    m10 = render(0u, 0, 104, 0, 10);
++    m11 = render(0u, 0, 104, 0, 11);
++    check("MIDI: a kick on channel 10 plays the first drum track (as SLOOP), on 11 the second", m10.e1 > 100000u && m10.e2 == 0u &&
++          m11.e2 > 100000u && m11.e1 == 0u);
++    both = render(3u, 0, 104, 0, 0);
++    sp = render(3u, -1, 104, 0, 0);
++    check("split: the second core taking the drums unit (the default): the same stems", sp.h1 == both.h1 && sp.h2 == both.h2);
++    sp = render(3u, 15, 104, 0, 0);
++    check("split: the drums on core 0: the same stems", sp.h1 == both.h1 && sp.h2 == both.h2);
++    printf(fails ? "drum2: %d FAILED\n" : "drum2: 0 failed\n", fails);
++    return fails != 0;
++}
+diff --git a/tests/dsyn_test.c b/tests/dsyn_test.c
+index ad73769..b861872 100644
+--- a/tests/dsyn_test.c
++++ b/tests/dsyn_test.c
+@@ -1,3 +1,4 @@
++#include <stddef.h>
+ /* SPDX-License-Identifier: GPL-3.0-only */
+ /* SLOOP 2.5: the drum track's SYN1..SYN4, your own synthesised kits (drum_synth.c dsu), and the editor's DRUM
+  * SYNTH commands (editor_dsyn.c, protocol v10), through hostsim.c:
+@@ -105,7 +106,7 @@ static void hit_render(uint32_t note, double *zc, double *tail)
+     static int32_t L[66150 + CTL], R[66150 + CTL], RV[66150 + CTL], DL[66150 + CTL];   /* (+ CTL: the last block) */
+     uint32_t i, n = 66150, c = 0;
+     double e0 = 0, e1 = 0;
+-    memset(&drums, 0, sizeof drums);
++    memset(&drums, 0, offsetof(drum_st_t, tune));        /* (2.8-kitten: the SOUND page's TUNE / DECAY kept, in the drums' state) */
+     drums.set = -2;
+     memset(L, 0, sizeof L), memset(R, 0, sizeof R), memset(RV, 0, sizeof RV), memset(DL, 0, sizeof DL);
+     rng_state = 0x1234567u;
+diff --git a/tests/lite_part_test.c b/tests/lite_part_test.c
+index cd1ec14..b7ccdac 100644
+--- a/tests/lite_part_test.c
++++ b/tests/lite_part_test.c
+@@ -136,19 +136,20 @@ int main(void)
+     ok = 1;
+     for (i = 0; i < 16u; i++) {
+         track_t *t = midi_own(i);
+-        ok &= t != &trk[NHEAVY] && (i < 3u ? t == &trk[i] : i == 9u ? t == TDRUM : t == 0);
++        ok &= t != &trk[NHEAVY] && (i < 3u ? t == &trk[i] : i == 9u ? t == TDRUM : i == 10u ? t == TDRUM2 : t == 0);
+     }
+-    check("4. MIDI IN: channels 1, 2, 3 and 10 reach their tracks as in SLOOP; no channel is the LITE part's", ok);
++    check("4. MIDI IN: channels 1, 2, 3 and 10 reach their tracks as in SLOOP, 11 the second drum track; none the LITE part's", ok);
+     song.g[G_CH2] = 4;                                                /* a user moves part 2 to channel 4: it follows, as always */
+     check("4. a synth part moved to channel 4 owns it", midi_own(3) == &trk[1] && midi_own(1) == 0);
+     song.g[G_CH2] = 2;
+ 
+     /* 5. the numbers outside: the editor's are the working ones; SLOOP's four (screen, project file) leave the LITE part out */
+     ok = 1;
+-    for (k = 0; k < NTRK; k++)
++    for (k = 0; k < TRK_WIRE_N; k++)
+         ok &= trk_wire(k) == k && trk_of_wire(k) == k;
+-    ok &= trk_of_wire(NTRK) == TRK_NOWIRE && TRK_WIRE_N == NTRK && NTRK == 5u && TRK_DRUM == NTRK - 1u;
+-    check("5. the editor's tracks are the working ones: 5, the drum track the last (as INFO's ntrk says)", ok);
++    ok &= trk_of_wire(TRK_WIRE_N) == TRK_NOWIRE && trk_wire(TRK_DRUM2) == TRK_NOWIRE && TRK_WIRE_N == 5u && NTRK == 6u &&
++          TRK_DRUM == TRK_WIRE_N - 1u;
++    check("5. the editor's tracks: the first 5 working ones, the drum track the last (the second drum track not on the wire yet)", ok);
+     ok = 1;
+     for (k = 0; k < NTRK; k++)
+         ok &= trk_ui(k) == (k < NHEAVY ? k : k == TRK_DRUM ? 3u : TRK_NOWIRE);
+diff --git a/tests/run_tests.sh b/tests/run_tests.sh
+index d0208a5..06eece7 100644
+--- a/tests/run_tests.sh
++++ b/tests/run_tests.sh
+@@ -212,4 +212,7 @@ run "every page, HOME, REC READY: a knob turned alone changes one value (sloop-p
+ $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/unison_level_test" tests/unison_level_test.c -lm
+ run "UNISON: every engine spreads its voices' phases (no stack of voices in phase over POLY)" "$OUT/unison_level_test"
+ 
++# (2.8-kitten fix-20) the second drum track
++$CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drum2_test" tests/drum2_test.c -lm
++run "2.8-kitten: the second drum track (own kit, pattern, level, mute, MIDI 11, USB 8, either core)" "$OUT/drum2_test"
+ [ $fail -eq 0 ] && echo "ALL HOST TESTS PASSED" || { echo "HOST TESTS FAILED"; exit 1; }
+diff --git a/tests/seq2_test.c b/tests/seq2_test.c
+index 68d2a72..d796ddc 100644
+--- a/tests/seq2_test.c
++++ b/tests/seq2_test.c
+@@ -1243,20 +1243,20 @@ static void t_recquant(void)
+     transport_req = 1;
+     run_block();
+     GO_TO(2, 0.25);                                  /* a quarter step late on step 3 */
+-    drum_input(0, LV_NORM, 0, 1);
++    drum_input(TDRUM, 0, LV_NORM, 0, 1);
+     ok = d->dstep[2].on[0] & 1u;
+     k = (uint32_t)(d->micro[2] + 64);
+     ok &= d->micro[2] >= 15 && d->micro[2] <= 17;
+-    drum_input(3, LV_NORM, 0, 1);                    /* a second sound a little later on that step: the first's nudge */
++    drum_input(TDRUM, 3, LV_NORM, 0, 1);                    /* a second sound a little later on that step: the first's nudge */
+     ok &= d->micro[2] >= 15 && d->micro[2] <= 17 && (d->dstep[2].on[0] & 8u);
+     check(ok, "2.7 QUANT OFF: a hit a quarter step late: step 3, nudge +16; a second sound on it keeps it");
+     GO_TO(6, -0.25);                                 /* a quarter step early, before step 7 */
+-    drum_input(1, LV_NORM, 0, 1);
++    drum_input(TDRUM, 1, LV_NORM, 0, 1);
+     check((d->dstep[6].on[0] & 2u) && d->micro[6] >= -17 && d->micro[6] <= -15 && !(d->dstep[5].on[0] & 2u),
+           "2.7 QUANT OFF: a hit a quarter step early: into the next step (7), nudge -16");
+     rec_quant_off = 0;
+     GO_TO(10, 0.25);
+-    drum_input(0, LV_NORM, 0, 1);
++    drum_input(TDRUM, 0, LV_NORM, 0, 1);
+     check((d->dstep[10].on[0] & 1u) && d->micro[10] == 0, "2.7 QUANT ON (as before): on the grid, no nudge");
+     transport_req = 2; run_block();
+     /* a synth part, played by hand (input_on) and by the arp */
+diff --git a/tests/slicer_test.c b/tests/slicer_test.c
+index 5dddcd1..751d203 100644
+--- a/tests/slicer_test.c
++++ b/tests/slicer_test.c
+@@ -231,6 +231,8 @@ static int test_sync(void)
+         mix_block(o, CTL);
+         blocks++;
+         for (k = 0; k < NTRK; k++) {              /* the SLICER step that holds the block's first sample */
++            if (k == TRK_DRUM2)
++                continue;                         /* (2.8-kitten: the second drum track has no SLICER) */
+             uint32_t idx = sl[k].pos >= CTL * (uint32_t)song.g[G_BPM] ? sl[k].idx : (sl[k].idx + 15u) & 15u;
+             miss += idx != trk[k].seq_idx % 16u;
+         }
+diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
+index d3cc3b5..1bc055a 100644
+--- a/tests/ui_pages_test.c
++++ b/tests/ui_pages_test.c
+@@ -95,7 +95,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n) { (void)off, (void
+ #include "../firmware/src/storage.c"
+ /* (2.7) the editor's LIVE page (firmware/src/editor_live.c): its reply captured here */
+ static uint8_t lv_out[96];
+-#define LVM (20u + 3u * NTRK)                /* the LIVE state: 20 bytes, a step / length / meter per track, then the master, the throws, 16 drum tune / decay */
++#define LVM (20u + 3u * TRK_WIRE_N)                /* the LIVE state: 20 bytes, a step / length / meter per track, then the master, the throws, 16 drum tune / decay */
+ static uint32_t lv_n;
+ static void ed_b(uint32_t v) { if (lv_n < sizeof lv_out) lv_out[lv_n++] = (uint8_t)(v & 0x7Fu); }
+ static void ed_v(int32_t v) { uint32_t u = (uint32_t)(clamp(v, -8192, 8191) + 8192); ed_b(u); ed_b(u >> 7); }
+@@ -1467,7 +1467,10 @@ int main(int argc, char **argv)
+         check(song.sel == TRK_DRUM && ui.page == b0 && !page_for_drum(cur_page()) && !strcmp(PAGES[ui.page].title, "NOTES"),
+               "STEP on the drum track: not a page for the drums (DRUM TRACK shown, no piano roll of the drum steps)");
+         encs[panel.enc[EN_ALGO]] = 1; frames(2);
+-        check(song.sel == TRK_DRUM, "the knob past the drum track: held at the last track (the drum track is last)");
++        check(song.sel == TRK_DRUM2, "the knob past the drum track: the second drum track (2.8-kitten)");
++        encs[panel.enc[EN_ALGO]] = 1; frames(2);
++        check(song.sel == TRK_DRUM2, "the knob past the second drum track: held at the last track");
++        encs[panel.enc[EN_ALGO]] = -1; frames(2);
+         ui.force = 1; frames(3); ppm("track-drum");
+         encs[panel.enc[EN_ALGO]] = -1; frames(2);
+         check(song.sel == NHEAVY, "the knob back: the LITE part, before the drum track");
