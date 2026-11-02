@@ -1,0 +1,17 @@
+{
+ "default": "kittensynths-314c185e",
+ "firmwares": [
+  {
+   "id": "kittensynths-314c185e",
+   "hub": "kittensynths",
+   "name": "Kitten Synths",
+   "version": "2.8-kitten+314c185e",
+   "author": "Black Kitten Devices",
+   "license": "GPL-3.0",
+   "about": "SLOOP 2.8 (with the fixes of 2.8.4) with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and two drum tracks: 4 synths and 2 drum kits at once. On a real FM-1 it records 8 channels into your DAW over USB.",
+   "repo": "https://github.com/BlackKittenDevices/Kitten-Synths",
+   "package": "fw/kitten-synths.fwsc?314c185e",
+   "installer": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/installer/"
+  }
+ ]
+}
