@@ -1810,9 +1810,18 @@ index cd1ec14..f279e16 100644
      for (k = 0; k < NTRK; k++)
          ok &= trk_ui(k) == (k < NHEAVY ? k : k == TRK_DRUM ? 3u : TRK_NOWIRE);
 diff --git a/tests/run_tests.sh b/tests/run_tests.sh
-index d0208a5..06eece7 100644
+index d0208a5..34b8895 100644
 --- a/tests/run_tests.sh
 +++ b/tests/run_tests.sh
+@@ -28,7 +28,7 @@ OUT=build/host
+ mkdir -p "$OUT"
+ CC="${CC:-cc} -O1 -Wall -Wno-unused-function"
+ fail=0
+-run() { echo "== $1"; shift; "$@" || fail=1; }
++run() { echo "== $1"; n_="$1"; shift; "$@" || { fail=1; echo "FAILED: $n_"; }; }
+ 
+ [ -f build/felucca.fwsc ] || { echo "run ./build.sh first"; exit 1; }
+ # the generated headers the FM6 engine needs (tools/build.py generate() makes them too; no Pillow needed)
 @@ -212,4 +212,7 @@ run "every page, HOME, REC READY: a knob turned alone changes one value (sloop-p
  $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/unison_level_test" tests/unison_level_test.c -lm
  run "UNISON: every engine spreads its voices' phases (no stack of voices in phase over POLY)" "$OUT/unison_level_test"
