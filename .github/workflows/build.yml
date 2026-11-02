@@ -97,8 +97,9 @@ jobs:
           cd sloop
           # (run_tests.sh looks for build/felucca.fwsc: the package of this build, whatever its name)
           [ -f build/felucca.fwsc ] || cp "$(ls build/*.fwsc | head -1)" build/felucca.fwsc
-          sh tests/run_tests.sh > ../tests.log 2>&1 || true
+          timeout 2400 sh tests/run_tests.sh > ../tests.log 2>&1 || echo "run_tests.sh stopped: $?" >> ../tests.log
           tail -40 ../tests.log
+          echo "::notice title=TESTS-LAST::$(grep '^== ' ../tests.log | tail -1 | cut -c1-150)"
           # the result as an annotation (the log is not readable from here): the failed checks' lines, or that all passed
           if grep -q "ALL HOST TESTS PASSED" ../tests.log; then echo "::notice title=TESTS::all host tests passed"; else
             echo "::warning title=TESTS::$(grep -E "FAIL|FAILED" ../tests.log | head -15 | tr '\n' ';' | cut -c1-900)"; fi
