@@ -44,10 +44,10 @@ index 7f4367c..aef022d 100644
  static int trk_silent(const track_t *t)
  {
 diff --git a/firmware/src/drums.c b/firmware/src/drums.c
-index 5f86131..df39666 100644
+index 5f86131..57f4995 100644
 --- a/firmware/src/drums.c
 +++ b/firmware/src/drums.c
-@@ -33,10 +33,9 @@ static const char *const DRUM_KIT_STYLES[] = {"STUDIO", "SOFT", "PUNCHY", "BRIGH
+@@ -33,13 +33,12 @@ static const char *const DRUM_KIT_STYLES[] = {"STUDIO", "SOFT", "PUNCHY", "BRIGH
                                                "YOUR KIT", "YOUR KIT", "YOUR KIT", "YOUR KIT", "BIG KIT",
                                                "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH"};
  _Static_assert(sizeof(DRUM_KIT_NAMES) / sizeof(DRUM_KIT_NAMES[0]) == DRUM_KITS, "a name per kit");
@@ -58,7 +58,11 @@ index 5f86131..df39666 100644
 +typedef struct {
      voice_t v[NDRUM];
      uint32_t age;
-     int16_t set;                 /* SMP_SETS index of "PERC" (GM map), -1 = none */
+-    int16_t set;                 /* SMP_SETS index of "PERC" (GM map), -1 = none */
++    int16_t set;                 /* SMP_SETS index of "PERC" (GM map) + 1, -1 = none, 0 (or -2) = not looked up yet */
+     int32_t tail;                /* declick: the last output of cut voices, decaying */
+     int32_t peak;                /* largest |output| since the UI last looked (TRACKS meter) */
+     uint8_t kit[NDRUM];
 @@ -52,7 +51,18 @@ static struct {
      int32_t a0, a1;              /* the drum track's mute / solo attenuation over this block (fx.c), Q15, 0 = heard */
      int32_t glv, ggl, ggr;       /* (2.7) LEVEL and PAN as last mixed: a change glides (~3 ms, fx.c mix_glide) */
@@ -70,7 +74,7 @@ index 5f86131..df39666 100644
 + * sounds a drum track sets dcur for it and puts the old one back (voice.c trk_note_on, fx.c mix_drums); the audio
 + * interrupt starts from the first (fx.c mix_block), so whatever it reaches unasked is the first drum track as before.
 + * Both drum tracks render in the one drums unit (fx.c), on one core at a time */
-+static drum_st_t drum_sts[2] = {{.set = -2}, {.set = -2}};
++static drum_st_t drum_sts[2];                     /* (zeroed, not in the flash image: set 0 = not looked up yet) */
 +static drum_st_t *dcur = &drum_sts[0];
 +#define drums (*dcur)
 +#define DTRK (dcur == &drum_sts[0] ? TDRUM : TDRUM2)   /* the drum track it belongs to */
@@ -79,6 +83,23 @@ index 5f86131..df39666 100644
  
  static int32_t ds_buf[CTL];
  
+@@ -68,13 +78,13 @@ static int32_t mix_glide(int32_t from, int32_t to)
+ static int32_t drum_set(void)
+ {
+     uint32_t i;
+-    if (drums.set == -2) {
++    if (drums.set == 0 || drums.set == -2) {
+         drums.set = -1;
+         for (i = 0; i < SMP_NSETS; i++)
+             if (str_eq(SMP_SETS[i].name, "PERC"))
+-                drums.set = (int16_t)i;
++                drums.set = (int16_t)(i + 1u);
+     }
+-    return drums.set;
++    return drums.set > 0 ? drums.set - 1 : -1;
+ }
+ 
+ /* ------------------------------------------------------------ lanes --- */
 @@ -103,7 +113,8 @@ static const uint8_t LANE_OF_GM[81 - 35 + 1] = {
  #define DRUM_TUNE_MAX 7
  #define DRUM_DEC_MIN (-4)
