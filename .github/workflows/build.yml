@@ -95,7 +95,10 @@ jobs:
         continue-on-error: true
         run: |
           cd sloop
-          sh tests/run_tests.sh 2>&1 | tee ../tests.log || true
+          echo "::notice title=TESTS-START::the host tests start"
+          sh tests/run_tests.sh > ../tests.log 2>&1 || true
+          tail -40 ../tests.log
+          echo "::notice title=TESTS-END::$(grep -c "" ../tests.log) lines; $(tail -1 ../tests.log | cut -c1-200)"
           # the result as an annotation (the log is not readable from here): the failed checks' lines, or that all passed
           if grep -q "ALL HOST TESTS PASSED" ../tests.log; then echo "::notice title=TESTS::all host tests passed"; else
             echo "::warning title=TESTS::$(grep -E "FAIL|FAILED" ../tests.log | head -15 | tr '\n' ';' | cut -c1-900)"; fi
