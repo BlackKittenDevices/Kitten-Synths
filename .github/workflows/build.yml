@@ -96,6 +96,9 @@ jobs:
         run: |
           cd sloop
           sh tests/run_tests.sh 2>&1 | tee ../tests.log
+          # the result as an annotation (the log is not readable from here): the failed checks' lines, or that all passed
+          if grep -q "ALL HOST TESTS PASSED" ../tests.log; then echo "::notice title=TESTS::all host tests passed"; else
+            echo "::warning title=TESTS::$(grep -E "FAIL|FAILED" ../tests.log | head -15 | tr '\n' ';' | cut -c1-900)"; fi
           node web/test_web.mjs 2>&1 | tail -3 | tee -a ../tests.log
 
       - name: Site (installer, web editor)
