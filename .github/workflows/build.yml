@@ -91,6 +91,15 @@ jobs:
           grep -o "RAM .data+.bss [0-9]* B of [0-9]*; lowram [0-9]* B of [0-9]*; pool [0-9]* B of [0-9]*" ../build.log | tail -1 | sed 's/^/::notice title=RAM::/' || true
           grep -i -E "ram|flash|size|bytes|free|overflow" ../build.log | tail -20 | tee -a ../size.log || true
 
+      - name: The render loops' cost against the budget (tests/target_budget.py), as annotations
+        continue-on-error: true
+        run: |
+          cd sloop
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt > ../budget.log 2>&1 || true
+          echo "::notice title=BUDGET-CHECK::$(grep -E 'OVER|FAIL' ../budget.log | sed 's/  */ /g' | tr '\n' ';' | cut -c1-1500)"
+          cp tests/target_budget.txt ../tb.txt && BUDGET_UPDATE=1 python3 tests/target_budget.py build/felucca.dis ../tb.txt > /dev/null 2>&1 || true
+          echo "::notice title=BUDGET-NEW::$(grep -v '^#' ../tb.txt | tr '\n' ';' | cut -c1-1500)"
+
       - name: Tests (the host suite and the web editor)
         continue-on-error: true
         run: |
