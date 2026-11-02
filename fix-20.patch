@@ -13,6 +13,19 @@ index 69fc4aa..74e845e 100644
  #define FL_KIT_HI       0x000FC000u
  /* [off, off + n) inside [lo, hi), without wrapping: off + n can overflow, and
   * the 1 MiB part ignores the high address bits, so a wrapped range lands low. */
+diff --git a/firmware/src/arranger_scene.c b/firmware/src/arranger_scene.c
+index 1495a7e..945a060 100644
+--- a/firmware/src/arranger_scene.c
++++ b/firmware/src/arranger_scene.c
+@@ -16,7 +16,7 @@ static uint32_t section_bars(uint32_t s)
+     uint32_t k, bars = 1;
+     if (!proj_ok(p))
+         return 1;
+-    for (k = 0; k < NTRK; k++) {
++    for (k = 0; k < TRK_UI_N; k++) {               /* (a project's four records: NTRK read past them) */
+         uint32_t len = (uint32_t)clamp(p->t[k].p[P_SLEN], 1, NSTEP), u = div_units((uint32_t)p->t[k].p[P_SDIV] % NDIV_STEP);
+         uint32_t b = (len * u + 4u * BEAT_U - 1u) / (4u * BEAT_U);   /* (64 x 8 beats fits 32 bits) */
+         if (b > bars)
 diff --git a/firmware/src/core.h b/firmware/src/core.h
 index 7f4367c..aef022d 100644
 --- a/firmware/src/core.h
