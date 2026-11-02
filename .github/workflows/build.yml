@@ -147,7 +147,7 @@ jobs:
           cat = {"default": "kittensynths-" + sha, "firmwares": [{
               "id": "kittensynths-" + sha, "hub": "kittensynths", "name": "Kitten Synths", "version": v + "+" + sha, "author": "Black Kitten Devices",
               "license": "GPL-3.0",
-              "about": "SLOOP 2.8 with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and drums. On a real FM-1 it records 7 tracks into your DAW over USB.",
+              "about": "SLOOP 2.8 (with the fixes of 2.8.4) with MUUG (Minimoog-style, 100 sounds), a fourth LITE synth and two drum tracks: 4 synths and 2 drum kits at once. On a real FM-1 it records 8 channels into your DAW over USB.",
               "repo": "https://github.com/BlackKittenDevices/Kitten-Synths",
               "package": "fw/kitten-synths.fwsc?" + sha,
               "installer": "https://blackkittendevices.github.io/Kitten-Synths/site/webapp/installer/"}]}

@@ -27,7 +27,7 @@ index 1495a7e..945a060 100644
          uint32_t b = (len * u + 4u * BEAT_U - 1u) / (4u * BEAT_U);   /* (64 x 8 beats fits 32 bits) */
          if (b > bars)
 diff --git a/firmware/src/core.h b/firmware/src/core.h
-index 7f4367c..aef022d 100644
+index 7f4367c..efcecb8 100644
 --- a/firmware/src/core.h
 +++ b/firmware/src/core.h
 @@ -10,16 +10,17 @@
@@ -46,7 +46,7 @@ index 7f4367c..aef022d 100644
 -#define TRK_WIRE_N NTRK
 -static inline uint32_t trk_wire(uint32_t k) { return k < NTRK ? k : TRK_NOWIRE; }
 -static inline uint32_t trk_of_wire(uint32_t w) { return w < NTRK ? w : TRK_NOWIRE; }
-+#define TRK_WIRE_N 5u            /* (2.8-kitten: the second drum track is not on the editor's wire yet) */
++#define TRK_WIRE_N NTRK           /* (2.8-kitten: six, the two drum tracks last: the editor knows them) */
 +static inline uint32_t trk_wire(uint32_t k) { return k < TRK_WIRE_N ? k : TRK_NOWIRE; }
 +static inline uint32_t trk_of_wire(uint32_t w) { return w < TRK_WIRE_N ? w : TRK_NOWIRE; }
  /* the colour slot of working track k (gfx.c TE_COL: 0..3 SLOOP's four, 4 the LITE part, 5 a second drum track) */
@@ -161,7 +161,7 @@ index 5f86131..b08495d 100644
          drums.glv = lvl, drums.ggl = gl, drums.ggr = gr, drums.gon = 1;
      lvl = drums.glv = mix_glide(drums.glv, lvl);
 diff --git a/firmware/src/editor.c b/firmware/src/editor.c
-index 4606230..739eae7 100644
+index 4606230..549c63f 100644
 --- a/firmware/src/editor.c
 +++ b/firmware/src/editor.c
 @@ -107,7 +107,7 @@ UI_SMALL static uint32_t ed_smp_slot(uint32_t k) { return SMP_USER_OFF(k); }
@@ -209,27 +209,53 @@ index 4606230..739eae7 100644
              rc = 1;
          else if (usr_nz[a[0]] || !ed_smp_open[a[0]])
              rc = 4;                                        /* slot in use: SMP_BEGIN first (voices read it) */
+@@ -991,7 +991,7 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
+             ed_b(trk[k].p[P_MUTE] != 0);
+             ed_b((song.rec >> k) & 1u);
+         }
+-        ed_b(ed_wire_bits(song.solo) & 31u);              /* v5: the tracks soloed */
++        ed_b(ed_wire_bits(song.solo) & 63u);              /* v5: the tracks soloed */
+         break;
+     case ED_TRACK_MIX: {                                   /* track [, level v14, mute] -> track, level, mute */
+         track_t *t;
+@@ -1045,7 +1045,7 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
+         uint32_t on, lv, rt;
+         if (na < 1u || a[0] >= NSTEP)
+             return;
+-        d = &TDRUM->dstep[a[0]];
++        d = &TDS->dstep[a[0]];                         /* (2.8-kitten: the selected drum track's; the first otherwise) */
+         if (na >= 14u) {
+             on = (uint32_t)a[1] | (uint32_t)a[2] << 7 | (uint32_t)(a[3] & 3u) << 14;
+             lv = (uint32_t)a[4] | (uint32_t)a[5] << 7 | (uint32_t)a[6] << 14 | (uint32_t)a[7] << 21 | (uint32_t)(a[8] & 15u) << 28;
+@@ -1057,8 +1057,8 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
+                     dstep_set(d, i, (lv >> (2u * i)) & 3u, (rt >> (2u * i)) & 3u);
+             fm1_irq_on();
+             ui.force = 1;
+-            if (song.sel == TRK_DRUM)
+-                ed_w.st[a[0]] = ed_step_sig(TDRUM, a[0]);
++            if (is_drum(TSEL))
++                ed_w.st[a[0]] = ed_step_sig(TSEL, a[0]);
+         }
+         on = dstep_mask(d);
+         lv = (uint32_t)d->lvl[0] | (uint32_t)d->lvl[1] << 8 | (uint32_t)d->lvl[2] << 16 | (uint32_t)d->lvl[3] << 24;
 diff --git a/firmware/src/editor_live.c b/firmware/src/editor_live.c
-index 3604726..82644c4 100644
+index 3604726..b93ff3a 100644
 --- a/firmware/src/editor_live.c
 +++ b/firmware/src/editor_live.c
-@@ -39,8 +39,13 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
+@@ -39,8 +39,10 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
              }
              break;
          case 2:
 -            if (na >= 4u && a[1] >= LY_SCALE && a[1] <= LY_SONG && a[2] < 16u)
 -                layer_key(a[1], key_of_white(a[2]), a[3] & 1u);
 +            if (na >= 4u && a[1] >= LY_SCALE && a[1] <= LY_SONG && a[2] < 16u) {
-+                uint32_t w = a[2];
-+                if (a[1] == LY_MIX && w >= 5u && w < 12u)  /* (2.8-kitten) the editor's GLO keys are for five tracks (mute 1..5,
-+                                                         * solo 6..10, fill 11, bar 12): on the FM-1 solo is 7..11, fill 13, bar 14 */
-+                    w = w < 10u ? w + 1u : w + 2u;
-+                layer_key(a[1], key_of_white(w), a[3] & 1u);
++                layer_key(a[1], key_of_white(a[2]), a[3] & 1u);   /* (2.8-kitten: GLO's keys as the FM-1's, six tracks: mute
++                                                         * 1..6, solo 7..12, fill 13, bar 14; the editor sends them so) */
 +            }
              break;
          case 3:
              if (na >= 3u && a[1] < PUNCH_NFX) {
-@@ -138,8 +143,8 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
+@@ -138,8 +140,8 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
              break;
          case 12:
              if (na >= 4u) {
@@ -240,7 +266,18 @@ index 3604726..82644c4 100644
                                                           * screen sees them: its signature has them; nothing else redraws) */
              }
              break;
-@@ -172,7 +177,7 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
+@@ -160,8 +162,8 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
+     ed_b(chain_n);
+     ed_b(chain_i);
+     ed_b(m);
+-    ed_b(ed_wire_bits(song.solo) & 31u);
+-    ed_b(ed_wire_bits(song.rec) & 31u);
++    ed_b(ed_wire_bits(song.solo) & 63u);
++    ed_b(ed_wire_bits(song.rec) & 63u);
+     ed_b(ED_SELW);
+     ed_b((uint32_t)(punch.req + 1));
+     ed_b(clamp((int32_t)((song.cpu_q8 * 100u) >> 8), 0, 127));
+@@ -172,7 +174,7 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
      ed_b(arrangement_ready() & 15u);
      for (i = 0; i < TRK_WIRE_N; i++) {
          uint32_t k = trk_of_wire(i);
@@ -249,7 +286,7 @@ index 3604726..82644c4 100644
          ed_b(trk[k].seq_idx);
          ed_b(trk_len(&trk[k]));
          if (pk >= 64) {
-@@ -187,5 +192,5 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
+@@ -187,5 +189,5 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
      ed_b(ed_master);
      ed_b(thr_ed | thr_req);
      for (i = 0; i < DRUM_LANES; i++)
@@ -949,7 +986,7 @@ index d833a68..05e4e05 100644
              str_cpy(val, "MUTE", 12);
              unit = "";
 diff --git a/firmware/src/ui_input.c b/firmware/src/ui_input.c
-index dbab159..8e5d03e 100644
+index dbab159..ea33a3a 100644
 --- a/firmware/src/ui_input.c
 +++ b/firmware/src/ui_input.c
 @@ -136,10 +136,10 @@ UI_SMALL static uint32_t keys_lit(void)
@@ -966,6 +1003,23 @@ index dbab159..8e5d03e 100644
          if (play_led())
              m |= 1u << key_of_white(15);
          return m;
+@@ -149,13 +149,13 @@ UI_SMALL static uint32_t keys_lit(void)
+         break;
+     }
+     if (kb_grid) {                                 /* the DRUMS grid page: the sound's steps of this page */
+-        uint32_t len = trk_len(TDRUM), b0 = drum_cursor / 16u * 16u;
++        uint32_t len = trk_len(TDS), b0 = drum_cursor / 16u * 16u;
+         for (i = 0; i < 16u; i++) {
+             uint32_t idx = b0 + i, on;
+             if (idx >= len)
+                 continue;
+-            on = dstep_has(&TDRUM->dstep[idx], drum_lane);
+-            if (song.playing && idx == TDRUM->seq_idx)
++            on = dstep_has(&TDS->dstep[idx], drum_lane);
++            if (song.playing && idx == TDS->seq_idx)
+                 on = !on || blink;
+             if (on)
+                 m |= 1u << key_of_white(i);
 @@ -304,8 +304,8 @@ UI_SMALL static void tracks_edit(uint32_t slot, int32_t steps)
              t->p[P_MUTE] = 0;
              return;
@@ -990,6 +1044,15 @@ index dbab159..8e5d03e 100644
      drum_mute = 0;                                      /* (2.6: the live mutes) */
      for (i = 0; i < G_COUNT; i++)
          if (i != G_SLOT && i != G_DRCH && i != G_SYNC && i != G_MIDI && i != G_ROUTE && (i < G_CH1 || i > G_CHOTH) &&
+@@ -1279,7 +1281,7 @@ UI_SMALL static void ui_input(void)
+          * being edited. Every detent counts */
+         uint32_t total, cur = preset_pos(&total);
+         if (is_drum(TSEL))
+-            TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
++            TSEL->p[P_E0] = (int16_t)clamp(TSEL->p[P_E0] + s, 0, DRUM_KITS - 1);   /* (2.8-kitten: either drum track) */
+         else if (total)
+             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+     }
 diff --git a/firmware/src/ui_layers.c b/firmware/src/ui_layers.c
 index d858bff..54f5914 100644
 --- a/firmware/src/ui_layers.c
@@ -1717,7 +1780,7 @@ index 3f6c829..c3197da 100644
      return bad;
  }
 diff --git a/tests/lite_part_test.c b/tests/lite_part_test.c
-index cd1ec14..b7ccdac 100644
+index cd1ec14..f279e16 100644
 --- a/tests/lite_part_test.c
 +++ b/tests/lite_part_test.c
 @@ -136,19 +136,20 @@ int main(void)
@@ -1740,9 +1803,9 @@ index cd1ec14..b7ccdac 100644
          ok &= trk_wire(k) == k && trk_of_wire(k) == k;
 -    ok &= trk_of_wire(NTRK) == TRK_NOWIRE && TRK_WIRE_N == NTRK && NTRK == 5u && TRK_DRUM == NTRK - 1u;
 -    check("5. the editor's tracks are the working ones: 5, the drum track the last (as INFO's ntrk says)", ok);
-+    ok &= trk_of_wire(TRK_WIRE_N) == TRK_NOWIRE && trk_wire(TRK_DRUM2) == TRK_NOWIRE && TRK_WIRE_N == 5u && NTRK == 6u &&
-+          TRK_DRUM == TRK_WIRE_N - 1u;
-+    check("5. the editor's tracks: the first 5 working ones, the drum track the last (the second drum track not on the wire yet)", ok);
++    ok &= trk_of_wire(TRK_WIRE_N) == TRK_NOWIRE && trk_wire(TRK_DRUM2) == TRK_DRUM2 && TRK_WIRE_N == 6u && NTRK == 6u &&
++          TRK_DRUM == TRK_WIRE_N - 2u && TRK_DRUM2 == TRK_WIRE_N - 1u;
++    check("5. the editor's tracks are the working ones: 6, the two drum tracks the last (as INFO's ntrk says)", ok);
      ok = 1;
      for (k = 0; k < NTRK; k++)
          ok &= trk_ui(k) == (k < NHEAVY ? k : k == TRK_DRUM ? 3u : TRK_NOWIRE);
@@ -1787,6 +1850,20 @@ index 68d2a72..d796ddc 100644
      check((d->dstep[10].on[0] & 1u) && d->micro[10] == 0, "2.7 QUANT ON (as before): on the grid, no nudge");
      transport_req = 2; run_block();
      /* a synth part, played by hand (input_on) and by the arp */
+diff --git a/tests/site_test.py b/tests/site_test.py
+index 88dcecb..776692d 100644
+--- a/tests/site_test.py
++++ b/tests/site_test.py
+@@ -32,7 +32,8 @@ check("offline: no download link to itself", "<!--DL-->" not in off and 'id="off
+ check("offline: the installer and the font licence online",
+       'href="../installer/"' not in off and make_site.ONLINE + "webapp/installer/" in off
+       and 'href="FUKIAI-LICENSE.txt"' not in off)
+-rel = [m for m in re.findall(r'(?:src|href)="([^"#]+)"', off) if not re.match(r"(https?:|data:|mailto:)", m)]
++rel = [m for m in re.findall(r'(?:src|href)="([^"#]+)"', off) if not re.match(r"(https?:|data:|mailto:)", m)
++       and m != "KITTEN_IMG_PLACEHOLDER"]          # (Kitten Synths: the kitten, a data: URL put in by tools/kitten_img.py at build)
+ check("offline: no other file next to it (no relative src / href)", not rel)
+ check("offline: no url() to a file", not re.search(r'url\((?!data:)["\']?[A-Za-z]', off))
+ check("offline: no app, no service worker (a file has no site)",
 diff --git a/tests/slicer_test.c b/tests/slicer_test.c
 index 5dddcd1..751d203 100644
 --- a/tests/slicer_test.c
@@ -1820,7 +1897,7 @@ index c9aeefe..f5665bd 100644
              }
          bad += check("data stays in the Felucca regions (autosave too)", inside);
 diff --git a/tests/ui_pages_test.c b/tests/ui_pages_test.c
-index d3cc3b5..d0b083c 100644
+index d3cc3b5..1433ed2 100644
 --- a/tests/ui_pages_test.c
 +++ b/tests/ui_pages_test.c
 @@ -95,7 +95,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n) { (void)off, (void
@@ -1877,7 +1954,7 @@ index d3cc3b5..d0b083c 100644
      release(B_GLO);
      fm1_in.notes = 1u << key_of_white(8); frame();     /* (no layer: a plain key, no fill) */
      check(fill_held == 0u, "key 9 without GLO: no fill");
-@@ -1467,7 +1471,10 @@ int main(int argc, char **argv)
+@@ -1467,7 +1471,18 @@ int main(int argc, char **argv)
          check(song.sel == TRK_DRUM && ui.page == b0 && !page_for_drum(cur_page()) && !strcmp(PAGES[ui.page].title, "NOTES"),
                "STEP on the drum track: not a page for the drums (DRUM TRACK shown, no piano roll of the drum steps)");
          encs[panel.enc[EN_ALGO]] = 1; frames(2);
@@ -1885,10 +1962,37 @@ index d3cc3b5..d0b083c 100644
 +        check(song.sel == TRK_DRUM2, "the knob past the drum track: the second drum track (2.8-kitten)");
 +        encs[panel.enc[EN_ALGO]] = 1; frames(2);
 +        check(song.sel == TRK_DRUM2, "the knob past the second drum track: held at the last track");
++        {   /* (2.8-kitten) PRESETS on HOME with the second drum track selected: its kit, not the first drum track's */
++            int16_t k1 = TDRUM->p[P_E0], k2 = TDRUM2->p[P_E0];
++            go_home(); frames(2);
++            encs[panel.enc[EN_PRESET]] = 2; frames(2);
++            check(song.sel == TRK_DRUM2 && TDRUM2->p[P_E0] == k2 + 2 && TDRUM->p[P_E0] == k1,
++                  "PRESETS on HOME, the second drum track selected: its own kit changes (the first drum track's stays)");
++            TDRUM2->p[P_E0] = k2;
++        }
 +        encs[panel.enc[EN_ALGO]] = -1; frames(2);
          ui.force = 1; frames(3); ppm("track-drum");
          encs[panel.enc[EN_ALGO]] = -1; frames(2);
          check(song.sel == NHEAVY, "the knob back: the LITE part, before the drum track");
+@@ -1967,13 +1982,13 @@ int main(int argc, char **argv)
+         ok = trk[0].p[P_MUTE] && (lv_out[9] & 1u);
+         live(2, LY_MIX, 0, 1); live(2, LY_MIX, 0, 0);
+         ok &= !trk[0].p[P_MUTE];
+-        live(2, LY_MIX, 6, 1); live(2, LY_MIX, 6, 0);
++        live(2, LY_MIX, 7, 1); live(2, LY_MIX, 7, 0);    /* (2.8-kitten: six tracks: solo 7..12, fill 13, bar 14) */
+         ok &= song.solo == 2u;
+-        live(2, LY_MIX, 6, 1); live(2, LY_MIX, 6, 0);
++        live(2, LY_MIX, 7, 1); live(2, LY_MIX, 7, 0);
+         ok &= !song.solo;
+-        live(2, LY_MIX, 10, 1); ok &= fill_held == 1u; live(2, LY_MIX, 10, 0); ok &= !fill_held;
+-        live(2, LY_MIX, 11, 1); ok &= fill_arm == 1u && (lv_out[1] & 32u) != 0u;
+-        live(2, LY_MIX, 11, 1); ok &= !fill_arm;
++        live(2, LY_MIX, 12, 1); ok &= fill_held == 1u; live(2, LY_MIX, 12, 0); ok &= !fill_held;
++        live(2, LY_MIX, 13, 1); ok &= fill_arm == 1u && (lv_out[1] & 32u) != 0u;
++        live(2, LY_MIX, 13, 1); ok &= !fill_arm;
+         check(ok, "LIVE: GLO keys: mute, solo, fill while held, fill next bar (as GLO + key)");
+         live(2, LY_SONG, 1, 1); live(2, LY_SONG, 1, 0);
+         ok = live_req == 1 && chain_n == 0u && lv_out[6] == 2u;
 diff --git a/tests/userkit_test.c b/tests/userkit_test.c
 index 21637aa..e3a6c62 100644
 --- a/tests/userkit_test.c
@@ -1908,10 +2012,20 @@ index 21637aa..e3a6c62 100644
      TDRUM->p[P_E0] = (int16_t)DRUM_USR;                  /* USR1 */
      quiet();
 diff --git a/web/editor.html b/web/editor.html
-index bfbeac4..dd42994 100644
+index bfbeac4..072cddc 100644
 --- a/web/editor.html
 +++ b/web/editor.html
-@@ -1852,6 +1852,8 @@ function fmtValue(d, v) {
+@@ -1263,7 +1263,8 @@ const LIVE = { STATE: 0, PLAY: 1, KEY: 2, FX: 3, REC: 4, UNDO: 5, LY_KEY: 5, LY_
+     "LOOP 8T", "MONO", "FADE OUT"],
+   /* the GLO keys (ui_layers.c layer_key): 1..4 mute, 5..8 solo, 9 fill while held, 10 fill next bar, 16 tap tempo;
+      the SAVE keys: 1..4 play A..D, 5..8 store into A..D, 13 loop / song, 14 SONG REC */
+-  MUTE: 0, SOLO: 5, FILL: 10, FILL_BAR: 11, TAP: 15, SEC: 0, STORE: 4, SONG: 12, SONG_REC: 13 };
++  MUTE: 0, SOLO: 6, FILL: 12, FILL_BAR: 13, TAP: 15, SEC: 0, STORE: 4, SONG: 12, SONG_REC: 13 };   /* (2.8-kitten: six tracks:
++     GLO's keys mute 1..6, solo 7..12, fill 13, bar 14) */
+ /* ---- LIVE pro (editor only: the 2.7 firmware as it is, every value through TRACK_MIX / TRACK_PARAM / SET).
+    Scenes: what a track and the master sound like, kept in the browser, recalled at once or morphed over bars, or mixed
+    with the A / B crossfader. Ids: core.h P_* and G_* (2.7: P_E0 = 63). cont: values that glide in a morph; the others
+@@ -1852,6 +1853,8 @@ function fmtValue(d, v) {
     byte for byte: web/test_web.mjs compares them. */
  const SMP = { SLOT_SIZE: 0x14000, DATA_OFF: 512, RATE: 22050, HDR_LEN: 32 + 16 * 28, MAX_ZONES: 16 };
  SMP.MAX_DATA = SMP.SLOT_SIZE - SMP.DATA_OFF;
@@ -1920,7 +2034,53 @@ index bfbeac4..dd42994 100644
  
  /* groups of up to 7 bytes, each preceded by their top bits */
  function pack7(b) {
-@@ -3649,7 +3651,7 @@ function makeMockDevice(opt = {}) {
+@@ -3273,16 +3276,17 @@ function makeMockDevice(opt = {}) {
+   const P_E0 = TP.length, P_COUNT = P_E0 + 8, G_COUNT = GP.length, NSTEP = 64, G_ENGSEL = 20, P_SLCR = 45, P_CHORD = 49;
+   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+   /* four tracks (firmware v3); engine / preset / p / step below are the selected track's */
+-  const NTRK = 5, TRK_DRUM = 4, LITE_T = 3, LITE_ENG = [1, 2, 3, 4, 5];   /* 4 synth parts (the 4th: LITE, engines DIGITAL PHASE LOFI SAMPLE VOICE), the drum track last */
+-  const newTrack = (i) => ({ engine: 0, preset: 0, drum: i === TRK_DRUM, muug: MUUG.INIT.slice(), mw: 0, fm6: FM6.INIT_PK.slice(),   /* fm6: the FM6 patch (eng_fm6.c fm6_patch) */
+-    p: TP.map((d) => d.def).concat(i === TRK_DRUM ? [5, 0, 0, 0, 0, 0, 0, 0] : new Array(8).fill(0)),
++  const NTRK = 6, TRK_DRUM = 4, TRK_DRUM2 = 5, LITE_T = 3, LITE_ENG = [1, 2, 3, 4, 5];   /* 4 synth parts (the 4th: LITE, engines DIGITAL PHASE LOFI SAMPLE VOICE), the two drum tracks last (2.8-kitten) */
++  const isD = (i) => i === TRK_DRUM || i === TRK_DRUM2;
++  const newTrack = (i) => ({ engine: 0, preset: 0, drum: isD(i), muug: MUUG.INIT.slice(), mw: 0, fm6: FM6.INIT_PK.slice(),   /* fm6: the FM6 patch (eng_fm6.c fm6_patch) */
++    p: TP.map((d) => d.def).concat(i === TRK_DRUM ? [5, 0, 0, 0, 0, 0, 0, 0] : new Array(8).fill(0)),   /* (the second drum track: ACOUSTIC, kit 0) */
+     step: Array.from({ length: NSTEP }, () => ({ n: 0, notes: [0, 0, 0, 0], time: 2, flags: 0, vel: 0, lvl: 0, rat: 0 })),
+-    dstep: i === TRK_DRUM ? Array.from({ length: NSTEP }, emptyDrum) : null,
++    dstep: isD(i) ? Array.from({ length: NSTEP }, emptyDrum) : null,
+     micro: new Array(NSTEP).fill(0), locks: [],      /* v7: nudges, parameter locks (at most NLOCK) */
+     fill: new Array(NSTEP / 4).fill(0) });           /* v8: fill conditions, 2 bits a step */
+   const NLOCK = 24;
+   const st = {
+-    tracks: [0, 1, 2, 3, 4].map(newTrack), sel: 0, rec: 0, solo: 0,
++    tracks: [0, 1, 2, 3, 4, 5].map(newTrack), sel: 0, rec: 0, solo: 0,
+     g: GP.map((d) => d.def),
+     slots: [null, null, null, null],
+     smp: [0, 1, 2, 3].map(() => ({ flash: new Uint8Array(SMP.SLOT_SIZE).fill(0xFF), zones: 0, name: "", len: 0, next: SMP.DATA_OFF })),   /* USR1..4 (2.4: USR4) */
+@@ -3491,11 +3495,11 @@ function makeMockDevice(opt = {}) {
+         if (a.length >= 1 && a[0] < NTRK) st.sel = a[0];
+         b(st.sel); b(NTRK);
+         st.tracks.forEach((t, i) => { b(engOf(t)); b(t.preset); v(i === TRK_DRUM ? st.g[25] : t.p[0]); b(t.p[40] ? 1 : 0); b((st.rec >> i) & 1); });
+-        if (v5) b(st.solo & 15);
++        if (v5) b(st.solo & 63);
+         break;
+       case CMD.TRACK_MIX: {
+         if (a.length < 1 || a[0] >= NTRK) return null;
+-        const t = st.tracks[a[0]], drum = a[0] === TRK_DRUM;
++        const t = st.tracks[a[0]], drum = a[0] === TRK_DRUM;   /* (the first drum track's level: G_DRLVL; the second's its own) */
+         if (a.length >= 4) {
+           const lv = clamp(v14dec(a[1], a[2]), 0, 127);
+           if (drum) st.g[25] = lv; else t.p[0] = lv;
+@@ -3584,7 +3588,7 @@ function makeMockDevice(opt = {}) {
+       }
+       case CMD.DRUM_STEP: {                       /* v5: index [, on 3 x 7 bits, lvl 5 x 7, rat 5 x 7] */
+         if (a.length < 1 || a[0] >= NSTEP) return null;
+-        const d = st.tracks[TRK_DRUM].dstep[a[0]];
++        const d = st.tracks[isD(st.sel) ? st.sel : TRK_DRUM].dstep[a[0]];   /* (2.8-kitten: the selected drum track's) */
+         if (a.length >= 14) {
+           const g = (k, n) => a.slice(k, k + n).reduce((x, y, j) => x + y * 2 ** (7 * j), 0);
+           const on = g(1, 3) & 0xFFFF, lv = g(4, 5) % 2 ** 32, rt = g(9, 5) % 2 ** 32;
+@@ -3649,7 +3653,7 @@ function makeMockDevice(opt = {}) {
          if (a.length < 5 || a[0] >= st.smp.length) return null;
          const u = st.smp[a[0]], off = a[1] | (a[2] << 7) | (a[3] << 14), dat = unpack7(a.slice(4));
          let rc = 0;
@@ -1929,7 +2089,7 @@ index bfbeac4..dd42994 100644
          else {
            if (!(off & 0xFFF)) u.flash.fill(0xFF, off, off + 4096);
            u.flash.set(dat, off);
-@@ -3666,7 +3668,7 @@ function makeMockDevice(opt = {}) {
+@@ -3666,7 +3670,7 @@ function makeMockDevice(opt = {}) {
          else if (!hd[6] || hd[6] > 16) rc = 5;
          else {
            const len = dv.getUint32(16, true);
@@ -1938,7 +2098,300 @@ index bfbeac4..dd42994 100644
            else if (crc32(u.flash.subarray(SMP.DATA_OFF, SMP.DATA_OFF + len)) !== dv.getUint32(20, true)) rc = 3;
            else {
              u.flash.set(hd, 0);
-@@ -8132,10 +8134,12 @@ function renderSamples() {
+@@ -3868,8 +3872,8 @@ function makeMockDevice(opt = {}) {
+       else if (!play && st.playing) { st.playing = false; L.next = -1; L.fillBar = false; if (st.rec) st.rec = 0; }
+     } else if (op === LIVE.KEY && a.length >= 4 && x === LIVE.LY_MIX && y < 16) {
+       if (!z) { if (y === LIVE.FILL) L.fillHeld = false; return; }
+-      if (y < 5) st.tracks[y].p[40] = st.tracks[y].p[40] ? 0 : 1;
+-      else if (y < 10) st.solo ^= 1 << (y - 5);
++      if (y < NTRK) st.tracks[y].p[40] = st.tracks[y].p[40] ? 0 : 1;   /* (2.8-kitten: six tracks, mute 1..6, solo 7..12) */
++      else if (y < 2 * NTRK) st.solo ^= 1 << (y - NTRK);
+       else if (y === LIVE.FILL) L.fillHeld = true;
+       else if (y === LIVE.FILL_BAR) { L.fillBar = !L.fillBar; L.fillAt = nextBar(); }
+       else if (y === LIVE.TAP) {                     /* ui_layers.c tap_tempo: the last taps' mean, 40..240 */
+@@ -3909,7 +3913,7 @@ function makeMockDevice(opt = {}) {
+     } else if ((op === LIVE.ROLL && a.length >= 5) || (op === LIVE.ERASE && a.length >= 4)) {   /* (kept for the tests) */
+       const set = op === LIVE.ROLL ? L.rolls : L.erase, k = `${x}:${y}`, down = op === LIVE.ROLL ? a[4] : z;
+       if (down) set.add(k); else set.delete(k);
+-      if (op === LIVE.ERASE && down && x === TRK_DRUM) st.tracks[TRK_DRUM].dsteps?.forEach((d) => { if (d) d.on &= ~(1 << y); });
++      if (op === LIVE.ERASE && down && isD(x)) st.tracks[x].dsteps?.forEach((d) => { if (d) d.on &= ~(1 << y); });
+     } else if (op === LIVE.PATTERN && a.length >= 4 && x < 4) {
+       const t = st.tracks[x], len = lenOf(t);
+       if (y === 1) t.p[29] = z ? Math.min(64, len * 2) : Math.max(1, len >> 1);
+@@ -4767,7 +4771,7 @@ const TEXT = {
+     lvxHelp_transport: "再生／停止：PLAY ボタンと同じ。録音：演奏中のトラックに録音（FM-1 の REC と同じ）。空のプロジェクトでは、もう一度押すとループが確定。元に戻す／やり直す：最後の録音や編集。\nBPM：ノブを上下にドラッグ（Shift で細かく）、またはタップ。SWING：まっすぐからシャッフルまで。カウンターは小節.拍、ソングモードではソングの位置。\nループ／ソング：ループ再生かソング（セクションの順）。ソング録音：演奏したセクションの順がソングになります。フィル（押す間）、次の小節フィル。\n全オフ：すべてのノートとエフェクトを止めます。全画面：ページのみ。\n2 段目：時計とセットの時間（タップでリセット）、セット録音（FM-1 の USB オーディオを WAV に）、MIDI ラーンとロック。",
+     lvxHelp_sections: "セクションはループ全体：4 トラックのパターン、音色、ミックス。ソングは A、B、C、D（例：A イントロ、B バース、C サビ、D ブレイク）。\n作り方：ループを鳴らし、「ループを保存」の文字を押します。使用中のセクションは確認してから上書き。\n切り替え：A–D をタップ（1–4 キー）。再生中は次の小節から（待つ間点滅）、停止中はすぐ。\nセクションは「何が鳴るか」（ノート）を変えます。ノートを変えずに「どう鳴るか」を変えるにはシーンを使います。\nチェーン：2 つ以上の文字（A B B C…）をタップしてチェーン再生。各セクションをその小節数鳴らして次へ、繰り返し（FM-1 の SAVE + 複数キーと同じ）。チェーン停止で 1 つのセクションに戻ります。",
+     lvxHelp_scenes: "シーンはノブの写真です：各トラックのレベル、ミュート、パン、フィルタ、センド、ドライブ、音色のノブ、エンベロープ、LFO、INSERT、アルペジオ、そしてマスターエフェクト。ノートには触れません。\n例：シーン 1「イントロ」＝フィルタ閉、ドラム小さめ、リバーブ少；シーン 2「ドロップ」＝全開。ループを鳴らして 1、ドロップで 2 をタップ。\n保存：ノブを決めて「保存」、シーンパッドを押す。ダブルクリックで名前。F1–F8 呼び出し、Shift+F1–F8 保存。\nモーフ：「すぐ」は即切替、1–16 小節はゆっくり移ります（ビルドアップ）。＋音色：プリセットとキットも読み込み。＋テンポ：BPM も。\nクロスフェーダー：2 つのシーン（A と B）を選び、手でスライド。",
+-    lvxHelp_mixer: "トラックごとに 1 本（1–3 シンセ、D ドラム）。リストと ‹ › で音色（ドラムはキット）、☆ でお気に入り。\nフェーダーはレベル（横にメーター）、音色の下の細い線はパターンの位置。\nfilt：左ローパス（暗く）、右ハイパス（細く）。pan：左右。rev、dly、cho：リバーブ、ディレイ、コーラスへの量。drive：サチュレーション。\nミュート／ソロ：GLO + キーと同じ。演奏：下の鍵盤とパフォームがこのトラックに（FM-1 でも選択されるので REC で録音）。",
++    lvxHelp_mixer: "トラックごとに 1 本（1–3 シンセ、4 LITE、D と D2 は 2 つのドラム）。リストと ‹ › で音色（ドラムはキット）、☆ でお気に入り。\nフェーダーはレベル（横にメーター）、音色の下の細い線はパターンの位置。\nfilt：左ローパス（暗く）、右ハイパス（細く）。pan：左右。rev、dly、cho：リバーブ、ディレイ、コーラスへの量。drive：サチュレーション。\nミュート／ソロ：GLO + キーと同じ。演奏：下の鍵盤とパフォームがこのトラックに（FM-1 でも選択されるので REC で録音）。",
+     lvxHelp_keys: "鍵盤は「演奏」で選んだトラックを MIDI ノートで鳴らします：すぐ鳴り、REC で録音されます。\nパソコン：A W S E D F T G Y H U J K O L P が鍵盤、Z / X でオクターブ。ドラムは同じ文字が 16 パッド、強さは 4 段階（GHOST、SOFT、NORM、HARD）。\nベロシティ：強さ。アルペジオ：トラックのアルペジオモード。ホールド：離しても鳴り続けます。\n演奏／ロール／消去：鍵盤とパッドの動作。ロールは押している間ロールの速さで連打（ARP + キーと同じ）、REC 中は録音されます。消去は押している間そのノートやドラム音をパターンから消します：再生中は通ったステップ、停止中は全ステップ（EDIT + キーと同じ、アンドゥで戻せます）。",
+     lvxHelp_perform: "演奏中のトラックのすべてを、メニューなしで。\n音色：エンジンの値（FM-1 の EDIT ページ）、3 つのマクロ（FLT PIT SHP）、エンベロープとグライド、LFO。\nアルペジオ・キー：アルペジオ（モード、速さ、オクターブ、ゲート、スウィング、順序、ホールド）、キー（ルート、スケール、コード、トランスポーズ）——「全シンセトラック」で 3 つのシンセに送ります。\nインサート・バス：トラックの INSERT とフィルタ、共有のディレイ、リバーブ、コーラス、TEXTURE、メトロノーム。\nステップ：パターンのグリッド。タップでオン／オフ（新しいシンセステップは最後に弾いた音）、右クリックでフィル条件（黄：フィルのみ、赤：フィルなし）。LEN、DIV、SWG、GATE：長さ、速さ、スウィング、音の長さ。\nドラムの音色タブ：パッドを選び、チューン（半音）とディケイ（DRUMS の SOUND ページと同じ）。ステップタブのパターンボタン：全体を 1 ステップずらす、長さ ½ / ×2、トランスポーズ（各 1 回のアンドゥ）。",
+     lvxHelp_fx: "パンチインエフェクトはパッドを押している間（または Shift + 文字キー）だけ鳴り、離すと元通り。何も録音・変更されません。\nループ・タイム：直前の拍の繰り返し（LOOP 4…32）、スタッター、リバース、ストップ、半速、巻き戻し、フリーズ。フィルタ・EQ：ロー／ハイパス、帯域カット、電話。カラー：クラッシュ、エイリアス、オクターブ上、フランジャー、エコー。ムーブメント：ゲート、ワブル、オートパン、モノ、フェードアウト。\nラッチ：タップでオンのまま、もう一度（または別のエフェクト）でオフ。",
+@@ -4923,7 +4927,7 @@ const TEXT = {
+     stepDetail: "ステップ", nudge: "ナッジ", locks: "パラメータロック", addLock: "+ ロック", noLock: "ロックなし",
+     fillCond: "フィル", fcNorm: "通常", fcFill: "フィル時のみ", fcNoFill: "フィル時は休み",
+     lockFull: "ロックは 1 トラック 24 個まで。", lockRefused: "このパラメータはロックできません。",
+-    lockHelp: "ナッジ：ステップの長さの 1/64 単位で早め（−）／遅め（＋）。ロック：そのステップだけパラメータの値を変え、次のステップで元に戻ります。フィル：「フィル時のみ」のステップは GLO ＋ キー 9 を押している間（またはキー 10 で次の小節）だけ鳴り、「フィル時は休み」はその間だけ休みます（グリッドの F と ×）。本体では SEQ ＋ ステップ長押し ＋ KNOB 4（ナッジ）／PRESETS（ロック、ALGORITHM でパラメータ）／OCT+（フィル）。",
++    lockHelp: "ナッジ：ステップの長さの 1/64 単位で早め（−）／遅め（＋）。ロック：そのステップだけパラメータの値を変え、次のステップで元に戻ります。フィル：「フィル時のみ」のステップは GLO ＋ キー 13 を押している間（またはキー 14 で次の小節）だけ鳴り、「フィル時は休み」はその間だけ休みます（グリッドの F と ×）。本体では SEQ ＋ ステップ長押し ＋ KNOB 4（ナッジ）／PRESETS（ロック、ALGORITHM でパラメータ）／OCT+（フィル）。",
+     mixer: "ミキサー", mixHelp: "本体の TRACKS ページと同じ 4 トラック。フェーダーはレベル（ドラムは GLO > DRUMS LEVEL）。パンはどのトラックも選択を変えずに書き込みます（0.8 のファームウェアでは一瞬そのトラックを選びます）。REC は本体での録音待機の表示です。",
+     level: "レベル", pan: "パン", mute: "ミュート", rec: "REC", selectTrack: "選択", selectedTrack: "選択中",
+     projHelp: "FM-1 が持つのは 1 曲です: セクション A〜D（それぞれ 4 トラックのループ: 音色、パターン、テンポ、キー）と、その並び（ソングタブ）。「読込」はセクションを今のループに入れ、「保存」は今のループをセクションにしまいます。4 曲ではありません: 何曲も残すには、曲ごとに下のバックアップをファイルに保存し、使う曲を復元してください。",
+@@ -5109,7 +5113,7 @@ const TEXT = {
+     lvxHelp_transport: "PLAY / STOP: as the PLAY button. REC: records into the track you play (as REC on the FM-1); in an empty project, REC again closes the loop. undo / redo: the last recording or edit.\nBPM: drag the knob up or down (Shift: fine), or tap TAP in time. SWING: from straight to shuffled. The counter shows bar.beat, and in song mode the part and bar of the song.\nloop / song: the loop playing, or the song (the sections in order). song rec: the order you play the sections becomes the song. FILL while held, FILL BAR: the next bar is a fill (the steps marked “fill only” play).\nall off: lets go of every note and effect. full screen: the page alone.\nThe second row: the clock and the set's time (tap it to start again), record set (a WAV of what the FM-1 plays, from its USB audio), MIDI learn and lock (see their tips).",
+     lvxHelp_sections: "A section is a whole loop: the four tracks' patterns, sounds and mix. A song is A, B, C, D — for example A intro, B verse, C chorus, D break.\nTo make one: play the loop you want, then under “save the loop into” press a letter. A used section asks before it is replaced.\nTo switch: tap A–D (or keys 1–4). Playing, the new section starts at the next bar (it blinks while it waits); stopped, at once.\nSections change WHAT plays (the notes). To change HOW it sounds without changing the notes, use the scenes.\nchain: tap two or more letters (A B B C…), then play chain: each section plays for its own bars, then the next, and the chain loops — as SAVE + several keys on the FM-1. stop chain goes back to one section.",
+     lvxHelp_scenes: "A scene is a photo of your knobs: each track's level, mute, pan, filter, sends, drive, sound knobs, envelope, LFO, INSERT and arp, and the master effects. It does not touch the notes.\nExample: scene 1 “intro” = filters closed, drums low, little reverb; scene 2 “drop” = everything open and loud. Play your loop, tap 1, then 2 at the drop: the FM-1 jumps from one sound to the other.\nTo store: set the knobs as you want them, press STORE, then a scene pad. Double-click a pad to name it. F1–F8 recall, Shift+F1–F8 store.\nmorph: “at once” jumps; 1–16 bars glides there slowly (a build-up). + sounds: the scene also loads its presets and kit. + tempo: it also sets the BPM.\nThe crossfader: pick two scenes (A and B) and slide between them by hand, like a DJ.",
+-    lvxHelp_mixer: "One strip per track (1–3 synths, D drums). The list and ‹ › change the sound (the drums: the kit); ☆ makes it a favourite.\nThe fader is the level (its meter beside it); the thin bar under the sound is where the pattern is.\nfilt: left a low-pass (darker), right a high-pass (thinner). pan: left / right. rev, dly, cho: how much goes to the reverb, delay, chorus. drive: saturation.\nmute / solo: as GLO + key. play: the keys below and the PERFORM card follow this track (it is selected on the FM-1 too, so REC records it).",
++    lvxHelp_mixer: "One strip per track (1–3 synths, 4 the LITE part, D and D2 the two drum tracks). The list and ‹ › change the sound (the drums: the kit); ☆ makes it a favourite.\nThe fader is the level (its meter beside it); the thin bar under the sound is where the pattern is.\nfilt: left a low-pass (darker), right a high-pass (thinner). pan: left / right. rev, dly, cho: how much goes to the reverb, delay, chorus. drive: saturation.\nmute / solo: as GLO + key. play: the keys below and the PERFORM card follow this track (it is selected on the FM-1 too, so REC records it).",
+     lvxHelp_keys: "The keys play the track chosen with “play” (or the track buttons here), as real MIDI notes: they sound at once, and REC records them.\nOn the computer: A W S E D F T G Y H U J K O L P are the keys (white and black), Z / X change the octave. For the drums, the same letters are the 16 pads, with four strengths (GHOST, SOFT, NORM, HARD).\nvelocity: how hard the keys play. arp: the track's arpeggiator mode, hold: notes keep playing after you let go.\nplay / roll / erase: what the keys and pads do. roll repeats the note or drum sound while you hold it, at the roll rate (as ARP + key); playing with REC on, it is recorded. erase removes that note or drum sound from the pattern while you hold it: playing, the steps it passes; stopped, every step (as EDIT + key; undo brings it back).",
+     lvxHelp_perform: "Everything you can turn on the track you play, without menus.\nsound: the engine's own values (as the FM-1's EDIT page), the three macros (FLT PIT SHP), the envelope and glide, the LFO.\narp & key: the arpeggiator (mode, rate, octaves, gate, swing, order, hold); the key (root, scale, chord, transpose) — “every synth track” sends the key to all three synths.\ninsert & bus: the track's INSERT effect and filter; the shared delay, reverb, chorus, TEXTURE (a background bed) and the metronome.\nsteps: the pattern as a grid. Tap a step to turn it on or off (a new synth step plays the last note you played); right-click for its fill condition (yellow: only in a fill, red: never in a fill). LEN, DIV, SWG, GATE: the pattern's length, speed, swing and note length.\nThe drums' sound tab: pick a pad, then its tune (semitones) and decay, as the DRUMS screen's SOUND page. The steps tab's pattern buttons: shift the whole pattern a step, half or double its length, transpose it — each one undo.",
+     lvxHelp_fx: "Punch-in effects play only while you hold the pad (or Shift + a letter key), then the sound comes back exactly as it was: nothing is recorded or changed.\nloops & time: repeat the last beats (LOOP 4 … 32), stutter, reverse, stop, half speed, rewind, freeze. filter & EQ: low / high pass, kill a band, phone. colour: crush, alias, octave up, flanger, echo. movement: gate, wobble, auto-pan, mono, fade out.\nlatch: a tap turns the effect on and it stays; another tap (or another effect) turns it off.",
+@@ -5265,7 +5269,7 @@ const TEXT = {
+     stepDetail: "Step", nudge: "Nudge", locks: "Parameter locks", addLock: "+ lock", noLock: "no lock",
+     fillCond: "Fill", fcNorm: "normal", fcFill: "fill only", fcNoFill: "no fill",
+     lockFull: "A track holds 24 locks at most.", lockRefused: "This parameter cannot be locked.",
+-    lockHelp: "Nudge: the step early (-) or late (+), in 1/64 of a step. A lock gives a parameter another value for this step only; the base comes back at the next one. Fill: a \"fill only\" step plays only while GLO + key 9 is held (or key 10 makes the next bar a fill), a \"no fill\" step is silent then (F and \u00d7 on the grid). On the device: SEQ + a step held + KNOB 4 (nudge) / PRESETS (the lock; ALGORITHM picks its parameter) / OCT+ (the fill condition).",
++    lockHelp: "Nudge: the step early (-) or late (+), in 1/64 of a step. A lock gives a parameter another value for this step only; the base comes back at the next one. Fill: a \"fill only\" step plays only while GLO + key 13 is held (or key 14 makes the next bar a fill), a \"no fill\" step is silent then (F and \u00d7 on the grid). On the device: SEQ + a step held + KNOB 4 (nudge) / PRESETS (the lock; ALGORITHM picks its parameter) / OCT+ (the fill condition).",
+     mixer: "Mixer", mixHelp: "The four tracks of the device's TRACKS page. The fader is the level (drums: GLO > DRUMS LEVEL). Pan is written to any track without changing the selection (firmware 0.8: by selecting it for a moment). REC shows a track armed for live recording on the device.",
+     level: "Level", pan: "Pan", mute: "Mute", rec: "REC", selectTrack: "Select", selectedTrack: "Selected",
+     projHelp: "The FM-1 holds one song: four sections A–D, each a loop of the four tracks (sounds, patterns, tempo, key), and the order they play in (the Song tab). Load puts a section into the loop you are working on; Save stores that loop into a section. They are not four songs: to keep several songs, save a Backup file per song (below) and restore the one you want.",
+@@ -5515,9 +5519,19 @@ let mock = null;
+ /* ------------------------------------------------------- local browser audio --- */
+ let localAudio = null, previewStarting = null, previewPlaying = false, previewOctave = 60, previewKeysHidden = false, previewExpanded = false;
+ const previewHeld = new Map();
+-/* the preview knows the editor's tracks: the drum track is the last (INFO ntrk, 4 on older firmware), the synth tracks before it; the LITE part (4th synth) has its own colour */
+-const pvDrum = () => (dev?.info?.ntrk || 4) - 1;
+-const pvCol = (k) => (k === pvDrum() ? 4 : k === pvDrum() ? 5 : k + 1);
++/* (2.8-kitten) the drum tracks: the last (INFO ntrk, 4 on older firmware), or the last two (6 tracks: Kitten Synths' second
++   drum track); the LITE part is the synth track before them. drumIdx: every drum track; drum1: the one whose level is
++   GLO > DRUMS (G_DRLVL; the second drum track's is its own LEVEL, as a synth track's) */
++const nTrk = () => dev?.info?.ntrk || 4;
++const drumIdx = (n = nTrk()) => (n >= 6 ? [n - 2, n - 1] : [n - 1]);
++const isDrumIdx = (i, n = nTrk()) => drumIdx(n).includes(i);
++const drum1 = (n = nTrk()) => drumIdx(n)[0];
++const liteIdx = (n = nTrk()) => drum1(n) - 1;
++const curDrum = () => (isDrumIdx(dev?.sel) ? dev.sel : drum1());   /* the drum track at hand: the selected one, else the first */
++/* the preview knows the editor's tracks: the drum tracks are the last, the synth tracks before them; the LITE part (4th synth) has its own colour */
++const pvDrum = () => curDrum();
++const pvIsDrum = (k) => isDrumIdx(k);
++const pvCol = (k) => (k === drum1() ? 4 : isDrumIdx(k) ? 6 : k === liteIdx() && nTrk() >= 5 ? 5 : k + 1);
+ let previewPositions = [-1, -1, -1, -1, -1];
+ const PREVIEW_KEYS = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j", "k", "o", "l", "p"];
+ $("preview").hidden = !MOCK;
+@@ -5578,13 +5592,13 @@ function renderPreviewSummary() {
+   }
+   if (!mock || !dev?.dump) { box.textContent = t("previewConnect"); return; }
+   const k = mock.state.sel, track = mock.state.tracks[k];
+-  const name = k === pvDrum() ? t("drum") : (dev.names[track.engine] || [])[track.preset] || t("track");
++  const name = pvIsDrum(k) ? t("drum") : (dev.names[track.engine] || [])[track.preset] || t("track");
+   const position = previewPlaying ? previewPositions[k] : -1;
+   const muted = !!track.p[40] || !!(mock.state.solo && !(mock.state.solo & (1 << k)));
+   let state = t(previewPlaying ? "previewRunning" : "previewStopped");
+   if (position >= 0) {
+-    const step = (k === pvDrum() ? track.dstep : track.step)[position];
+-    const notes = k === pvDrum() ? DRUM_LANES.filter((_, lane) => step?.on & (1 << lane)).map(([, name]) => name) :
++    const step = (pvIsDrum(k) ? track.dstep : track.step)[position];
++    const notes = pvIsDrum(k) ? DRUM_LANES.filter((_, lane) => step?.on & (1 << lane)).map(([, name]) => name) :
+       step?.time === 0 ? step.notes.slice(0, step.n).map(noteName) : [];
+     const sound = muted ? t("previewMuted") : notes.length ? notes.join(" + ") : step?.time === 1 ? t("previewTie") : t("previewRest");
+     state = `${t("previewStep")} ${position + 1}/${track.p[29]} · ${sound}`;
+@@ -5613,12 +5627,12 @@ function previewSequenceClick(k, index, lane = -1, replacement = null) {
+   previewEditQueue = previewEditQueue.then(async () => {
+     if (d !== dev || m !== mock || index >= m.state.tracks[k].p[29]) return;
+     const track = m.state.tracks[k];
+-    const command = k === pvDrum() ? req.drumStep(index, previewToggleDrum(track.dstep[index], lane)) :
++    const command = pvIsDrum(k) ? req.drumStep(index, previewToggleDrum(track.dstep[index], lane)) :
+       req.trackStep(k, index, replacement || previewToggleStep(track.step[index], note));
+     const response = await d.link.request(command);
+     if (d !== dev) return false;
+     if (d.sel === k) {
+-      if (k === pvDrum()) {
++      if (pvIsDrum(k)) {
+         const r = parse[CMD.DRUM_STEP](response);
+         d.dsteps[index] = r; d.steps[index] = drumAsStep(r);
+       } else d.steps[index] = parse[CMD.TRACK_STEP](response);
+@@ -5700,7 +5714,7 @@ $("preview-note-listen").addEventListener("change", () => { if (!$("preview-note
+ function previewCellClick(e, cell, k, lane) {
+   const index = +cell.dataset.step;
+   if (lane === -2) { expandPreviewDrums(true); return; }
+-  if (k === pvDrum() || e.detail === 0) { previewSequenceClick(k, index, lane); return; }
++  if (pvIsDrum(k) || e.detail === 0) { previewSequenceClick(k, index, lane); return; }
+   const pending = previewStepGestures.get(cell);
+   if (e.detail > 1) { clearTimeout(pending?.timer); return; }
+   clearTimeout(pending?.timer);
+@@ -5784,7 +5798,7 @@ function renderPreviewSequence() {
+     const numbers = el("div", { class: "preview-seq-row preview-seq-numbers" }, el("span"),
+       el("div", { class: "preview-seq-steps" }, ...Array.from({ length: 16 }, (_, i) => el("span", { text: i + 1 }))));
+     box.append(numbers);
+-    for (let k = 0; k < pvDrum(); k++) {
++    for (let k = 0; k < drum1(); k++) {
+       const picker = el("select", { class: "seq-pitch", onchange: () => { previewNotes[k] = +picker.value; renderPreviewSequence(); } },
+         ...Array.from({ length: 128 }, (_, n) => el("option", { value: n, text: noteName(n) })));
+       const label = el("div", { class: "preview-seq-label" }, previewTrackButton(k), previewPageTools(k));
+@@ -5811,7 +5825,7 @@ function renderPreviewSequence() {
+     // Keep the page still under the pointer or keyboard focus while editing.
+     if ($("preview-follow").checked && position >= 0 && !group.matches(":hover, :focus-within")) previewPages[k] = Math.floor(position / 16) * 16;
+     const page = previewPages[k] = Math.min(previewPages[k], Math.floor((len - 1) / 16) * 16);
+-    const name = k === pvDrum() ? t("drum") : (dev.names[track.engine] || [])[track.preset] || t("track");
++    const name = pvIsDrum(k) ? t("drum") : (dev.names[track.engine] || [])[track.preset] || t("track");
+     const muted = !!track.p[40] || !!(st.solo && !(st.solo & (1 << k)));
+     button.querySelector(".seq-name").textContent = name;
+     button.querySelector(".seq-position").textContent = `${position < 0 ? "–" : position + 1}/${len}`;
+@@ -5827,7 +5841,7 @@ function renderPreviewSequence() {
+       b.hidden = len <= 16; b.disabled = disabled;
+       b.setAttribute("aria-label", `${t(key)} · ${t("track")} ${k + 1}`); b.title = b.getAttribute("aria-label");
+     }
+-    if (k < pvDrum()) {
++    if (!pvIsDrum(k)) {
+       const picker = group.querySelector(".seq-pitch");
+       picker.value = String(previewNotes[k]);
+       picker.setAttribute("aria-label", `${t("previewNewNote")} · ${t("track")} ${k + 1}`); picker.title = picker.getAttribute("aria-label");
+@@ -5847,7 +5861,7 @@ function renderPreviewSequence() {
+         row.hidden = !(previewAllDrums || [0, 2, 3, 4, 5].includes(lane) || (active & (1 << lane)));
+       }
+     }
+-    const source = (k === pvDrum() ? track.dstep : track.step).slice(page, page + 16);
++    const source = (pvIsDrum(k) ? track.dstep : track.step).slice(page, page + 16);
+     const stamp = JSON.stringify([source, len, page, lang, previewNotes[k]]);
+     if (group.dataset.pattern !== stamp) {
+       group.dataset.pattern = stamp;
+@@ -5855,19 +5869,19 @@ function renderPreviewSequence() {
+         const i = Array.prototype.indexOf.call(cell.parentNode.children, cell), index = page + i, s = source[i], lane = +cell.dataset.lane;
+         const notes = k < 3 && s && s.time === 0 ? s.notes.slice(0, s.n).map(noteName) : [];
+         const tie = k < 3 && s?.time === 1;
+-        const hits = k === pvDrum() && lane === -2 && s ? DRUM_LANES.filter((_, l) => s.on & (1 << l)).map(([, name]) => name) : [];
+-        const on = k === pvDrum() ? lane === -2 ? hits.length > 0 : !!(s?.on & (1 << lane)) : notes.length > 0 || tie;
++        const hits = pvIsDrum(k) && lane === -2 && s ? DRUM_LANES.filter((_, l) => s.on & (1 << l)).map(([, name]) => name) : [];
++        const on = pvIsDrum(k) ? lane === -2 ? hits.length > 0 : !!(s?.on & (1 << lane)) : notes.length > 0 || tie;
+         cell.dataset.step = index;
+         cell.disabled = index >= len;
+         cell.classList.toggle("on", on);
+         cell.classList.toggle("unused", index >= len);
+         cell.classList.toggle("bar-start", i % 4 === 0);
+-        const stored = k < pvDrum() && s?.n > 0 ? s.notes.slice(0, s.n).map(noteName) : [];
+-        cell.firstChild.textContent = k === pvDrum() ? lane === -2 ? hits.length > 1 ? String(hits.length) : on ? "●" : "" : on ? "●" : "" : tie ? "→" : stored.length ? stored[0] + (stored.length > 1 ? "+" + (stored.length - 1) : "") : "+";
++        const stored = !pvIsDrum(k) && s?.n > 0 ? s.notes.slice(0, s.n).map(noteName) : [];
++        cell.firstChild.textContent = pvIsDrum(k) ? lane === -2 ? hits.length > 1 ? String(hits.length) : on ? "●" : "" : on ? "●" : "" : tie ? "→" : stored.length ? stored[0] + (stored.length > 1 ? "+" + (stored.length - 1) : "") : "+";
+         if (lane !== -2) cell.setAttribute("aria-pressed", String(on));
+         else cell.setAttribute("aria-controls", "preview-drum-details");
+-        const content = k === pvDrum() ? lane === -2 ? hits.join(", ") || t("previewRest") : DRUM_LANES[lane][1] : tie ? t("previewTie") : on ? notes.join(", ") : s?.n > 0 ? s.notes.slice(0, s.n).map(noteName).join(", ") : noteName(previewNotes[k]);
+-        const description = `${t(lane === -2 ? "previewShowDrumGrid" : k < pvDrum() && s?.n > 0 ? on ? "previewDeactivate" : "previewReactivate" : on ? "previewRemove" : "previewAdd")} · ${content} · ${t("track")} ${k + 1} · ${t("previewStep")} ${index + 1}`;
++        const content = pvIsDrum(k) ? lane === -2 ? hits.join(", ") || t("previewRest") : DRUM_LANES[lane][1] : tie ? t("previewTie") : on ? notes.join(", ") : s?.n > 0 ? s.notes.slice(0, s.n).map(noteName).join(", ") : noteName(previewNotes[k]);
++        const description = `${t(lane === -2 ? "previewShowDrumGrid" : !pvIsDrum(k) && s?.n > 0 ? on ? "previewDeactivate" : "previewReactivate" : on ? "previewRemove" : "previewAdd")} · ${content} · ${t("track")} ${k + 1} · ${t("previewStep")} ${index + 1}`;
+         cell.setAttribute("aria-label", description); cell.title = description + (k < 3 ? " · " + t("previewDoubleClick") : "");
+       }
+     }
+@@ -5966,8 +5980,8 @@ async function playPreview() {
+ async function previewNoteOn(token, offset) {
+   if (!dev?.dump || previewHeld.has(token)) return;
+   const track = mock.state.sel;
+-  const note = track === pvDrum() ? DRUM_LANES[offset][0] : previewOctave + offset;
+-  if (track < pvDrum()) { previewNotes[track] = note; renderPreviewSequence(); }
++  const note = pvIsDrum(track) ? DRUM_LANES[offset][0] : previewOctave + offset;
++  if (!pvIsDrum(track)) { previewNotes[track] = note; renderPreviewSequence(); }
+   const held = { track, note };
+   previewHeld.set(token, held);
+   if (await startPreview() && previewHeld.get(token) === held) {
+@@ -5981,7 +5995,8 @@ async function previewNoteOn(token, offset) {
+ const midiIn = { access: null, held: new Map(), flash: 0 };
+ function midiRoute(ch) {                        /* 0-based MIDI channel -> a track of the mock, -1: none */
+   const g = mock.state.g, c = ch + 1;
+-  if (c === g[24]) return pvDrum();             /* the drum channel (CH4) */
++  if (c === g[24]) return drum1();              /* the drum channel (CH4) */
++  if (nTrk() >= 6 && c === 10) return drum1() + 1;   /* (2.8-kitten) channel 11: the second drum track */
+   for (let i = 0; i < 3; i++) if (c === g[33 + i]) return i;   /* CH1..CH3: the heavy parts */
+   return g[36] ? -1 : mock.state.sel;           /* OTHER: 0 SEL, 1 OFF */
+ }
+@@ -6008,7 +6023,7 @@ function midiMessage(e) {
+     if (old) localAudio.note(old.track, old.note, false);
+     midiIn.held.set(key, { track: k, note });
+     localAudio.note(k, note, true);
+-    $("midilast").textContent = `CH ${ch + 1} · ${k === pvDrum() ? "GM " + note : noteName(note)} vel ${d2} → ${t("track")} ${k + 1}`;
++    $("midilast").textContent = `CH ${ch + 1} · ${pvIsDrum(k) ? "GM " + note : noteName(note)} vel ${d2} → ${t("track")} ${k + 1}`;
+   } else if (type === 0x80 || (type === 0x90 && d2 === 0)) {
+     const key = ch + ":" + d1, h = midiIn.held.get(key);
+     if (h) { localAudio?.note(h.track, h.note, false); midiIn.held.delete(key); }
+@@ -6394,7 +6409,7 @@ function buildUI() {
+ /* the device's track colours (ui_studio.c TE_COL): the selected one is the editor's accent (--trk) */
+ const TCOL = ["var(--t1)", "var(--t2)", "var(--t3)", "var(--t4)"];
+ /* a track's colour: SLOOP's four as ever; with 5 tracks the drum track keeps the 4th colour and the LITE part (before it) has its own */
+-const tcol = (i) => { const n = dev?.info?.ntrk || 4; return n >= 5 && i === n - 1 ? TCOL[3] : n >= 5 && i === n - 2 ? "var(--t5)" : TCOL[i % 4]; };
++const tcol = (i) => { const n = nTrk(); return n >= 6 && i === n - 1 ? "var(--t6)" : n >= 5 && i === drum1(n) ? TCOL[3] : n >= 5 && i === liteIdx(n) ? "var(--t5)" : TCOL[i % 4]; };
+ function renderTrackbar() {
+   renderPreviewKeys();
+   const box = $("trackbtns");
+@@ -6407,7 +6422,7 @@ function renderTrackbar() {
+   for (const b of box.children) {
+     const i = +b.dataset.i, x = dev.mix && dev.mix.tracks[i];
+     b.setAttribute("aria-pressed", i === (dev.sel || 0) ? "true" : "false");
+-    const nm = !x ? [i === ntrk - 1 ? "DRUMS" : "", ""] : x.engine >= dev.info.nengines ? [(dev.kitNames || [])[x.e0] || "", "drums"]
++    const nm = !x ? [isDrumIdx(i, ntrk) ? (i === drum1(ntrk) ? "DRUMS" : "DRUMS 2") : "", ""] : x.engine >= dev.info.nengines ? [(dev.kitNames || [])[x.e0] || "", i === drum1(ntrk) ? "drums" : "drums 2"]
+       : [(dev.names[x.engine] || [])[x.preset] || "", String(dev.info.engines[x.engine] || "").toLowerCase()];
+     b.lastChild.replaceChildren(nm[0] + " ", el("span", { class: "dim", text: nm[1] }));
+     b.title = `${t("track")} ${i + 1}`;
+@@ -6443,7 +6458,7 @@ function updateBrowser() {
+   const drum = e >= dev.info.nengines;              /* the drum track: no engine, no presets */
+   renderTrackbar();
+   /* the LITE part (the 4th synth, the track before the drums) plays DIGITAL PHASE LOFI SAMPLE VOICE only (firmware engines.c eng_allowed) */
+-  const lite = dev.info.engines.includes("MUUG") && (dev.info.ntrk || 4) >= 5 && dev.sel === (dev.info.ntrk || 4) - 2;
++  const lite = dev.info.engines.includes("MUUG") && nTrk() >= 5 && dev.sel === liteIdx();
+   [...sel.options].forEach((o) => { o.disabled = lite && ![1, 2, 3, 4, 5].includes(+o.value); });
+   sel.disabled = drum;
+   $("preset").disabled = drum;
+@@ -6485,7 +6500,7 @@ function drumPanel(drum) {
+   box.hidden = !drum;
+   $("drumnote").hidden = true;
+   if (!drum) { clearInterval(DP.timer); DP.timer = 0; return; }
+-  if (DP.built !== dev) drumPanelBuild();
++  if (DP.built !== dev || DP.drum !== curDrum()) drumPanelBuild();
+   drumPanelRender();
+   if (!DP.timer) DP.timer = setInterval(() => { if (tab === "sound" && dev && dev.dump && isDrum() && !busy) drumPanelRead(); else { clearInterval(DP.timer); DP.timer = 0; } }, 1500);
+   drumPanelRead();
+@@ -6499,6 +6514,7 @@ async function drumPanelRead() {
+ function drumPanelBuild() {
+   const box = $("drumpanel"), pe0 = dev.info.pe0, U = DP.ui = {};
+   DP.built = dev;
++  DP.drum = curDrum();                                  /* (2.8-kitten: the panel is the selected drum track's) */
+   const knob = (lbl, s, id, d) => {
+     d = d || (s ? dev.gdesc[id] : dev.pdesc[id]) || { min: 0, max: 127, def: 0 };
+     return lvKnob(lbl, { min: d.min, max: d.max, def: d.def, bip: d.min < 0, get: () => (s ? dev.dump.g[id] : dev.dump.p[id]) ?? 0,
+@@ -6509,7 +6525,9 @@ function drumPanelBuild() {
+   const step = (d) => { const n = U.kit.options.length || 1; userSet(0, pe0, ((dev.dump.p[pe0] ?? 0) + d + n) % n, true); drumPanelRender(); };
+   U.prev = el("button", { type: "button", text: "‹", "aria-label": "previous", onclick: () => step(-1) });
+   U.next = el("button", { type: "button", text: "›", "aria-label": "next", onclick: () => step(1) });
+-  U.mix = [knob(t("lvLevel"), 1, gDrLvl()), knob(t("lvPan"), 0, 39), knob(t("lvFilter"), 0, 50), knob(t("lvRev"), 1, 26), knob(t("lvDly"), 1, 32)];
++  const d1 = curDrum() === drum1(), LP = LVP();        /* (the second drum track: its own LEVEL, REV, DLY, as a synth track) */
++  U.mix = [d1 ? knob(t("lvLevel"), 1, gDrLvl()) : knob(t("lvLevel"), 0, P.LEVEL), knob(t("lvPan"), 0, 39), knob(t("lvFilter"), 0, 50),
++    d1 ? knob(t("lvRev"), 1, 26) : knob(t("lvRev"), 0, LP.rev), d1 ? knob(t("lvDly"), 1, 32) : knob(t("lvDly"), 0, LP.dly)];
+   const itd = dev.pdesc[53];
+   U.ins = el("select", { "aria-label": "INSERT" }, ...((itd && itd.names) || ["OFF"]).map((n, k) => el("option", { value: String(k), text: n })));
+   U.ins.addEventListener("change", () => userSet(0, 53, +U.ins.value, true));
+@@ -6564,14 +6582,14 @@ async function drumPanelTw(lane) {
+ }
+ /* a pad heard: a MIDI note on the drum track's channel (as the LIVE page's pads) */
+ function drumHear(lane, on) {
+-  const tr = (dev.info.ntrk || 4) - 1, tok = "dp:" + lane;
++  const tr = curDrum(), tok = "dp:" + lane;
+   const km = LV.kmode;
+   LV.kmode = "play";                                    /* (always heard: not the LIVE page's roll / erase) */
+   try { if (on) lvNoteOn(tok, tr, lvDrumNote(lane), 100); else lvNoteOff(tok); } finally { LV.kmode = km; }
+ }
+ function drumPanelRender() {
+   const U = DP.ui;
+-  if (!U || DP.built !== dev || !dev.dump) return;
++  if (!U || DP.built !== dev || DP.drum !== curDrum() || !dev.dump) return;
+   const pe0 = dev.info.pe0;
+   if (document.activeElement !== U.kit && U.kit.options.length) U.kit.value = String(dev.dump.p[pe0] ?? 0);
+   if (document.activeElement !== U.ins) U.ins.value = String(dev.dump.p[53] ?? 0);
+@@ -7573,7 +7591,7 @@ $("dsplay").addEventListener("click", () => { if (DS.kit) op(() => dsPlay()); })
+ $("dsuse").addEventListener("click", () => {
+   if (!dev || !hasTracks() || !DS.kit) return;
+   op(async () => {
+-    const drum = dev.info.ntrk - 1;
++    const drum = curDrum();
+     if (dev.sel !== drum) { dev.sel = parse[CMD.TRACK](await rq(req.track(drum))).sel; await afterSoundChange(); }
+     const d = dev.pdesc[dev.info.pe0], i = d && d.names ? d.names.indexOf(dsKitName()) : -1;
+     if (i < 0) { sayK("kitNoKit"); return; }
+@@ -8132,10 +8150,12 @@ function renderSamples() {
    u.chopPane.hidden = P.mode !== "chop";
    u.modeHelp.replaceChildren(...t(P.mode === "files" ? "smpFilesHelp" : "smpChopHelp").split("\n").map((x) => el("p", { text: x })));
    const d = P.draft, keys = splitKeys(d.files), bytes = draftBytes(d);
@@ -1955,7 +2408,7 @@ index bfbeac4..dd42994 100644
    u.keymap.hidden = u.list.hidden = !d.files.length;
    u.match.disabled = d.files.length < 2;
    u.list.replaceChildren(...(d.files.length ? [el("div", { class: "frow fhead" }, el("span"), el("span", { text: t("file") }), el("span", { text: t("smpNote") }),
-@@ -8242,7 +8246,7 @@ const kitDraft = { name: "", slot: 4, pads: Array(16).fill(null), sel: -1 };   /
+@@ -8242,7 +8262,7 @@ const kitDraft = { name: "", slot: 4, pads: Array(16).fill(null), sel: -1 };   /
  const KIT_PAIR = 4;
  const kitSlots = (d = kitDraft.slot) => (d === KIT_PAIR ? [2, 3] : [d]);
  const kitDest = (d = kitDraft.slot) => (d === KIT_PAIR ? "USR3+4" : `USR${d + 1}`);
@@ -1964,7 +2417,16 @@ index bfbeac4..dd42994 100644
  const kitHas4 = () => !!dev && !!dev.smp && dev.smp.nslots >= 4;
  const KEY_OF_LANE = ["F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5"];
  let kitUi = null, kitAudio = null, kitSrc = null;
-@@ -8514,6 +8518,7 @@ async function smpUpload(k, prog, ask = true, d = smpDraft[k]) {   /* (d: the DR
+@@ -8492,7 +8512,7 @@ async function kitSend() {
+ function kitUse(k) {
+   if (!dev || !hasTracks()) return;
+   op(async () => {
+-    const drum = dev.info.ntrk - 1;
++    const drum = curDrum();
+     if (dev.sel !== drum) { dev.sel = parse[CMD.TRACK](await rq(req.track(drum))).sel; await afterSoundChange(); }
+     const d = dev.pdesc[dev.info.pe0], i = d && d.names ? d.names.indexOf(kitDest(k)) : -1;   /* (the drum track's DESC now) */
+     if (i < 0) { sayK("kitNoKit"); return; }
+@@ -8514,6 +8534,7 @@ async function smpUpload(k, prog, ask = true, d = smpDraft[k]) {   /* (d: the DR
    try { built = buildSlot(d.name, d.files.map((f) => ({ s: withGain(f.s, f.gain), root: f.root, lo: f.lo, hi: f.hi,
      loop: f.loop || 0, ls: f.ls, le: f.le }))); }
    catch (e) { sayK("smpFail", e.message); return false; }
@@ -1972,11 +2434,178 @@ index bfbeac4..dd42994 100644
    if (ask && !confirm(t("confirmUpload").replace("{n}", k + 1))) return false;
    const { hdr, data } = built;
    busy++;
+@@ -9004,7 +9025,7 @@ let panning = false;                /* v3 firmware: another track is selected fo
+ const mixTouched = (kind, i) => mixDrag === `${kind}:${i}` || performance.now() - (mixEdit.get(`${kind}:${i}`) || 0) < 600
+   || (!!dev && kind === "lv" && dev.link.hasQueued("mix:" + i))
+   || (kind === "pan" && (panWant.has(i) || (!!dev && dev.link.hasQueued("pan:" + i))));
+-const drumTrack = (i) => !!dev && !!dev.mix && i === dev.mix.ntrk - 1;
++const drumTrack = (i) => !!dev && !!dev.mix && i === drum1(dev.mix.ntrk);   /* (the level in GLO > DRUMS: the first drum track) */
+ function trackName(x) {
+   if (x.engine >= dev.info.nengines) return ["DRUMS", (dev.kitNames || [])[x.e0]].filter(Boolean).join(" ");
+   return [dev.info.engines[x.engine], (dev.names[x.engine] || [])[x.preset]].filter(Boolean).join(" ");
+@@ -9029,7 +9050,7 @@ async function readMixer() {
+ /* the Sound view's values of the selected track (and the drum level, a global) -> the strips */
+ function mixFromDump() {
+   if (!dev || !dev.mix || !dev.dump || panning) return;
+-  const m = dev.mix, ds = m.ntrk - 1, x = m.tracks[dev.sel];
++  const m = dev.mix, ds = drum1(m.ntrk), x = m.tracks[dev.sel];
+   if (!mixTouched("lv", ds)) m.tracks[ds].level = dev.dump.g[gDrLvl()];
+   if (x) {
+     if (!mixTouched("lv", dev.sel)) {
+@@ -10296,7 +10317,8 @@ const LVP = () => ({ pan: lvP("PAN", 39), filt: lvP("FILT", 50), rev: lvP("REV",
+ const LVG = () => ({ bpm: lvGany("BPM", 0), swing: lvGany("SWING", 1), filt: lvG("FILT", 29), dust: lvG("DUST", 27), duck: lvG("DUCK", 28),
+   drRev: lvG("REV", 26), drDly: lvG("DLY", 32), ch: [lvG("CH1", 33), lvG("CH2", 34), lvG("CH3", 35)], drCh: lvG("CH4", 24),
+   other: lvG("OTHER", 36), route: lvGany("IN", 14), fxCh: lvG("FX CH", 45), drMap: lvG("DR MAP", 46), remote: lvG("REMOTE", 47) });
+-const lvDrum = (i) => i === (dev && dev.info ? dev.info.ntrk || 4 : 4) - 1;
++const lvDrum = (i) => isDrumIdx(i);
++const lvDrumG = (i) => i === drum1();                    /* (its level is GLO > DRUMS LVL) */
+ const lvGv = (id) => (dev && dev.dump ? dev.dump.g[id] : 0);
+ 
+ /* ---- requests: the buttons' ones go first in the queue and are never sent twice (a mute is a toggle) */
+@@ -10365,7 +10387,7 @@ async function lvReadTrack(i) {
+ /* the drum kits' names: the drum track's KIT (DESC of P_E0 with the drum track selected) */
+ async function lvKits() {
+   if (dev.kitNames && dev.kitNames.length) { LV.kitNames = dev.kitNames; return; }
+-  const ds = (dev.info.ntrk || 4) - 1, sel = dev.sel;
++  const ds = drum1(), sel = dev.sel;
+   try {
+     if (sel !== ds) await rq(req.track(ds));
+     const kd = await getDescOrNull(0, dev.info.pe0);
+@@ -10559,7 +10581,7 @@ function lvChan(i) {
+   const g = LVG(), route = lvGv(g.route);
+   if (route === 1) return { err: "lvClock" };
+   if (route >= 2) return { ch: route - 2 };      /* IN = CH n: that channel, on the selected track */
+-  const own = lvDrum(i) ? lvGv(g.drCh) : lvGv(g.ch[i]);
++  const own = lvDrum(i) && !lvDrumG(i) ? 11 : lvDrum(i) ? lvGv(g.drCh) : lvGv(g.ch[i]);   /* (2.8-kitten: the second drum track, 11) */
+   if (own) return { ch: own - 1 };
+   if (lvGv(g.other)) return { err: "lvNoChan" };  /* OTHER = OFF */
+   const used = new Set([...g.ch.map(lvGv), lvGv(g.drCh), lvGv(g.fxCh), lvGv(g.remote)].filter(Boolean).map((c) => c - 1));
+@@ -10839,7 +10861,7 @@ function lvBuild() {
+   const fxBox = el("div", { class: "card lvcard lvfxbox" }, el("div", { class: "lvhead" }, el("h2", { text: t("lvFx") }), U.latch),
+     el("p", { class: "dim lvhint", text: t("lvFxHint") }), ...groups);
+   /* the keys */
+-  U.targets = [0, 1, 2, 3].slice(0, n).map((i) => el("button", { type: "button", class: "tog", style: `--trk:${TCOL[i]}`, text: lvDrum(i) ? "D" : String(i + 1), onclick: () => lvTarget(i) }));
++  U.targets = Array.from({ length: n }, (_, i) => i).map((i) => el("button", { type: "button", class: "tog", style: `--trk:${tcol(i)}`, text: lvDrum(i) ? (lvDrumG(i) ? "D" : "D2") : String(i + 1), onclick: () => lvTarget(i) }));
+   U.octDn = el("button", { type: "button", text: "−", "aria-label": t("lvOct") + " −", onclick: () => { LV.oct = Math.max(1, LV.oct - 1); lvRenderPlay(); } });
+   U.octUp = el("button", { type: "button", text: "+", "aria-label": t("lvOct") + " +", onclick: () => { LV.oct = Math.min(7, LV.oct + 1); lvRenderPlay(); } });
+   U.octV = el("span", { class: "lvoct" });
+@@ -10893,7 +10915,7 @@ function lvStrip(i) {
+   const drum = lvDrum(i), P = LVP(), g = LVG();
+   const tr = () => LV.tr[i] || { p: [] };
+   const pd = (id, d) => dev.pdesc[id] || d;
+-  const lvD = (drum ? dev.gdesc[gDrLvl()] : dev.pdesc[P.LEVEL ?? 0]) || { min: 0, max: 127, def: 100 };
++  const lvD = (lvDrumG(i) ? dev.gdesc[gDrLvl()] : dev.pdesc[P.LEVEL ?? 0]) || { min: 0, max: 127, def: 100 };
+   const s = {};
+   s.name = el("div", { class: "lsname" });
+   s.sound = el("select", { class: "lssound", "aria-label": t(drum ? "lvKit" : "lvSound") });
+@@ -10916,10 +10938,11 @@ function lvStrip(i) {
+       get: () => (glob ? lvGv(id) : tr().p[id] ?? 0), set: (v, f) => (glob ? lvGlobal(id, v, f) : lvParam(i, id, v)), mid: glob ? `g:${id}` : `s${i}:${id}` });
+   };
+   s.knobs = drum
+-    ? [kn(t("lsFilt"), P.filt, true), kn(t("lsPan"), P.pan, true), kn(t("lsRev"), g.drRev, false, true), kn(t("lsDly"), g.drDly, false, true)]
++    ? (lvDrumG(i) ? [kn(t("lsFilt"), P.filt, true), kn(t("lsPan"), P.pan, true), kn(t("lsRev"), g.drRev, false, true), kn(t("lsDly"), g.drDly, false, true)]
++      : [kn(t("lsFilt"), P.filt, true), kn(t("lsPan"), P.pan, true), kn(t("lsRev"), P.rev), kn(t("lsDly"), P.dly)])   /* (the second drum track's own) */
+     : [kn(t("lsFilt"), P.filt, true), kn(t("lsPan"), P.pan, true), kn(t("lsRev"), P.rev), kn(t("lsDly"), P.dly), kn(t("lsCho"), P.cho), kn(t("lsDrv"), P.dst)];
+-  s.node = el("div", { class: "lstrip" + (drum ? " drum" : ""), style: `--c:${TCOL[i % 4]}`, role: "group", "aria-label": `${t("lvTrack")} ${i + 1}` },
+-    el("div", { class: "lshead" }, el("span", { class: "lsnum", text: drum ? "D" : String(i + 1) }), s.name, drum ? "" : s.fav),
++  s.node = el("div", { class: "lstrip" + (drum ? " drum" : ""), style: `--c:${tcol(i)}`, role: "group", "aria-label": `${t("lvTrack")} ${i + 1}` },
++    el("div", { class: "lshead" }, el("span", { class: "lsnum", text: drum ? (lvDrumG(i) ? "D" : "D2") : String(i + 1) }), s.name, drum ? "" : s.fav),
+     el("div", { class: "lssnd" }, s.prev, s.sound, s.next), s.prog,
+     el("div", { class: "lsbody" }, s.fader, el("div", { class: "lsknobs" }, ...s.knobs)),
+     el("div", { class: "lsbtns" }, s.mute, s.solo, s.sel));
+@@ -11823,14 +11846,14 @@ function livePush(f) {
+     const c = parse[CMD.TRACK_CHANGED](f.a), o = LV.tr[c.track];
+     if (!o) return;
+     if (c.id === LVP().mute) { if (!lvTouched("lv:" + c.track)) o.mute = c.value ? 1 : 0; }
+-    else if (c.id === 0 && !lvDrum(c.track)) { if (!lvTouched("lv:" + c.track)) o.level = c.value; }
++    else if (c.id === 0 && !lvDrumG(c.track)) { if (!lvTouched("lv:" + c.track)) o.level = c.value; }
+     else if (!lvTouched(`p:${c.track}:${c.id}`)) o.p[c.id] = c.value;
+     lvRenderStrip(c.track);
+   } else if (f.cmd === CMD.CHANGED) {
+     const c = parse[CMD.CHANGED](f.a), o = LV.tr[dev.sel];
+-    if (c.scope) { lvRenderMaster(); if (c.id === gDrLvl()) { const ds = (dev.info.ntrk || 4) - 1; if (LV.tr[ds] && !lvTouched("lv:" + ds)) LV.tr[ds].level = c.value; lvRenderStrip(ds); } lvRenderPlay(); return; }
++    if (c.scope) { lvRenderMaster(); if (c.id === gDrLvl()) { const ds = drum1(); if (LV.tr[ds] && !lvTouched("lv:" + ds)) LV.tr[ds].level = c.value; lvRenderStrip(ds); } lvRenderPlay(); return; }
+     if (!o) return;
+-    if (c.id === 0 && !lvDrum(dev.sel)) { if (!lvTouched("lv:" + dev.sel)) o.level = c.value; }
++    if (c.id === 0 && !lvDrumG(dev.sel)) { if (!lvTouched("lv:" + dev.sel)) o.level = c.value; }
+     else if (c.id === LVP().mute) { if (!lvTouched("lv:" + dev.sel)) o.mute = c.value ? 1 : 0; }
+     else if (!lvTouched(`p:${dev.sel}:${c.id}`)) o.p[c.id] = c.value;
+     lvRenderStrip(dev.sel);
 diff --git a/web/test_web.mjs b/web/test_web.mjs
-index 54132bf..78d740b 100644
+index 54132bf..7d5cff8 100644
 --- a/web/test_web.mjs
 +++ b/web/test_web.mjs
-@@ -1353,7 +1353,7 @@ async function editorLivePage() {
+@@ -333,8 +333,8 @@ async function editorTracks() {
+   const { m, rq, ev, done } = attachMock({ watchMs: 1000 });
+   const info = E.parse[C.INFO](await rq(E.req.info()));
+   const tr = E.parse[C.TRACK](await rq(E.req.track()));
+-  ok(info.ntrk === 5 && tr.sel === 0 && tr.ntrk === 5 && tr.tracks[0].engine === 0 && tr.tracks[1].engine === 1
+-    && tr.tracks[3].engine === 4 && tr.tracks[4].engine === info.nengines, "tracks: INFO NTRK, TRACK lists 5 (track 4 = the LITE part on SAMPLE, track 5 = drums, engine NENGINES)");
++  ok(info.ntrk === 6 && tr.sel === 0 && tr.ntrk === 6 && tr.tracks[0].engine === 0 && tr.tracks[1].engine === 1
++    && tr.tracks[3].engine === 4 && tr.tracks[4].engine === info.nengines && tr.tracks[5].engine === info.nengines, "tracks: INFO NTRK, TRACK lists 6 (track 4 = the LITE part on SAMPLE, tracks 5, 6 = the two drum tracks, engine NENGINES)");
+   /* the v1 commands follow the selected track */
+   const d0 = E.parse[C.DUMP](await rq(E.req.dump()), info);
+   const t1 = E.parse[C.TRACK](await rq(E.req.track(1)));
+@@ -432,7 +432,7 @@ async function editorMixer() {
+   const info = E.parse[C.INFO](await rq(E.req.info()));
+   const PAN = 39, MUTE = 40;
+   const m0 = await E.mixer.read(rq, info, { pan: PAN });
+-  ok(m0.ntrk === 5 && m0.tracks.length === 5 && m0.tracks[1].pan === -24 && m0.tracks[2].pan === 20 && m0.tracks[4].engine === info.nengines
++  ok(m0.ntrk === 6 && m0.tracks.length === 6 && m0.tracks[1].pan === -24 && m0.tracks[2].pan === 20 && m0.tracks[4].engine === info.nengines
+     && m0.tracks.every((x) => Number.isInteger(x.level) && (x.mute === 0 || x.mute === 1)), "mixer: read = TRACK + pan of every track (TRACK_DUMP)");
+   /* level / mute of a track that is not selected, and of the drum track (G_DRLVL) */
+   const a = await E.mixer.setMix(rq, 2, 70, 1);
+@@ -498,8 +498,8 @@ async function editorTrackParam() {
+   ok(g.track === 1 && g.id === PAN && g.value === -24 && p2 === -40 && p1 === 63 && alg.value === 7 && lv.value === 0 && td2.p[PAN] === -40
+     && sel.sel === 0 && (sent[C.TRACK] || 0) === tracks0 + 1 && ev.pushes.length === pushes,
+     "v4: TRACK_PARAM get / set on other tracks (clamped as SET, selection kept, no push)");
+-  const bad = await rq(E.req.trackParam(5, PAN), { timeout: 60, retries: 0, quiet: true }).then(() => "reply", () => "none");
+-  ok(bad === "none", "v4: TRACK_PARAM of track 6 (past the five): no reply");
++  const bad = await rq(E.req.trackParam(6, PAN), { timeout: 60, retries: 0, quiet: true }).then(() => "reply", () => "none");
++  ok(bad === "none", "v4: TRACK_PARAM of track 7 (past the six): no reply");
+   /* device-side changes: CHANGED for the selected track, TRACK_CHANGED for the others */
+   m.sim.param(2, PAN, 30);
+   m.sim.param(3, MUTE, 1);
+@@ -648,7 +648,8 @@ async function editorLite() {
+   const { rq, done } = attachMock({});
+   const info = E.parse[C.INFO](await rq(E.req.info()));
+   let tr = E.parse[C.TRACK](await rq(E.req.track(3)));
+-  ok(info.ntrk === 5 && tr.sel === 3 && tr.tracks[3].engine === 4 && tr.tracks[4].engine === info.nengines, "lite: the editor sees 5 tracks; track 4 (the LITE part) starts on SAMPLE, the drums are the last");
++  ok(info.ntrk === 6 && tr.sel === 3 && tr.tracks[3].engine === 4 && tr.tracks[4].engine === info.nengines && tr.tracks[5].engine === info.nengines,
++    "lite: the editor sees 6 tracks; track 4 (the LITE part) starts on SAMPLE, the two drum tracks are the last");
+   await rq(E.req.set(1, 20, info.engines.indexOf("MUUG")));
+   let d = E.parse[C.DUMP](await rq(E.req.dump()), info);
+   ok(d.engine === 4, "lite: the LITE part refuses MUUG (engines.c eng_allowed): still SAMPLE");
+@@ -669,7 +670,7 @@ async function editorLite() {
+   tr = E.parse[C.TRACK](await rq(E.req.track()));
+   ok(mx.level === 80 && mx.mute === 1 && tr.tracks[3].level === 80 && tr.tracks[3].mute === 1, "lite: its level and mute through TRACK_MIX");
+   const live = E.parse[C.LIVE](await rq(E.req.live(0)));
+-  ok(live.tracks.length === 5, "lite: the LIVE state has a step / length / meter for each of the 5 tracks");
++  ok(live.tracks.length === 6, "lite: the LIVE state has a step / length / meter for each of the 6 tracks");
+   done();
+ }
+ 
+@@ -781,7 +782,7 @@ async function editorV5() {
+   /* TRACK ends with the solo mask */
+   m.state.solo = 0b0101;
+   const tr = E.parse[C.TRACK](await rq(E.req.track()));
+-  ok(tr.solo === 5 && tr.sel === 4 && tr.tracks.length === 5, "v5: TRACK reports the soloed tracks");
++  ok(tr.solo === 5 && tr.sel === 4 && tr.tracks.length === 6, "v5: TRACK reports the soloed tracks");
+   ok(!ev.unknown.length, "v5: no unmatched replies");
+   done();
+   /* firmware 0.8 (v3): no DRUM_STEP, no protocol byte, steps without the extra bytes */
+@@ -1317,8 +1318,8 @@ async function editorLivePage() {
+   const info = E.parse[C.INFO](await rq(E.req.info()));
+   let s = await live(L.STATE);
+   const raw = await rq(E.req.live(L.STATE));
+-  ok(info.proto === 12 && raw.length === 53 && s.pro && s.master === -1 && s.dtw.length === 16 && s.dtw[0].tune === 0 && !s.playing && s.ready === 1 && s.tracks.length === 5 && s.bpm === m.state.g[0] && s.sec === -1 && s.fx === -1,
+-    "live page: the state (53 bytes as editor_live.c): stopped, 5 tracks, BPM, no section, no effect, A stored, the master on its knob, the pads as the kit");
++  ok(info.proto === 12 && raw.length === 56 && s.pro && s.master === -1 && s.dtw.length === 16 && s.dtw[0].tune === 0 && !s.playing && s.ready === 1 && s.tracks.length === 6 && s.bpm === m.state.g[0] && s.sec === -1 && s.fx === -1,
++    "live page: the state (56 bytes as editor_live.c): stopped, 6 tracks, BPM, no section, no effect, A stored, the master on its knob, the pads as the kit");
+   s = await live(L.PLAY, 1);
+   ok(s.playing && m.state.playing, "live page: PLAY plays");
+   await live(L.KEY, L.LY_MIX, L.MUTE + 1, 1); s = await live(L.KEY, L.LY_MIX, L.MUTE + 1, 0);
+@@ -1353,7 +1354,7 @@ async function editorLivePage() {
      const lv = (/case 6:[\s\S]*case 12:[\s\S]*?break;/.exec(readFileSync(join(HERE, "../firmware/src/editor_live.c"), "utf8")) || [""])[0];
      ok(L.ROLL === 6 && L.ERASE === 7 && L.PATTERN === 8 && L.CHAIN === 9 && L.THROW === 10 && L.MASTER === 11 && L.DRUM_TW === 12
        && /roll_start/.test(lv) && /erase_now/.test(lv) && /pattern_length/.test(lv) && /chain_sec/.test(lv) && /thr_ed/.test(lv) && /ed_master/.test(lv)
@@ -1985,3 +2614,18 @@ index 54132bf..78d740b 100644
      s = await live(L.THROW, 2); const thr = s.throws === 2; await live(L.THROW, 0);
      s = await live(L.MASTER, 63); const mst = s.master === 63; s = await live(L.MASTER, 127);
      const knob = s.master === -1;
+@@ -1552,11 +1553,11 @@ function editorTabs() {
+   {   /* 2.4: the device's palette as tokens (:root), used through var(--...); outside them only #000 (text on a colour) */
+     const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>")).replace(/:root\s*\{[^}]*\}/g, "");
+     const hex = [...css.matchAll(/#[0-9a-f]{3,6}\b/gi)].map((m) => m[0].toLowerCase()).filter((c) => c !== "#000");
+-    ok(!hex.length && /--t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a;/.test(html),
++    ok(!hex.length && /--t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #d6dae2; --t6: #d62830;/.test(html),   /* (Kitten Synths' PUMPKIN) */
+       "editor: the track colours of the device (gfx.c TE_COL_DEF), colours only as tokens" + (hex.length ? ` (${hex.join(" ")})` : ""));
+     const te = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");   /* (2.7: TE_COL_DEF, a theme may change them) */
+-    ok(/TE_COL_DEF\[NTE\] = \{RGB\(40, 124, 255\), RGB\(30, 204, 112\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), /.test(te),
+-      "editor: ... the same four as the firmware's TE_COL");
++    ok(/TE_COL_DEF\[NTE\] = \{RGB\(176, 96, 255\), RGB\(110, 226, 48\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), RGB\(214, 218, 226\), RGB\(214, 40, 48\)\}/.test(te),
++      "editor: ... the same six as the firmware's TE_COL (the LITE part, the second drum track)");
+     ok(/SLOOP-FONT\*\/url\(data:font\/ttf;base64,[A-Za-z0-9+\/=]{20000,}\)/.test(html), "editor: the device's Terminus font inlined (tools/gen_webfont.py)");
+   }
+ }

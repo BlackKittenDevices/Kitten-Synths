@@ -2,7 +2,7 @@
 
 <h1 align="center">Kitten Synths</h1>
 
-<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con un sintetizador tipo Minimoog, un cuarto sintetizador liviano.</b><br>
+<p align="center"><b>Firmware libre para el M-VAVE FM-1: una groovebox con cuatro sintes (uno tipo Minimoog) y dos baterías, que graba 8 canales en tu DAW.</b><br>
 Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.com/isod89/sloop-fm1">SLOOP</a>, <a href="https://github.com/hugelton/Felucca">Felucca</a> y <a href="https://github.com/ruppert/fmini-1">FMini-1</a></p>
 
 <p align="center">
@@ -19,19 +19,21 @@ Por <b>Black Kitten Devices</b> · GPL-3.0 · basado en <a href="https://github.
 
 ---
 
-> ### 🎛️ NUEVO: grabá 7 pistas en tu DAW
-> El FM-1 es una placa de sonido USB de 8 canales: el master estéreo y cada sinte y la batería en su propio canal, sin drivers. [Cómo se usa](MANUAL.md#audio-usb).
+> ### 🥁 NUEVO: dos baterías y 8 canales a tu DAW
+> Seis pistas a la vez: **4 sintes y 2 baterías**, cada batería con su propio kit (por ejemplo una acústica y una 808). El FM-1 es una placa de sonido USB de 8 canales: el master estéreo y cada una de las seis pistas en su propio canal, sin drivers. [Cómo se usa](MANUAL.md#audio-usb).
 
 ## ¿Qué es?
 
-Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro sintetizadores y una batería**. Parte de SLOOP 2.8 (doce motores de síntesis, secuenciador de 64 pasos, modo canción, efectos de golpe, muestras propias, MIDI y audio USB) y le suma:
+Kitten Synths convierte el FM-1 en una groovebox para tocar en vivo con **cuatro sintetizadores y dos baterías** a la vez. Parte de SLOOP 2.8 (con los arreglos de 2.8.4) (doce motores de síntesis, secuenciador de 64 pasos, modo canción, efectos de golpe, muestras propias, MIDI y audio USB) y le suma:
 
 - **MUUG**: un motor al estilo de los clásicos de tres osciladores de Moog, portado desde FMini-1, con **100 sonidos de fábrica**, filtro de escalera de 24 dB/oct y todas sus pantallas de edición en el propio FM-1 (no hace falta el editor web). Hasta 8 voces según el preset.
 - **Una cuarta parte sintetizadora "LITE"** (gris, antes de la batería), pensada para sumar capas sin cargar el procesador: toca los motores DIGITAL, PHASE, LOFI, SAMPLE y VOICE.
-- **Grabación multipista por USB**: 8 canales, el master en 1-2 y cada pista por separado (los 4 sintes y la batería), para grabarlas en el DAW.
-- **Instalador y editor web** que reconocen las cinco pistas y leen MIDI desde un controlador.
+- **Una segunda batería** (pista 6): su propio kit, patrón, nivel, paneo y SOUND, en el canal MIDI 11. Combiná una batería acústica o sampleada con una sintetizada.
+- **Grabación multipista por USB**: 8 canales, el master en 1-2 y cada pista por separado (los 4 sintes y las 2 baterías), para grabarlas en el DAW.
+- **Instalador y editor web** que reconocen las seis pistas y leen MIDI desde un controlador.
+- **Estética Halloween**: la paleta PUMPKIN (naranja sobre negro), un gatito al encender que parpadea y un visualizador con el gatito que parpadea al tempo.
 
-La **compatibilidad MIDI es idéntica a la de SLOOP**: mismos canales, mismos mensajes, mismo mapa. Lo que ya funcionaba con SLOOP funciona igual.
+La **compatibilidad MIDI es idéntica a la de SLOOP**: mismos canales, mismos mensajes, mismo mapa (lo único nuevo es el canal 11 para la batería 2). Lo que ya funcionaba con SLOOP funciona igual.
 
 > **Estado:** beta. Probado en un FM-1 real por su autor (editor, MIDI, CPU, guardado). Aun así, instalar firmware propio es **bajo tu propio riesgo** y sin garantía. Leé [Antes de instalar](#antes-de-instalar).
 
@@ -41,7 +43,7 @@ Pantallas del FM-1 generadas con el código real del firmware (en el equipo se v
 
 | | | |
 | --- | --- | --- |
-| <img src="capturas/c01_pistas.png" width="240"><br>**Pistas**: tres sintes, LITE y batería | <img src="capturas/c02_presets_muug.png" width="240"><br>**Lista de sonidos** (MUUG) | <img src="capturas/c14_pista_lite.png" width="240"><br>**Parte LITE** seleccionada |
+| <img src="capturas/c01_pistas.png" width="240"><br>**Pistas**: tres sintes, LITE y dos baterías | <img src="capturas/c02_presets_muug.png" width="240"><br>**Lista de sonidos** (MUUG) | <img src="capturas/c14_pista_lite.png" width="240"><br>**Parte LITE** seleccionada |
 | <img src="capturas/c03_muug_filtro.png" width="240"><br>**MUUG**: curva del filtro | <img src="capturas/c04_muug_resonancia.png" width="240"><br>La misma curva con **resonancia** | <img src="capturas/c05_muug_env_filtro.png" width="240"><br>**MUUG**: contorno del filtro |
 | <img src="capturas/c06_env_principal.png" width="240"><br>Envolvente principal | <img src="capturas/c07_muug_osc_rangos.png" width="240"><br>MUUG: rangos de osciladores | <img src="capturas/c08_muug_osc_ondas.png" width="240"><br>MUUG: formas de onda |
 | <img src="capturas/c09_muug_osc_frecuencias.png" width="240"><br>MUUG: frecuencias | <img src="capturas/c10_muug_mezclador.png" width="240"><br>MUUG: mezclador | <img src="capturas/c11_muug_modulacion.png" width="240"><br>MUUG: modulación |
@@ -79,7 +81,7 @@ Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| `muug.patch` y `fix-01.patch` … `fix-19.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
+| `muug.patch` y `fix-01.patch` … `fix-20.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |

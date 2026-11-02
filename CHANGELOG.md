@@ -2,7 +2,7 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
-## fix-20 · Segunda pista de batería (versión de prueba)
+## fix-20 · Segunda pista de batería
 
 - **Una sexta pista: la batería 2.** Tiene su propio kit (arranca en ACOUSTIC), patrón, nivel, paneo, mute, solo y filtro, para combinar por ejemplo una batería acústica o sampleada con la 808. Va después de la batería 1: el orden es 1, 2, 3, LITE, batería, batería 2.
 - **Cómo se elige:** con la perilla de pista, como las demás. La pantalla DRUMS, sus teclas, el kit, el SOUND (TUNE / DECAY de cada sonido) y la grabación son los de la batería elegida.
@@ -12,8 +12,11 @@ Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplic
 - **GLO (mezcla):** las teclas 1–6 son mute, 7–12 solo, 13 fill y 14 la próxima barra de fill. El tap tempo sigue en la última tecla.
 - **Nivel:** la batería 1 sigue usando GLO > DRUMS (LVL, REV, DLY); la batería 2 usa su propio LEVEL, REV y DLY, como una pista de sinte.
 - **Guardado:** se guarda junto a cada proyecto (A–D y el autoguardado), como la parte LITE. Ocupa el último sector de USR4, que pasa de 80 a **76 KiB** (unos 0,2 s menos de muestras en esa ranura). El editor web ya conoce el tamaño nuevo.
-- El editor web todavía no muestra ni edita la batería 2 (la ves y la tocás en el FM-1).
-- No cambia ningún sonido de las otras pistas. Memoria flash libre: unos 1.300 bytes.
+- **Editor web:** muestra las seis pistas. La batería 2 aparece como **D2** en el mezclador, en la página LIVE y en la grilla de batería, con su kit, nivel, REV y DLY propios; las teclas de GLO de la página LIVE siguen el orden nuevo.
+- **PRESETS en HOME** con la batería 2 elegida cambia su kit (en la versión de prueba cambiaba el de la batería 1).
+- La batería 2 no tiene SLICER ni INSERT propios y no cambia de patrón con las secciones del modo canción (como la parte LITE).
+- No cambia ningún sonido de las otras pistas. Memoria flash libre: alrededor de 1 KB.
+- Las pruebas automáticas ahora corren también en GitHub (buscaban el paquete con otro nombre y no se ejecutaban).
 
 ## fix-19 · El gatito vuelve al arranque
 

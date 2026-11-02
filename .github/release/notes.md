@@ -1,24 +1,24 @@
-# 🐈‍⬛ Cleaner sound, held notes that stay held · Sonido más limpio, notas sostenidas que se sostienen
+# 🥁 Two drum tracks, 8 channels into your DAW · Dos baterías y 8 canales a tu DAW
 
-**English.** The fixes of SLOOP 2.8.1 to 2.8.4, brought onto Kitten Synths:
+**English.** Kitten Synths now plays **six tracks at once: four synths and two drum kits**.
 
-- **Sequencer:** on a POLY track, a note you hold while recording others over it is no longer cut or restarted (live, free take and overdub). A note's LEN can run on under the notes after it. No more stuck notes after a burst of MIDI, and the kick no longer drops out on a busy beat.
-- **Audio:** no more distortion at the end of notes (3.5 mm and USB): the mix rounds instead of truncating. UNISON no longer stacks its voices in phase, MUUG included. A sample played again starts from silence, no click.
-- **Boot:** the kitten blinks once at power-on. To make room, four of SLOOP's visualizers (SPECTRUM, TAPE, ORBIT, WIRES) were left out; six remain.
-
-Everything else is as in 2.8-kitten.4: the FM-1 as an 8-channel USB sound card (master + each track on its own channel), MUUG, the LITE synth. MIDI is unchanged (identical to SLOOP).
+- **Drums 2 (track 6):** a whole second drum track with its own kit, pattern, level, pan, mute, solo, filter and SOUND page (tune / decay per sound). Pair an acoustic or sampled kit with an 808. Pick it with the track knob; it listens and sends on **MIDI channel 11** (every other channel is as in SLOOP).
+- **8-channel USB audio:** the stereo master on 1-2 and each of the six tracks on its own channel (3-6 the synths, 7 drums, 8 drums 2), no drivers.
+- **Screens and web editor** show the six tracks; GLO's keys: 1-6 mute, 7-12 solo, 13 fill, 14 fill next bar.
+- Saved with each project. The USR4 sample slot holds 76 KiB now (its last 4 KiB keep drums 2).
+- Also: the fixes of SLOOP 2.8.1-2.8.4 (held notes while recording, clean note ends, UNISON spread) and the blinking kitten at power-on.
 
 **Install:** download `Kitten-Synths-instalador-2.8-kitten.zip`, unzip it, run `servir.py` (Python 3, Chrome or Edge), press Install. Back up first. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.en.md
 
 ---
 
-**Español.** Los arreglos de SLOOP 2.8.1 a 2.8.4, traídos a Kitten Synths:
+**Español.** Kitten Synths ahora toca **seis pistas a la vez: cuatro sintes y dos baterías**.
 
-- **Secuenciador:** en una pista POLY, una nota que sostenés mientras grabás otras encima ya no se corta ni se reinicia (en vivo, en toma libre y en overdub). El LEN de una nota puede seguir por debajo de las siguientes. No más notas colgadas después de una ráfaga MIDI, y el bombo ya no se pierde en un ritmo cargado.
-- **Audio:** sin distorsión al final de las notas (3,5 mm y USB): la mezcla redondea en vez de truncar. El UNISON ya no apila sus voces en fase, MUUG incluido. Un sample tocado de nuevo arranca desde el silencio, sin click.
-- **Arranque:** el gatito parpadea una vez al encender. Para hacerle lugar se quitaron cuatro visualizadores de SLOOP (SPECTRUM, TAPE, ORBIT, WIRES); quedan seis.
-
-Todo lo demás sigue como en 2.8-kitten.4: el FM-1 como placa de sonido USB de 8 canales (master + cada pista en su canal), MUUG, el sinte LITE. El MIDI no cambia (idéntico a SLOOP).
+- **Batería 2 (pista 6):** otra batería completa con su kit, patrón, nivel, paneo, mute, solo, filtro y página SOUND (afinación y decay de cada sonido). Combiná una batería acústica o sampleada con una 808. Se elige con la perilla de pista; escucha y envía por el **canal MIDI 11** (los demás canales, como en SLOOP).
+- **Audio USB de 8 canales:** el master estéreo en 1-2 y cada una de las seis pistas en su canal (3-6 los sintes, 7 la batería, 8 la batería 2), sin drivers.
+- **Pantallas y editor web** con las seis pistas; teclas de GLO: 1-6 mute, 7-12 solo, 13 fill, 14 fill en la próxima barra.
+- Se guarda con cada proyecto. La ranura USR4 queda en 76 KiB (sus últimos 4 KiB guardan la batería 2).
+- Además: los arreglos de SLOOP 2.8.1-2.8.4 (notas sostenidas al grabar, finales de nota limpios, UNISON abierto) y el gatito que parpadea al encender.
 
 **Instalar:** bajá `Kitten-Synths-instalador-2.8-kitten.zip`, descomprimilo, abrí `servir.py` (Python 3, Chrome o Edge) y apretá Instalar. Hacé backup antes. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.md
 

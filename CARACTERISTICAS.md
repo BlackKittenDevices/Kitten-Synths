@@ -4,7 +4,7 @@ Ficha técnica de la versión **2.8-kitten** (basada en SLOOP 2.8). Lo marcado c
 
 ## En una mirada
 
-- **Cuatro sintetizadores + batería**, tocados en vivo.
+- **Cuatro sintetizadores + ★ dos baterías**, tocados en vivo a la vez.
 - **13 motores de síntesis** (★ MUUG).
 - **250 sonidos** de fábrica (150 de SLOOP + ★ 100 de MUUG) y 32 presets propios.
 - **37 kits de batería** y 4 ranuras para tus muestras.
@@ -19,6 +19,7 @@ Ficha técnica de la versión **2.8-kitten** (basada en SLOOP 2.8). Lo marcado c
 | 1, 2, 3 | Sintes completos (cualquier motor) | azul, verde, amarillo |
 | ★ 4 | Sinte LITE: DIGITAL, PHASE, LOFI, SAMPLE, VOICE | gris claro |
 | 5 | Batería (16 sonidos) | naranja |
+| ★ 6 | Batería 2: otra batería completa, con su kit, patrón, nivel y canal MIDI 11 | rojo |
 
 ## ★ MUUG
 
@@ -93,20 +94,20 @@ Presupuesto compartido de 8 voces entre las pistas sintetizadoras; la batería t
 ## MIDI y USB
 
 - MIDI USB (clase estándar) de entrada y salida; entrada TRS de 3,5 mm; clock de entrada por USB o TRS.
-- Canales 1–3 sintes, 10 batería, 4–16 la pista elegida (configurable en GLO → MIDI).
+- Canales 1–3 sintes, 10 batería, ★ 11 batería 2, los demás la pista elegida (configurable en GLO → MIDI).
 - CC de nivel, panorama, filtro, resonancia, envolvente, glide y envíos; ★ CC 1 para la modulación de MUUG; pedal de sustain, pitch bend, Program Change, Bank Select, MIDI LEARN.
-- Audio USB: entrada de 8 canales de 16 bits a 44,1 kHz, sin drivers: master estéreo (1-2), pistas 1-4 (3-6) y batería (7), pre-master y en mono.
+- Audio USB: entrada de 8 canales de 16 bits a 44,1 kHz, sin drivers: master estéreo (1-2), pistas 1-4 (3-6), batería (7) y ★ batería 2 (8), pre-master y en mono.
 
 ## Interfaz
 
 - ★ Gatito de bienvenida que parpadea una vez al encender, y visualizador del gatito que parpadea al tempo.
 - Luces de botones y teclas, 5 paletas de color más tema propio.
-- ★ Pantallas de pistas, mezclador y visualizadores con cinco pistas.
+- ★ Pantallas de pistas, mezclador, REC y visualizadores con seis pistas.
 
 ## Instalador y editor web
 
 - ★ Instalación en un clic con `servir.py` (Chrome o Edge).
-- ★ Editor web con las cinco pistas, parámetros de MUUG y entrada de controlador MIDI.
+- ★ Editor web con las seis pistas (las dos baterías), parámetros de MUUG y entrada de controlador MIDI.
 - Simulador en el navegador (sin hardware).
 - Actualización segura: verificación SHA-256 y CRC, rescate USB (OCT− al encender).
 
@@ -116,5 +117,6 @@ Para liberar memoria de programa: DIGITAL STEEL DRUM, SAMPLE UP BASS, VOICE HARM
 
 ## Límites
 
-- La memoria de programa del FM-1 está casi llena (cientos de bytes libres).
-- Sin segunda batería (sexta pista) por ahora.
+- La memoria de programa del FM-1 está casi llena (alrededor de 1 KB libre).
+- La batería 2 no tiene SLICER ni INSERT propios, su canal MIDI es fijo (11) y no cambia de patrón con las secciones del modo canción.
+- La ranura USR4 tiene 76 KiB (su último pedazo guarda la batería 2).

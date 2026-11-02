@@ -8,7 +8,7 @@ Kitten Synths is built on **SLOOP 2.8**. Everything SLOOP does works the same he
 
 1. [What Kitten Synths adds](#1-what-kitten-synths-adds)
 2. [Installing](#2-installing)
-3. [The panel and the five tracks](#3-the-panel-and-the-five-tracks)
+3. [The panel and the six tracks](#3-the-panel-and-the-six-tracks)
 4. [Your first beat in 60 seconds](#4-your-first-beat-in-60-seconds)
 5. [Playing live: the layers](#5-playing-live-the-layers)
 6. [Drums](#6-drums)
@@ -45,11 +45,15 @@ More in [chapter 10](#10-muug-the-moog-style-synth).
 
 ### ★ A fourth synth: the LITE part
 
-An extra synth track, **grey**, placed before the drums. It uses only light engines (**DIGITAL, PHASE, LOFI, SAMPLE and VOICE**), so four synths and the drums can sound at once without choking the processor. It is saved with your projects and with autosave. More in [chapter 11](#11-the-lite-part-fourth-synth).
+An extra synth track, **grey**, placed before the drums. It uses only light engines (**DIGITAL, PHASE, LOFI, SAMPLE and VOICE**), so four synths and two drum tracks can sound at once without choking the processor. It is saved with your projects and with autosave. More in [chapter 11](#11-the-lite-part-fourth-synth).
 
-### ★ Five tracks everywhere
+### ★ A second drum track
 
-The order is always **1, 2, 3, LITE, drums** (drums last). You see it on the tracks screen (HOME), in the mixer (GLO), in the visualizers, in the web editor and in mute / solo.
+A sixth track, **drums 2** (red), after drums 1. It has its own kit (it starts on ACOUSTIC), pattern, level, pan, mute, solo and filter: for example an acoustic or sampled kit next to the 808. Pick it with the ALGORITHM knob; the DRUMS screen, its keys, the kit (PRESETS), SOUND (TUNE / DECAY) and recording are the chosen drum track's. Its level, reverb and delay are the track's own (LEVEL, REV, DLY), as on a synth; drums 1 keeps using GLO > DRUMS. It listens and sends MIDI on **channel 11** and comes out on its own on **USB audio channel 8**. It is saved with your projects, like the LITE part. In song mode it keeps its pattern across sections (as the LITE part does).
+
+### ★ Six tracks everywhere
+
+The order is always **1, 2, 3, LITE, drums, drums 2** (the drums last). You see it on the tracks screen (HOME), in the mixer (GLO), on the REC screen, in the visualizers, in the web editor and in mute / solo.
 
 ### ★ Kittens and Halloween
 
@@ -69,11 +73,11 @@ The order is always **1, 2, 3, LITE, drums** (drums last). You see it on the tra
 ### ★ Its own installer and web editor
 
 - The **installer** opens with a single command (`servir.py`): plug in the FM-1 and press Install.
-- The **web editor** asks for MIDI access when it opens, sees the five tracks, edits MUUG patches and listens to a **MIDI controller** connected to the computer.
+- The **web editor** asks for MIDI access when it opens, sees the six tracks (both drum tracks included), edits MUUG patches and listens to a **MIDI controller** connected to the computer.
 
 ### ★ More saved
 
-The LITE part and MUUG's own patches are saved **with each section (A–D)** and with autosave, in a separate area of memory. SLOOP's project files don't change.
+The LITE part, drums 2 and MUUG's own patches are saved **with each section (A–D)** and with autosave, in a separate area of memory. SLOOP's project files don't change. Drums 2 uses the last piece of the USR4 sample slot, which now holds **76 KiB** (it was 80).
 
 ### ★ Fewer SLOOP sounds, to make room
 
@@ -81,12 +85,12 @@ The FM-1's program memory is almost full. To fit everything, seven SLOOP sounds 
 
 ### What does not change
 
-- **MIDI identical to SLOOP**: the same channels, CCs, clock, program change, bank select.
+- **MIDI identical to SLOOP**: the same channels, CCs, clock, program change, bank select. The only new thing is channel 11, which plays drums 2 (if a synth track is set to 11, the channel stays that track's).
 - The 64-step sequencer, song mode, the 27 punch-in effects, your own samples and USB rescue work the same.
 
 ### ★ Multitrack recording over USB
 
-USB audio has **8 channels**: the master on 1-2 (as always) and each track on its own, pre-master (the 4 synths and the drums). See [chapter 14](#usb-audio).
+USB audio has **8 channels**: the master on 1-2 (as always) and each track on its own, pre-master (the 4 synths and the 2 drum tracks). See [chapter 14](#usb-audio).
 
 ---
 
@@ -127,7 +131,7 @@ The Kitten Synths installer does **not** offer a way back to the official V15 fi
 
 ---
 
-## 3. The panel and the five tracks
+## 3. The panel and the six tracks
 
 ### Tracks and colours
 
@@ -138,8 +142,9 @@ The Kitten Synths installer does **not** offer a way back to the official V15 fi
 | 3 | Synth | yellow |
 | 4 | ★ LITE synth | light grey |
 | 5 | Drums | orange |
+| 6 | ★ Drums 2 | red |
 
-Pick the track with the **ALGORITHM** knob. The order on screen is 1, 2, 3, LITE, drums. The screen's colour theme is changed in the HOME menu and on the web editor's Theme page.
+Pick the track with the **ALGORITHM** knob. The order on screen is 1, 2, 3, LITE, drums, drums 2. The screen's colour theme is changed in the HOME menu and on the web editor's Theme page.
 
 ### Controls
 
@@ -186,10 +191,10 @@ Each function button is a **layer**: hold it and the 16 white keys and the four 
 | **ARP** (roll) | Note repeat on the grid | RATE (1/8 … 1/64) |
 | **SEQ** (steps) | The 16 steps of the page. A step held: level, roll, nudge, parameter locks | SOUND / NOTE · DIV · SWING · LENGTH |
 | **SEL** (key) | The song's key | CHORD · SCALE · KEYS · TRANSPOSE |
-| **GLO** (mix) | 1–5 mute, 6–10 solo, fill, tap tempo | Track levels |
+| **GLO** (mix) | 1–6 mute, 7–12 solo, 13 fill, 14 fill on the next bar, tap tempo | Track levels |
 | **SAVE** (song) | 1–4 play sections A–D, 5–8 save the loop into them, 13 loop / song, 14 record song, 16 chain | — |
 
-> With five tracks, in GLO the mutes go from 1 to 5 and the solos from 6 to 10, in the screen's order (LITE before the drums).
+> ★ With six tracks, in GLO the mutes go from 1 to 6 and the solos from 7 to 12, in the screen's order (LITE, drums, drums 2). The fill moved to keys 13 (held) and 14 (the next bar).
 
 ---
 
@@ -201,6 +206,7 @@ Each function button is a **layer**: hold it and the 16 white keys and the four 
 - **Your own kits**: USR1–USR4 and USR3+4 use samples you load in the web editor. **SYN1–SYN4** are synthesized kits you build on the editor's Drum synth page.
 - The DRUMS screen has a grid (the keys are the steps of the chosen sound) and the kit.
 - **TUNE** and **DECAY** per sound, on the SOUND page of the DRUMS screen.
+- ★ **Two drum tracks**: drums 2 (track 6) is another full drum track, with its own kit, pattern, TUNE / DECAY, level and MIDI channel (11). Pick it with ALGORITHM and everything above applies to it.
 
 ---
 
@@ -231,10 +237,11 @@ Each function button is a **layer**: hold it and the 16 white keys and the four 
 
 ### ★ What Kitten Synths saves
 
-With each section and with autosave, the **LITE part** (its sound and its sequence) and **MUUG's own patches** are saved too. This lives in a separate area of memory. Two things to keep in mind:
+With each section and with autosave, the **LITE part** (its sound and its sequence), ★ **drums 2** (its kit, pattern, level and TUNE / DECAY) and **MUUG's own patches** are saved too. This lives in a separate area of memory. Two things to keep in mind:
 
 - If that area doesn't have room for a section's LITE part, the device says so (*SAVED, LITE NOT* or *LITE TOO BIG*) and saves the rest anyway.
-- That area has a single copy: if the power goes off exactly while it is written, the LITE part and your own patches can be lost, but **not** the rest of your projects.
+- If it has no room for drums 2, it says *SAVED, DRUMS 2 NOT*.
+- That area has a single copy: if the power goes off exactly while it is written, the LITE part, drums 2 and your own patches can be lost, but **not** the rest of your projects.
 
 ---
 
@@ -275,7 +282,7 @@ There is a budget of **8 voices shared by all the synth tracks**; if you play mo
 | GRAIN | 3 |
 | PHYS | 3 (SYMP model: 2) |
 
-The drums have their own 6 voices. The MONO and LEGATO modes play one note at a time.
+Each drum track has its own 6 voices. The MONO and LEGATO modes play one note at a time.
 
 ### Voice modes
 
@@ -396,7 +403,8 @@ Through the **3.5 mm TRS** jack (with a TRS to DIN adapter) and over **USB** (co
 | --- | --- |
 | 1, 2, 3 | Synths 1, 2, 3 |
 | 10 | The drums |
-| The others (4–16) | The track chosen at the moment |
+| ★ 11 | Drums 2 (unless a synth track has 11) |
+| The others (4–9, 12–16) | The track chosen at the moment |
 
 In GLO → MIDI you can set each track's channel; GLO → MIDI 2 sets IN, OTHER, OUT and BEND.
 
@@ -433,12 +441,12 @@ The FM-1 is also an **8-channel USB sound card** ("Felucca"), 44.1 kHz, 16-bit, 
 | 5 | Track 3 (synth) |
 | 6 | Track 4, LITE |
 | 7 | Drums |
-| 8 | (silent) |
+| 8 | ★ Drums 2 |
 
-The tracks (3 to 7) are **mono and pre-master**: with their level, pan, mute, solo, DIST, INSERT and track filter, but **without** the shared chorus, delay and reverb and without the master effects (DUST, FILT, the MASTER knob). If you want effects on the separate tracks, add them in the DAW, or record the master too.
+The tracks (3 to 8) are **mono and pre-master**: with their level, pan, mute, solo, DIST, INSERT and track filter, but **without** the shared chorus, delay and reverb and without the master effects (DUST, FILT, the MASTER knob). If you want effects on the separate tracks, add them in the DAW, or record the master too.
 
 - Most programs record channels 1-2 by default: if you only want the mix, nothing changes.
-- **Reaper, Ableton, Bitwig, Cubase, Studio One:** pick the "Felucca" input with its 8 channels and arm one track per channel (3, 4, 5, 6, 7 mono and 1-2 stereo).
+- **Reaper, Ableton, Bitwig, Cubase, Studio One:** pick the "Felucca" input with its 8 channels and arm one track per channel (3 to 8 mono and 1-2 stereo).
 - **Audacity:** Preferences → Devices → Recording → Channels: 8.
 - **Windows:** if an app only sees 2 channels, use WASAPI exclusive mode (or ASIO4ALL) in your DAW.
 - The master's level (1-2) is set by HOME → USB AUDIO (MASTER or FULL); the tracks' don't depend on the MASTER knob.
@@ -450,7 +458,7 @@ The tracks (3 to 7) are **mono and pre-master**: with their level, pan, mute, so
 
 **Online:** https://blackkittendevices.github.io/Kitten-Synths/site/webapp/editor/ — or from the installer (`http://localhost:8766/site/webapp/editor/`, with `servir.py` running), in Chrome or Edge. It asks for MIDI access when it opens. With the FM-1 connected, press **Connect**: the editor follows the device live.
 
-Main pages: **Sound** (every parameter of the track and the engines; ★ includes MUUG's parameters), **Sequencer** (steps, piano roll, MIDI export and import), **Tracks** (the ★ five tracks), **Song**, **Library**, **Samples** (with CHOP), **Drum synth**, **Song & sections** (with backup) and **Settings**.
+Main pages: **Sound** (every parameter of the track and the engines; ★ includes MUUG's parameters), **Sequencer** (steps, piano roll, MIDI export and import), **Tracks** (the ★ six tracks), **Song**, **Library**, **Samples** (with CHOP), **Drum synth**, **Song & sections** (with backup) and **Settings**.
 
 ★ **MIDI controller**: the editor can listen to a controller connected to the computer and play the FM-1's tracks with it.
 
@@ -460,7 +468,7 @@ The protocol is documented in `web/EDITOR_PROTOCOL.md` in SLOOP's source code.
 
 ## 16. Your own samples
 
-- **Four slots** (USR1–USR4) of about 7.4 seconds each; play them from a track with the SAMPLE engine or as a drum kit (USR3+4 makes a kit of about 15 s). Up to 16 WAV files per slot, one per key.
+- **Four slots** (USR1–USR4) of about 7.4 seconds each (★ USR4 about 7 s: 76 KiB, its last piece keeps drums 2); play them from a track with the SAMPLE engine or as a drum kit (USR3+4 makes a kit of about 15 s). Up to 16 WAV files per slot, one per key.
 - **CHOP** in the web editor: open or drag in a recording of any length (WAV, MP3, AIFF...), mark hits by hand or automatically, keep the slices you want and send them to a slot.
 
 ---
@@ -493,10 +501,10 @@ Something else? Open an *issue* on GitHub with what you did, what you expected, 
 
 ## 18. Known limits
 
-- **Program memory almost full** (a few hundred bytes left). Any new feature means removing something.
-- **No sixth track** (a second drum track with its own kit): left for later.
+- **Program memory almost full** (about 1 KB left). Any new feature means removing something.
+- **Drums 2** has no SLICER or INSERT of its own, no settable MIDI channel (it is 11), and in song mode it doesn't change pattern with the sections.
 - **LITE** has no MIDI channel of its own, no SLICER, and is limited to five engines.
 - **A single copy** of the LITE area and MUUG's own patches (see chapter 8).
-- **Colours** of LITE and the drums can't be edited separately yet (they use the theme's).
+- **Colours** of LITE and the drum tracks can't be edited separately yet (they use the theme's).
 - **MUUG** plays 8 voices, not the original FMini-1's 12 (the FM-1's budget is 8 in all).
 - The installer doesn't offer a way back to the official V15 firmware.

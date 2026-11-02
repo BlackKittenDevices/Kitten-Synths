@@ -2,7 +2,7 @@
 
 <h1 align="center">Kitten Synths</h1>
 
-<p align="center"><b>Free firmware for the M-VAVE FM-1: a groovebox with a Minimoog-style synth and a fourth light synth part.</b><br>
+<p align="center"><b>Free firmware for the M-VAVE FM-1: a groovebox with four synths (one Minimoog-style) and two drum tracks, that records 8 channels into your DAW.</b><br>
 By <b>Black Kitten Devices</b> · GPL-3.0 · based on <a href="https://github.com/isod89/sloop-fm1">SLOOP</a>, <a href="https://github.com/hugelton/Felucca">Felucca</a> and <a href="https://github.com/ruppert/fmini-1">FMini-1</a></p>
 
 <p align="center">
@@ -16,20 +16,21 @@ By <b>Black Kitten Devices</b> · GPL-3.0 · based on <a href="https://github.co
 
 ---
 
-> ### 🎛️ NEW: record 7 tracks into your DAW
-> The FM-1 is an 8-channel USB sound card: the stereo master plus each synth track and the drums on its own channel, no drivers. [How to use it](MANUAL.en.md#usb-audio).
+> ### 🥁 NEW: two drum tracks and 8 channels into your DAW
+> Six tracks at once: **4 synths and 2 drum tracks**, each drum track with its own kit (an acoustic one and an 808, say). The FM-1 is an 8-channel USB sound card: the stereo master plus each of the six tracks on its own channel, no drivers. [How to use it](MANUAL.en.md#usb-audio).
 
 ## What is it?
 
-Kitten Synths turns the FM-1 into a groovebox for playing live with **four synths and drums**. It starts from SLOOP 2.8 (twelve synth engines, a 64-step sequencer, song mode, punch-in effects, your own samples, MIDI and USB audio) and adds:
+Kitten Synths turns the FM-1 into a groovebox for playing live with **four synths and two drum tracks** at once. It starts from SLOOP 2.8 (with the fixes of 2.8.4) (twelve synth engines, a 64-step sequencer, song mode, punch-in effects, your own samples, MIDI and USB audio) and adds:
 
 - **MUUG**: an engine in the style of Moog's classic three-oscillator synths, ported from FMini-1, with **100 factory sounds**, a 24 dB/oct ladder filter and all its edit pages on the FM-1 itself (no web editor needed). Up to 8 voices, by preset.
 - **A fourth "LITE" synth part** (grey, before the drums), for extra layers without loading the processor: it plays the DIGITAL, PHASE, LOFI, SAMPLE and VOICE engines.
-- **Multitrack recording over USB**: 8 channels, the master on 1-2 and each track on its own (the 4 synths and the drums), to record them in your DAW.
-- **Its own installer and web editor**, which know the five tracks and read MIDI from a controller.
+- **A second drum track** (track 6): its own kit, pattern, level, pan and SOUND, on MIDI channel 11. Combine an acoustic or sampled kit with a synthesized one.
+- **Multitrack recording over USB**: 8 channels, the master on 1-2 and each track on its own (the 4 synths and the 2 drum tracks), to record them in your DAW.
+- **Its own installer and web editor**, which know the six tracks and read MIDI from a controller.
 - A Halloween look: the PUMPKIN palette (orange on black), a boot kitten and a kitten visualizer that blinks on the tempo.
 
-**MIDI compatibility is identical to SLOOP's**: the same channels, the same messages, the same map. **USB audio**: the computer sees the FM-1 as an 8-channel sound card: the master on channels 1-2 (as in SLOOP) and each track on its own channel.
+**MIDI compatibility is identical to SLOOP's**: the same channels, the same messages, the same map (the only new thing is channel 11 for drums 2). **USB audio**: the computer sees the FM-1 as an 8-channel sound card: the master on channels 1-2 (as in SLOOP) and each track on its own channel.
 
 > **Status:** beta. Tested on a real FM-1 by its author (editor, MIDI, CPU, saving). Installing custom firmware is still **at your own risk** and without warranty. Read [Before installing](#before-installing).
 
@@ -66,7 +67,7 @@ Kitten Synths meets the requirements of [The FM-1 Firmware Hub](https://thefirmw
 
 | File | What it is for |
 | --- | --- |
-| `muug.patch` and `fix-01.patch` … `fix-19.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
+| `muug.patch` and `fix-01.patch` … `fix-20.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
 | `.github/workflows/build.yml` | Fetches SLOOP, applies the patches, runs the tests, builds with JieLi's toolchain and publishes the site. |
 | `servir.py` | Serves the installer and the simulator on your computer. |
 | `splashes y logos/` | The kitten pictures (welcome, eyes open and closed). |

@@ -8,7 +8,7 @@ Kitten Synths está construido sobre **SLOOP 2.8**. Todo lo que hace SLOOP lo ha
 
 1. [Novedades de Kitten Synths](#1-novedades-de-kitten-synths)
 2. [Instalación](#2-instalación)
-3. [El panel y las cinco pistas](#3-el-panel-y-las-cinco-pistas)
+3. [El panel y las seis pistas](#3-el-panel-y-las-seis-pistas)
 4. [Tu primer ritmo en 60 segundos](#4-tu-primer-ritmo-en-60-segundos)
 5. [Tocar en vivo: las capas](#5-tocar-en-vivo-las-capas)
 6. [La batería](#6-la-batería)
@@ -45,11 +45,15 @@ Más en el [capítulo 10](#10-muug-el-sinte-tipo-moog).
 
 ### ★ Cuarto sinte: la parte LITE
 
-Una pista sintetizadora extra, **gris**, ubicada antes de la batería. Usa solo motores livianos (**DIGITAL, PHASE, LOFI, SAMPLE y VOICE**) para que puedas tener cuatro sintes y una batería sonando a la vez sin que el procesador se ahogue. Se guarda con tus proyectos y con el autoguardado. Más en el [capítulo 11](#11-la-parte-lite-cuarto-sinte).
+Una pista sintetizadora extra, **gris**, ubicada antes de las baterías. Usa solo motores livianos (**DIGITAL, PHASE, LOFI, SAMPLE y VOICE**) para que puedas tener cuatro sintes y dos baterías sonando a la vez sin que el procesador se ahogue. Se guarda con tus proyectos y con el autoguardado. Más en el [capítulo 11](#11-la-parte-lite-cuarto-sinte).
 
-### ★ Cinco pistas en todos lados
+### ★ Segunda batería
 
-El orden es siempre **1, 2, 3, LITE, batería** (la batería, última). Lo ves en la pantalla de pistas (HOME), en el mezclador (GLO), en los visualizadores, en el editor web y en el mute/solo.
+Una sexta pista, **la batería 2** (roja), después de la batería 1. Tiene su propio kit (arranca en ACOUSTIC), patrón, nivel, paneo, mute, solo y filtro: por ejemplo, una batería acústica o sampleada junto con la 808. Se elige con la perilla ALGORITHM; la pantalla DRUMS, sus teclas, el kit (PRESETS), el SOUND (TUNE / DECAY) y la grabación son los de la batería elegida. Su nivel, reverb y delay son los propios de la pista (LEVEL, REV, DLY), como en un sinte; la batería 1 sigue usando GLO > DRUMS. Escucha y envía MIDI por el **canal 11** y sale sola por el **canal 8 del audio USB**. Se guarda con tus proyectos, como la parte LITE. En modo canción sigue con su patrón al cambiar de sección (igual que la LITE).
+
+### ★ Seis pistas en todos lados
+
+El orden es siempre **1, 2, 3, LITE, batería, batería 2** (las baterías, últimas). Lo ves en la pantalla de pistas (HOME), en el mezclador (GLO), en la de REC, en los visualizadores, en el editor web y en el mute/solo.
 
 ### ★ Estética de gatitos y Halloween
 
@@ -69,11 +73,11 @@ El orden es siempre **1, 2, 3, LITE, batería** (la batería, última). Lo ves e
 ### ★ Instalador y editor web propios
 
 - El **instalador** se abre con un solo comando (`servir.py`): enchufás el FM-1 y apretás Instalar.
-- El **editor web** pide acceso MIDI al abrirlo, ve las cinco pistas, edita los parches de MUUG y escucha un **controlador MIDI** conectado a la computadora.
+- El **editor web** pide acceso MIDI al abrirlo, ve las seis pistas (las dos baterías incluidas), edita los parches de MUUG y escucha un **controlador MIDI** conectado a la computadora.
 
 ### ★ Guardado ampliado
 
-La parte LITE y los parches propios de MUUG se guardan **junto a cada sección (A–D)** y con el autoguardado, en un espacio aparte de la memoria. Los archivos de proyecto de SLOOP no cambian.
+La parte LITE, la batería 2 y los parches propios de MUUG se guardan **junto a cada sección (A–D)** y con el autoguardado, en un espacio aparte de la memoria. Los archivos de proyecto de SLOOP no cambian. La batería 2 usa el último pedazo de la ranura USR4, que queda en **76 KiB** (antes 80).
 
 ### ★ Menos sonidos de SLOOP, para hacer lugar
 
@@ -81,12 +85,12 @@ El FM-1 tiene la memoria de programa casi llena. Para que entre todo, se sacaron
 
 ### Lo que no cambia
 
-- **MIDI idéntico a SLOOP**: mismos canales, CC, clock, program change, bank select.
+- **MIDI idéntico a SLOOP**: mismos canales, CC, clock, program change, bank select. Lo único nuevo es el canal 11, que toca la batería 2 (si una pista de sinte está en el 11, el canal sigue siendo de esa pista).
 - El secuenciador de 64 pasos, el modo canción, los 27 efectos de golpe, las muestras propias y el rescate USB funcionan igual.
 
 ### ★ Grabación multipista por USB
 
-El audio USB tiene **8 canales**: el master en 1-2 (como siempre) y cada pista por separado, pre-master (los 4 sintes y la batería). Ver el [capítulo 14](#audio-usb).
+El audio USB tiene **8 canales**: el master en 1-2 (como siempre) y cada pista por separado, pre-master (los 4 sintes y las 2 baterías). Ver el [capítulo 14](#audio-usb).
 
 ---
 
@@ -127,7 +131,7 @@ El instalador de Kitten Synths **no** trae la opción de volver al firmware ofic
 
 ---
 
-## 3. El panel y las cinco pistas
+## 3. El panel y las seis pistas
 
 ### Pistas y colores
 
@@ -138,8 +142,9 @@ El instalador de Kitten Synths **no** trae la opción de volver al firmware ofic
 | 3 | Sinte | amarillo |
 | 4 | ★ Sinte LITE | gris claro |
 | 5 | Batería | naranja |
+| 6 | ★ Batería 2 | rojo |
 
-Elegís la pista con la perilla **ALGORITHM**. El orden en pantalla es 1, 2, 3, LITE, batería. El tema de colores de la pantalla se cambia desde el menú HOME y la página Theme del editor web.
+Elegís la pista con la perilla **ALGORITHM**. El orden en pantalla es 1, 2, 3, LITE, batería, batería 2. El tema de colores de la pantalla se cambia desde el menú HOME y la página Theme del editor web.
 
 ### Controles
 
@@ -186,10 +191,10 @@ Cada botón de función es una **capa**: mantenelo apretado y las 16 teclas blan
 | **ARP** (redoble) | Repetición de nota sobre la grilla | RATE (1/8 … 1/64) |
 | **SEQ** (pasos) | Los 16 pasos de la página. Un paso mantenido: nivel, redoble, desplazamiento, bloqueos de parámetros | SOUND / NOTE · DIV · SWING · LENGTH |
 | **SEL** (tonalidad) | Tonalidad de la canción | CHORD · SCALE · KEYS · TRANSPOSE |
-| **GLO** (mezcla) | 1–5 mute, 6–10 solo, fill, tap tempo | Niveles de las pistas |
+| **GLO** (mezcla) | 1–6 mute, 7–12 solo, 13 fill, 14 fill en la próxima barra, tap tempo | Niveles de las pistas |
 | **SAVE** (canción) | 1–4 tocan las secciones A–D, 5–8 guardan el bucle en ellas, 13 bucle / canción, 14 grabar canción, 16 cadena | — |
 
-> Con cinco pistas, en GLO los mutes van del 1 al 5 y los solos del 6 al 10, siguiendo el orden de la pantalla (LITE antes de la batería).
+> ★ Con seis pistas, en GLO los mutes van del 1 al 6 y los solos del 7 al 12, siguiendo el orden de la pantalla (LITE, batería, batería 2). El fill pasó a las teclas 13 (mantenida) y 14 (la próxima barra).
 
 ---
 
@@ -201,6 +206,7 @@ Cada botón de función es una **capa**: mantenelo apretado y las 16 teclas blan
 - **Tus propios kits**: USR1–USR4 y USR3+4 usan muestras que cargás en el editor web. **SYN1–SYN4** son kits sintetizados que armás en la página Drum synth del editor.
 - La pantalla DRUMS tiene grilla (las teclas son los pasos del sonido elegido) y kit.
 - **TUNE** y **DECAY** por sonido, desde la página SOUND de la pantalla DRUMS.
+- ★ **Dos baterías**: la batería 2 (pista 6) es otra batería completa, con su propio kit, patrón, TUNE / DECAY, nivel y canal MIDI (11). Elegila con ALGORITHM y todo lo de arriba se aplica a ella.
 
 ---
 
@@ -231,10 +237,11 @@ Cada botón de función es una **capa**: mantenelo apretado y las 16 teclas blan
 
 ### ★ Qué se guarda de Kitten Synths
 
-Con cada sección y con el autoguardado se guardan además la **parte LITE** (su sonido y su secuencia) y los **parches propios de MUUG**. Esto vive en un espacio aparte de la memoria. Dos cosas a tener en cuenta:
+Con cada sección y con el autoguardado se guardan además la **parte LITE** (su sonido y su secuencia), ★ la **batería 2** (su kit, patrón, nivel y TUNE / DECAY) y los **parches propios de MUUG**. Esto vive en un espacio aparte de la memoria. Dos cosas a tener en cuenta:
 
 - Si ese espacio no alcanza para la parte LITE de una sección, el equipo avisa (*SAVED, LITE NOT* o *LITE TOO BIG*) y guarda el resto igual.
-- Ese espacio tiene una sola copia: si se corta la luz justo mientras se escribe, se puede perder lo de LITE y los parches propios, pero **no** el resto de tus proyectos.
+- Si no alcanza para la batería 2, avisa *SAVED, DRUMS 2 NOT*.
+- Ese espacio tiene una sola copia: si se corta la luz justo mientras se escribe, se puede perder lo de LITE, la batería 2 y los parches propios, pero **no** el resto de tus proyectos.
 
 ---
 
@@ -275,7 +282,7 @@ Hay un presupuesto de **8 voces compartido entre todas las pistas sintetizadoras
 | GRAIN | 3 |
 | PHYS | 3 (modelo SYMP: 2) |
 
-La batería tiene aparte sus propias 6 voces. Los modos MONO y LEGATO tocan una nota por vez.
+Cada batería tiene aparte sus propias 6 voces. Los modos MONO y LEGATO tocan una nota por vez.
 
 ### Modos de voz
 
@@ -396,7 +403,8 @@ Por el jack **TRS de 3,5 mm** (con un adaptador TRS a DIN) y por **USB** (comput
 | --- | --- |
 | 1, 2, 3 | Sintes 1, 2, 3 |
 | 10 | La batería |
-| Los demás (4–16) | La pista elegida en ese momento |
+| ★ 11 | La batería 2 (salvo que una pista de sinte tenga el 11) |
+| Los demás (4–9, 12–16) | La pista elegida en ese momento |
 
 En GLO → MIDI podés fijar el canal de cada pista; GLO → MIDI 2 define IN, OTHER, OUT y BEND.
 
@@ -433,12 +441,12 @@ El FM-1 también es una **placa de sonido USB de 8 canales** ("Felucca"), de 44,
 | 5 | Pista 3 (sinte) |
 | 6 | Pista 4, LITE |
 | 7 | Batería |
-| 8 | (en silencio) |
+| 8 | ★ Batería 2 |
 
-Las pistas (3 a 7) van **en mono y pre-master**: con su nivel, paneo, mute, solo, DIST, INSERT y filtro de pista, pero **sin** el chorus, el delay ni la reverb compartidos y sin los efectos del master (DUST, FILT, perilla MASTER). Si querés los efectos en las pistas separadas, ponelos en el DAW; o grabá también el master.
+Las pistas (3 a 8) van **en mono y pre-master**: con su nivel, paneo, mute, solo, DIST, INSERT y filtro de pista, pero **sin** el chorus, el delay ni la reverb compartidos y sin los efectos del master (DUST, FILT, perilla MASTER). Si querés los efectos en las pistas separadas, ponelos en el DAW; o grabá también el master.
 
 - Casi todos los programas graban los canales 1-2 por defecto: si solo querés la mezcla, no hace falta cambiar nada.
-- **Reaper, Ableton, Bitwig, Cubase, Studio One:** elegí la entrada "Felucca" con sus 8 canales y armá una pista por canal (3, 4, 5, 6, 7 en mono y 1-2 en estéreo).
+- **Reaper, Ableton, Bitwig, Cubase, Studio One:** elegí la entrada "Felucca" con sus 8 canales y armá una pista por canal (3 a 8 en mono y 1-2 en estéreo).
 - **Audacity:** Preferencias → Dispositivos → Grabación → Canales: 8.
 - **Windows:** si una app ve solo 2 canales, usá en el DAW el modo WASAPI exclusivo (o ASIO4ALL).
 - El nivel del master (1-2) lo define HOME → USB AUDIO (MASTER o FULL); el de las pistas no depende de la perilla MASTER.
@@ -450,7 +458,7 @@ Las pistas (3 a 7) van **en mono y pre-master**: con su nivel, paneo, mute, solo
 
 Se abre desde el instalador (`http://localhost:8766/site/webapp/editor/`, con `servir.py` en marcha) en Chrome o Edge. Pide acceso MIDI al abrirse. Con el FM-1 conectado, apretá **Connect**: el editor sigue el equipo en vivo.
 
-Páginas principales: **Sound** (todos los parámetros de la pista y los motores; ★ incluye los parámetros de MUUG), **Sequencer** (pasos, piano roll, exportar e importar MIDI), **Tracks** (las ★ cinco pistas), **Song**, **Library**, **Samples** (con CHOP), **Drum synth**, **Song & sections** (con copia de seguridad) y **Settings**.
+Páginas principales: **Sound** (todos los parámetros de la pista y los motores; ★ incluye los parámetros de MUUG), **Sequencer** (pasos, piano roll, exportar e importar MIDI), **Tracks** (las ★ seis pistas), **Song**, **Library**, **Samples** (con CHOP), **Drum synth**, **Song & sections** (con copia de seguridad) y **Settings**.
 
 ★ **Controlador MIDI**: el editor puede escuchar un controlador conectado a la computadora y tocar con él las pistas del FM-1.
 
@@ -460,7 +468,7 @@ El protocolo está documentado en `web/EDITOR_PROTOCOL.md` del código fuente de
 
 ## 16. Tus propias muestras
 
-- **Cuatro ranuras** (USR1–USR4) de unos 7,4 segundos cada una; se tocan desde una pista con motor SAMPLE o como kit de batería (USR3+4 forma un kit de unos 15 s). Hasta 16 archivos WAV por ranura, uno por tecla.
+- **Cuatro ranuras** (USR1–USR4) de unos 7,4 segundos cada una (★ USR4, unos 7 s: 76 KiB, su último pedazo guarda la batería 2); se tocan desde una pista con motor SAMPLE o como kit de batería (USR3+4 forma un kit de unos 15 s). Hasta 16 archivos WAV por ranura, uno por tecla.
 - **CHOP** en el editor web: abrí o arrastrá una grabación de cualquier largo (WAV, MP3, AIFF...), marcá golpes a mano o automáticamente, quedate con los cortes que quieras y mandalos a una ranura.
 
 ---
@@ -493,10 +501,10 @@ El protocolo está documentado en `web/EDITOR_PROTOCOL.md` del código fuente de
 
 ## 18. Límites conocidos
 
-- **Memoria de programa casi llena** (quedan unos cientos de bytes). Cualquier función nueva exige sacar algo.
-- **Sin sexta pista** (una segunda batería con su propio kit): queda para más adelante.
+- **Memoria de programa casi llena** (queda alrededor de 1 KB). Cualquier función nueva exige sacar algo.
+- **La batería 2** no tiene SLICER ni INSERT propios, ni canal MIDI configurable (es el 11), y en modo canción no cambia de patrón con las secciones.
 - **LITE** sin canal MIDI propio, sin SLICER, y limitada a cinco motores.
 - **Un solo respaldo** del espacio de LITE y los parches propios de MUUG (ver capítulo 8).
-- **Colores** de LITE y de la batería: todavía no se pueden editar por separado (usan los del tema).
+- **Colores** de LITE y de las baterías: todavía no se pueden editar por separado (usan los del tema).
 - **MUUG** toca 8 voces, no las 12 del FMini-1 original (el presupuesto del FM-1 es de 8 en total).
 - El instalador no ofrece volver al firmware oficial V15.
