@@ -106,3 +106,5 @@ Código bajo **GPL-3.0**, igual que SLOOP, Felucca y FMini-1. Si distribuís el 
 ---
 
 <p align="center"><sub>Black Kitten Devices · =^.^=</sub></p>
+
+You can also try Kitten Synths in the browser, no flashing needed, in the free community [FM-1 Emulator](https://fm1-emulator.atst.tools/).
