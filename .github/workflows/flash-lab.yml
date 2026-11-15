@@ -1,0 +1,40 @@
+# Flash lab: how much flash one change of the build frees (compiler flags, the linker's garbage collection).
+# Run by hand: Actions > flash-lab > Run workflow. The results are annotations (LAB-*) on each job.
+name: flash-lab
+on:
+  workflow_dispatch:
+env:
+  SLOOP_COMMIT: ec9e53721cc576816a5750220391f2d0217c01cb
+  FM1_IDENTITY: FM-1_969
+jobs:
+  lab:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [base, oz, gc, data, gc-data, oz-gc-data, merge, nounwind]
+    env:
+      KITTEN_ART: ${{ github.workspace }}/splashes y logos
+    steps:
+      - uses: actions/checkout@v4
+      - name: SLOOP at the pinned commit, and the patches
+        run: |
+          git clone https://github.com/isod89/sloop-fm1.git sloop
+          cd sloop && git checkout "$SLOOP_COMMIT"
+          for p in ../muug.patch ../fix-*.patch; do git apply --index "$p"; done
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: pip install pillow fonttools
+      - name: clang and lld
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang lld
+
+      - name: JieLi toolchain
+        run: cd sloop && sh tools/get_toolchain.sh
+
+      - name: JieLi SDK
+        run: |
+          for i in 1 2 3; do git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK" && break; sleep 20; done
+      - name: The lab
+        run: cd sloop && FM1_IDENTITY=$FM1_IDENTITY python3 ../.github/tools/flashlab.py "${{ matrix.variant }}"
