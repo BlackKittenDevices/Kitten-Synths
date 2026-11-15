@@ -1,5 +1,5 @@
 diff --git a/firmware/src/gfx.c b/firmware/src/gfx.c
-index 6448984..6608dbd 100644
+index 6448984..3e382fd 100644
 --- a/firmware/src/gfx.c
 +++ b/firmware/src/gfx.c
 @@ -82,12 +82,12 @@ static uint8_t theme_valid, theme_on;
@@ -21,7 +21,61 @@ index 6448984..6608dbd 100644
  static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
  {
      uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
-@@ -258,32 +258,67 @@ static void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
+@@ -100,7 +100,7 @@ static int32_t rgb565_ch(uint32_t c, uint32_t k)
+     return k == 0u ? (int32_t)((c >> 11) & 31u) * 8 : k == 1u ? (int32_t)((c >> 5) & 63u) * 4 : (int32_t)(c & 31u) * 8;
+ }
+ /* one colour stands out from the background: one channel 96 or more apart */
+-static int theme_apart(uint32_t c, uint32_t bg)
++static UI_SMALL int theme_apart(uint32_t c, uint32_t bg)
+ {
+     uint32_t k;
+     for (k = 0; k < 3u; k++) {
+@@ -113,7 +113,7 @@ static int theme_apart(uint32_t c, uint32_t bg)
+ /* a theme as the editor sends it and flash keeps it: its magic, its CRC, a name of printable ASCII, and the strongest
+  * step and the accent standing out from the background (a screen whose values or menu cursor cannot be seen would hide
+  * the way back to COLOR). A first-beta THM1 (36 bytes) is turned into a THM2 in *t */
+-static int theme_check(theme_t *t)
++static UI_SMALL int theme_check(theme_t *t)
+ {
+     uint32_t k;
+     if (t->magic == THEME_MAGIC1) {
+@@ -132,7 +132,7 @@ static int theme_check(theme_t *t)
+     return theme_apart(t->c[4], t->bg) && theme_apart(t->hi, t->bg);
+ }
+ /* colour c at a / n over the background (antialiased text and icons) */
+-static uint16_t rgb565_over(uint32_t c, uint32_t a, uint32_t n)
++static UI_SMALL uint16_t rgb565_over(uint32_t c, uint32_t a, uint32_t n)
+ {
+     uint32_t b = pal_bg, r, g, bl;
+     r = (((b >> 11) & 31u) * (n - a) + ((c >> 11) & 31u) * a) / n;
+@@ -150,7 +150,7 @@ static uint16_t te_g[4] = {RGB(26, 26, 30), RGB(54, 54, 60), RGB(118, 118, 126),
+ #define TE_G2 te_g[1]                    /* empty steps, dial tracks */
+ #define TE_G3 te_g[2]                    /* labels */
+ #define TE_G4 te_g[3]                    /* secondary text */
+-static uint16_t te_gray(uint32_t c)
++static UI_SMALL uint16_t te_gray(uint32_t c)
+ {
+     uint32_t bg = pal_bg, k, out = 0;
+     static const uint8_t SH[3] = {11, 5, 0}, MX[3] = {31, 63, 31};
+@@ -165,7 +165,7 @@ static uint16_t te_gray(uint32_t c)
+     return (uint16_t)out;
+ }
+ 
+-static void palette_set(uint32_t i)              /* built-in palette i, or the theme when it is chosen (2.7) */
++static UI_SMALL void palette_set(uint32_t i)              /* built-in palette i, or the theme when it is chosen (2.7) */
+ {
+     uint32_t k;
+     int cu = theme_shown();
+@@ -237,7 +237,7 @@ static void cv_rect(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
+             cv_px[(uint32_t)y * cv_w + (uint32_t)i] = sc;
+ }
+ 
+-static void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
++static UI_SMALL void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
+ {
+     int32_t dx = x1 > x0 ? x1 - x0 : x0 - x1, sx = x0 < x1 ? 1 : -1;
+     int32_t dy = y1 > y0 ? y0 - y1 : y1 - y0, sy = y0 < y1 ? 1 : -1;
+@@ -258,38 +258,73 @@ static void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
      }
  }
  
@@ -29,7 +83,7 @@ index 6448984..6608dbd 100644
 - * drawn first, so the text and icons of the bar cover them. y1: the bottom row, the roofs 2..5 rows high; cat: its x (0 = none) */
 -static void cv_roofs(int32_t y1, int32_t cat, int32_t moon, int32_t my)
 +/* Kitten Synths (fix-24): a rounded rectangle (corners of 3 px) */
-+static void cv_rr(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
++static UI_SMALL void cv_rr(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
 +{
 +    cv_rect(x, y + 2, w, h - 4, c);
 +    cv_rect(x + 1, y + 1, w - 2, h - 2, c);
@@ -37,7 +91,7 @@ index 6448984..6608dbd 100644
 +}
 +
 +/* Kitten Synths (fix-24): the frame of a graph (the mock-up's), over the strip's rows 6 .. 91 (cv_oy aside) */
-+static void cv_frame(void)
++static UI_SMALL void cv_frame(void)
 +{
 +    cv_rr(3, 6, 234, 86, C_LINE);
 +    cv_rr(4, 7, 232, 84, C_BLACK);
@@ -45,7 +99,7 @@ index 6448984..6608dbd 100644
 +
 +/* Kitten Synths (fix-24): the kitten's face, 12 x 10 pixels at s times the size (the header's cat) */
 +#define C_EYE RGB(198, 240, 58)
-+static void cv_cat(int32_t x, int32_t y, int32_t s)
++static UI_SMALL void cv_cat(int32_t x, int32_t y, int32_t s)
 +{
 +    static const uint16_t F[10] = {0xC03, 0xE07, 0xFFF, 0x801, 0x801, 0x801, 0x801, 0x801, 0x402, 0x3FC};
 +    int32_t r, k;
@@ -61,7 +115,7 @@ index 6448984..6608dbd 100644
 +/* Kitten Synths (fix-24): the roofs under a header as in the mock-up: a skyline of up to hh rows with lit windows, a cat
 + * on one of them and the moon over them, in the theme's colours; drawn first, so the bar's text and icons stay on top.
 + * y1: the bottom row; moon: its x and y (0: none); cat: its x (0: none) */
-+static void cv_roofs(int32_t y1, int32_t hh, int32_t cat, int32_t moon, int32_t my)
++static UI_SMALL void cv_roofs(int32_t y1, int32_t hh, int32_t cat, int32_t moon, int32_t my)
  {
      int32_t x = 0, i = 0, h, w, a, b;
 -    for (a = -4; a <= 4; a++)                                           /* the moon */
@@ -105,6 +159,13 @@ index 6448984..6608dbd 100644
      }
  }
  
+ /* a cobweb in a graph strip's top right corner (a quarter of a wheel: 5 spokes, 4 rings) and a spider hanging from it;
+  * drawn from the strip's top row whatever the graph's own offset */
+-static void cv_web(uint16_t c)
++static UI_SMALL void cv_web(uint16_t c)
+ {
+     static const int8_t W[5][2] = {{0, 44}, {-17, 41}, {-31, 31}, {-41, 17}, {-44, 0}};
+     int32_t j, k, o = -cv_oy;
 @@ -299,11 +334,11 @@ static void cv_web(uint16_t c)
          for (j = 0; j < 4; j++)
              cv_line(239 + W[j][0] * k / 4, o + W[j][1] * k / 4, 239 + W[j + 1][0] * k / 4, o + W[j + 1][1] * k / 4, c);
@@ -122,6 +183,50 @@ index 6448984..6608dbd 100644
  }
  
  /* glyph index of a character: the screen shows capitals only (SLOOP 2.6: bold capitals read better on the
+@@ -319,7 +354,7 @@ static uint32_t glyph(const felucca_font_t *f, uint32_t ch)
+ }
+ 
+ /* text, alpha-blended onto the background with colour c; returns the end x */
+-static int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char *s, uint16_t c)
++static UI_SMALL int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char *s, uint16_t c)
+ {
+     uint16_t ramp[16];
+     uint32_t a;
+@@ -354,7 +389,7 @@ static int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char
+     return x;
+ }
+ 
+-static int32_t text_w(const felucca_font_t *f, const char *s)
++static UI_SMALL int32_t text_w(const felucca_font_t *f, const char *s)
+ {
+     int32_t w = 0;
+     for (; *s; s++)
+diff --git a/firmware/src/ota.c b/firmware/src/ota.c
+index fd04719..dfc758e 100644
+--- a/firmware/src/ota.c
++++ b/firmware/src/ota.c
+@@ -175,7 +175,7 @@ UI_SMALL static void ota_service(void)
+ /* one read request (3 tries x 5 s); data -> dst */
+ static uint32_t ota_deadline;                    /* 0 = none; else ota_now_ms() limit of the session */
+ 
+-static int ota_read(uint32_t addr, uint8_t *dst, uint32_t len)
++UI_SMALL static int ota_read(uint32_t addr, uint8_t *dst, uint32_t len)
+ {
+     uint8_t q[8];
+     uint32_t tries, t, d, i;
+diff --git a/firmware/src/seq.c b/firmware/src/seq.c
+index c860c54..2853496 100644
+--- a/firmware/src/seq.c
++++ b/firmware/src/seq.c
+@@ -3076,7 +3076,7 @@ static uint32_t cc74_slot(const engine_t *e)      /* 0..7, or 8: none */
+             return T[i].slot;
+     return 8u;
+ }
+-static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t value)
++UI_SMALL static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t value)
+ {
+     const param_desc_t *d = 0;
+     int16_t *slot = 0;
 diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
 index e4fd143..f345a40 100644
 --- a/firmware/src/ui_draw.c
@@ -281,16 +386,33 @@ index 4a31679..7a83024 100644
  }
  static uint16_t pad_lit[DRUM_LANES];                   /* pads and key LEDs: frames left lit */
  static uint8_t key_lit[27];                             /* menu NOTES, a synth track: frames its key stays lit */
-diff --git a/tools/build.py b/tools/build.py
-index 2b1ef6f..854037a 100644
---- a/tools/build.py
-+++ b/tools/build.py
-@@ -37,7 +37,7 @@ APP_SLOT = fm1pkg_make.APP_SLOT
- LOADER_LOAD = 0x01C0A800
- LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
- DOCKER_IMAGE = os.environ.get("JIELI_DOCKER_IMAGE", "debian:bookworm-slim")
--CFLAGS = ["-Os", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
-+CFLAGS = ["-Oz", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
- LINE = re.compile(r"^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s*\t(.*)$")
- 
- # SDK files of AC79NN_SDK_V1.2.1_2023-12-13 (the tested version)
+diff --git a/web/editor.html b/web/editor.html
+index 93346a7..2ff9337 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -18,7 +18,7 @@
+   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
+   :root {
+     --bg: #000; --s1: #0b0b0e; --s2: #1a1a1e; --s3: #36363c; --line: #232329; --dim: #76767e; --fg2: #c4c4cc; --fg: #f2f2f2;
+-    --red: #ff2c34; --t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #d6dae2; --t6: #d62830; --trk: var(--t4);
++    --red: #ff2c34; --t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #7de8ff; --t6: #ff4fa8; --trk: var(--t4);
+     --font: "SLOOP Terminus", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+     color-scheme: dark;
+   }
+diff --git a/web/test_web.mjs b/web/test_web.mjs
+index 654fa63..5b4f918 100644
+--- a/web/test_web.mjs
++++ b/web/test_web.mjs
+@@ -1591,10 +1591,10 @@ function editorTabs() {
+   {   /* 2.4: the device's palette as tokens (:root), used through var(--...); outside them only #000 (text on a colour) */
+     const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>")).replace(/:root\s*\{[^}]*\}/g, "");
+     const hex = [...css.matchAll(/#[0-9a-f]{3,6}\b/gi)].map((m) => m[0].toLowerCase()).filter((c) => c !== "#000");
+-    ok(!hex.length && /--t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #d6dae2; --t6: #d62830;/.test(html),   /* (Kitten Synths' PUMPKIN) */
++    ok(!hex.length && /--t1: #b060ff; --t2: #6ee230; --t3: #ffc618; --t4: #ff621a; --t5: #7de8ff; --t6: #ff4fa8;/.test(html),   /* (Kitten Synths' PUMPKIN) */
+       "editor: the track colours of the device (gfx.c TE_COL_DEF), colours only as tokens" + (hex.length ? ` (${hex.join(" ")})` : ""));
+     const te = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");   /* (2.7: TE_COL_DEF, a theme may change them) */
+-    ok(/TE_COL_DEF\[NTE\] = \{RGB\(176, 96, 255\), RGB\(110, 226, 48\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), RGB\(214, 218, 226\), RGB\(214, 40, 48\)\}/.test(te),
++    ok(/TE_COL_DEF\[NTE\] = \{RGB\(176, 96, 255\), RGB\(110, 226, 48\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), RGB\(125, 232, 255\), RGB\(255, 79, 168\)\}/.test(te),
+       "editor: ... the same six as the firmware's TE_COL (the LITE part, the second drum track)");
+     ok(/SLOOP-FONT\*\/url\(data:font\/ttf;base64,[A-Za-z0-9+\/=]{20000,}\)/.test(html), "editor: the device's Terminus font inlined (tools/gen_webfont.py)");
+   }

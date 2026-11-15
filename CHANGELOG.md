@@ -10,7 +10,8 @@ Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplic
 - **Presets**: la fila elegida va dentro de una caja.
 - **Batería y secuenciador de instrumentos** como el original, con la paleta de la maqueta (golpe fantasma violeta, normal naranja, fuerte claro; pista LITE cian, batería 2 rosa). Los secuenciadores no llevan telaraña ni el mosaico: no se agrega.
 - Paleta con seis colores de pista: violeta, verde, amarillo, cian, naranja y rosa.
-- **Flash**: el compilador pasa de `-Os` a `-Oz`, que libera unos **14,8 KB** sin quitar ninguna función (el código muerto ya lo eliminaba la compilación unificada). El costo de los lazos de audio sigue bajo el presupuesto que verifican las pruebas.
+- **Flash**: las funciones de dibujo y las de arranque en frío (menús, OTA, MIDI CC) se compilan por tamaño (`minsize`), sin quitar ninguna función. Los lazos de audio no se tocan: se probó `-Oz` global, que libera 14,8 KB pero dispara el presupuesto de la interrupción de audio y del slicer, así que no se usa.
+- **Editor web**: las pistas 5 y 6 usan los mismos colores nuevos que el firmware (cian y rosa).
 
 ## fix-23 · Noche de Brujas: tejados y telaraña en las pantallas
 
