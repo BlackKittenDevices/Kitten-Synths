@@ -6,6 +6,8 @@
 - **8-channel USB audio:** the stereo master on 1-2 and each of the six tracks on its own channel (3-6 the synths, 7 drums, 8 drums 2), no drivers.
 - **Screens and web editor** show the six tracks; GLO's keys: 1-6 mute, 7-12 solo, 13 fill, 14 fill next bar.
 - Saved with each project. The USR4 sample slot holds 76 KiB now (its last 4 KiB keep drums 2).
+- **New FM-1 units (flash chip UC25HQ80) work now:** the app, USB rescue and the updater know both flash chips, so projects save and the installer accepts the new units too. Untested on a new unit: please tell us how it goes.
+- **Web editor:** drum pattern templates (12 styles x 2 variations: drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz).
 - Also: the fixes of SLOOP 2.8.1-2.8.4 (held notes while recording, clean note ends, UNISON spread) and the blinking kitten at power-on.
 
 **Install:** download `Kitten-Synths-instalador-2.8-kitten.zip`, unzip it, run `servir.py` (Python 3, Chrome or Edge), press Install. Back up first. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.en.md
@@ -18,6 +20,8 @@
 - **Audio USB de 8 canales:** el master estéreo en 1-2 y cada una de las seis pistas en su canal (3-6 los sintes, 7 la batería, 8 la batería 2), sin drivers.
 - **Pantallas y editor web** con las seis pistas; teclas de GLO: 1-6 mute, 7-12 solo, 13 fill, 14 fill en la próxima barra.
 - Se guarda con cada proyecto. La ranura USR4 queda en 76 KiB (sus últimos 4 KiB guardan la batería 2).
+- **Los FM-1 nuevos (chip de flash UC25HQ80) funcionan:** la aplicación, el rescate USB y el actualizador conocen los dos chips; se guardan los proyectos y el instalador acepta las unidades nuevas. Sin probar en una unidad nueva: contanos cómo te va.
+- **Editor web:** plantillas de patrones de batería (12 estilos x 2 variaciones: drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz).
 - Además: los arreglos de SLOOP 2.8.1-2.8.4 (notas sostenidas al grabar, finales de nota limpios, UNISON abierto) y el gatito que parpadea al encender.
 
 **Instalar:** bajá `Kitten-Synths-instalador-2.8-kitten.zip`, descomprimilo, abrí `servir.py` (Python 3, Chrome o Edge) y apretá Instalar. Hacé backup antes. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.md

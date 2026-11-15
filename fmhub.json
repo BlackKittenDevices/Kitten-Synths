@@ -1,5 +1,6 @@
 {
-  "what": "NEW: two drum tracks. Four synths (one a Minimoog-style MUUG with 100 sounds, plus a light LITE synth) and two drum kits play at once, and the FM-1 records 8 channels into your DAW over USB: the stereo master plus each of the six tracks. A SLOOP 2.8 groovebox with the fixes of 2.8.4, 64 steps, songs, punch-in effects and USB MIDI.",
+  "what": "NEW: six tracks and USB recording of all of them. Four synths (one a Minimoog-style MUUG with 100 sounds, plus a light LITE synth), two drum kits, 12 drum pattern templates in the web editor. Works on both FM-1 flash chips (old and new). A SLOOP 2.8 groovebox with songs, punch-in FX and USB MIDI.",
+  "image": "docs/card.png",
   "kinds": [
     "groove"
   ],
