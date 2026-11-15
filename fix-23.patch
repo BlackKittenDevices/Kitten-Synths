@@ -1,0 +1,111 @@
+diff --git a/firmware/src/gfx.c b/firmware/src/gfx.c
+index b0b22a7..6448984 100644
+--- a/firmware/src/gfx.c
++++ b/firmware/src/gfx.c
+@@ -258,6 +258,54 @@ static void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
+     }
+ }
+ 
++/* Kitten Synths (fix-23): the roofs under a header, a cat on one and the moon (at moon, my) over them, in the theme's faintest colours;
++ * drawn first, so the text and icons of the bar cover them. y1: the bottom row, the roofs 2..5 rows high; cat: its x (0 = none) */
++static void cv_roofs(int32_t y1, int32_t cat, int32_t moon, int32_t my)
++{
++    int32_t x = 0, i = 0, h, w, a, b;
++    for (a = -4; a <= 4; a++)                                           /* the moon */
++        for (b = -4; b <= 4; b++)
++            if (a * a + b * b <= 18)
++                cv_pset(moon + a, my + b, C_LINE);
++    while (x < 240) {
++        w = 8 + (i * 7) % 9;
++        h = 2 + (i * 5) % 4;
++        cv_rect(x, y1 - h + 1, w, h, C_LINE);
++        if (i & 1)
++            cv_pset(x + w / 2, y1 - h, C_LINE);                         /* a gable */
++        x += w + 1;
++        i++;
++    }
++    if (cat) {                                                          /* sitting, seen from behind, tail up */
++        cv_rect(cat, y1 - 5, 6, 5, C_DIM);
++        cv_rect(cat + 1, y1 - 9, 5, 4, C_DIM);
++        cv_pset(cat + 1, y1 - 10, C_DIM);
++        cv_pset(cat + 5, y1 - 10, C_DIM);
++        cv_rect(cat + 6, y1 - 8, 1, 4, C_DIM);
++        cv_pset(cat + 2, y1 - 8, C_HI);
++        cv_pset(cat + 4, y1 - 8, C_HI);
++    }
++}
++
++/* a cobweb in a graph strip's top right corner (a quarter of a wheel: 5 spokes, 4 rings) and a spider hanging from it;
++ * drawn from the strip's top row whatever the graph's own offset */
++static void cv_web(uint16_t c)
++{
++    static const int8_t W[5][2] = {{0, 44}, {-17, 41}, {-31, 31}, {-41, 17}, {-44, 0}};
++    int32_t j, k, o = -cv_oy;
++    for (j = 0; j < 5; j++)
++        cv_line(239, o, 239 + W[j][0], o + W[j][1], c);
++    for (k = 1; k <= 4; k++)
++        for (j = 0; j < 4; j++)
++            cv_line(239 + W[j][0] * k / 4, o + W[j][1] * k / 4, 239 + W[j + 1][0] * k / 4, o + W[j + 1][1] * k / 4, c);
++    cv_line(214, o, 214, o + 22, C_LINE);                               /* the thread, the spider's body and legs */
++    cv_rect(212, o + 22, 5, 4, C_DIM);
++    cv_line(209, o + 20, 212, o + 24, C_DIM);
++    cv_line(209, o + 27, 212, o + 25, C_DIM);
++    cv_line(220, o + 20, 217, o + 24, C_DIM);
++    cv_line(220, o + 27, 217, o + 25, C_DIM);
++}
++
+ /* glyph index of a character: the screen shows capitals only (SLOOP 2.6: bold capitals read better on the
+  * small screen), so lower case folds to upper case, Latin-1 too (\xfc -> \xdc; not the division sign, nor sharp
+  * s and y diaeresis, which have none); anything missing (and C1 controls) draws as '?' */
+diff --git a/firmware/src/ui_draw.c b/firmware/src/ui_draw.c
+index 05e4e05..e4fd143 100644
+--- a/firmware/src/ui_draw.c
++++ b/firmware/src/ui_draw.c
+@@ -55,6 +55,7 @@ UI_SMALL static void draw_head(void)
+         cv_blit(0, Y_HEAD);
+         return;
+     }
++    cv_roofs(19, 118, 140, 8);                        /* (fix-23) the roofs, a cat and the moon behind the bar */
+     if (song.playing) {                               /* > play, square stop */
+         for (i = 0; i < 5u; i++)
+             cv_rect(4 + (int32_t)i * 2, 4 + (int32_t)i, 2, 10 - 2 * (int32_t)i, C_WHITE);
+@@ -185,6 +186,7 @@ UI_SMALL static void graph_env(uint16_t c, int32_t pa, int32_t pd, int32_t ps, i
+     int32_t top = 8, bot = 90, sus = ps * 1000 / 127;                   /* 0..1000 */
+     int32_t x0 = 6, x1 = x0 + a, x3 = 232 - r, i, px, py;
+     int32_t e = 32768;                                                  /* exp(-4.6 u), Q15 */
++    cv_web(C_LINE);                                                     /* (fix-23) behind the curve */
+ #define EGY(lvl) (bot - (lvl) * (bot - top) / 1000)
+     cv_line(x0, bot, x1, top, c);                                       /* attack: linear */
+     px = x1;
+@@ -218,6 +220,7 @@ UI_SMALL static void graph_env(uint16_t c, int32_t pa, int32_t pd, int32_t ps, i
+ UI_SMALL static void graph_filt(uint16_t c, uint32_t type, int32_t cut, int32_t res, int32_t slope)
+ {
+     int32_t xc = 8 + cut + (cut * 3 >> 2), x, y, py = 34;
++    cv_web(C_LINE);                                                     /* (fix-23) behind the curve */
+     cv_rect(xc, 10, 1, 80, C_DIM);
+     for (x = 8; x < 232; x += 2) {
+         int32_t o = x - xc, ao = o < 0 ? -o : o, att = type == 1u ? ao * slope >> 5 : (type == 0u) == (o > 0) ? ao * slope >> 4 : 0;
+diff --git a/firmware/src/ui_menu.c b/firmware/src/ui_menu.c
+index b5ffd3f..3d302c8 100644
+--- a/firmware/src/ui_menu.c
++++ b/firmware/src/ui_menu.c
+@@ -122,6 +122,7 @@ UI_SMALL static void draw_menu(void)
+     if (ui.force)                                   /* head + rule + two bands cover rows 0..229 */
+         lcd_fill(0, H_HEAD + 1 + 124 + 95, 240, 240 - (H_HEAD + 1 + 124 + 95), C_BLACK);
+     cv_begin(240, H_HEAD, C_BLACK);
++    cv_roofs(19, 84, 112, 8);                       /* (fix-23) */
+     cv_text(4, 1, &FONT_S, ui.menu == 2 ? "ABOUT" : "MENU", C_HI);
+     if (ui.menu != 2) {                             /* the section and its number, as a page's "ENV DEST 2/2" */
+         char t[16];
+diff --git a/firmware/src/ui_studio.c b/firmware/src/ui_studio.c
+index 3203191..4a31679 100644
+--- a/firmware/src/ui_studio.c
++++ b/firmware/src/ui_studio.c
+@@ -191,6 +191,7 @@ UI_SMALL static void te_header(const char *title, uint16_t tc, uint32_t *cache,
+         return;
+     *cache = sig;
+     cv_begin(240, 40, C_BLACK);
++    cv_roofs(38, 150, 160, 14);                        /* (fix-23) */
+     fmt_int(b, song.g[G_BPM]);
+     cv_text(4, 4, &FONT_L, b, ui.bpm_t ? C_WHITE : TE_G4);
+     cv_text(4 + text_w(&FONT_L, b) + 4, 20, &FONT_S, "bpm", TE_G3);

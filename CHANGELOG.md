@@ -2,6 +2,14 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-23 · Noche de Brujas: tejados y telaraña en las pantallas
+
+- **Tejados** detrás de la barra de arriba de todas las pantallas: la de páginas, la grande de HOME (pistas, secuenciadores, batería) y la del menú HOME. Son tejados bajos con un gatito sentado en uno y la luna; van en el color más tenue del tema y se dibujan primero, así que no tapan nada: el texto, los íconos y las luces siguen encima, como antes.
+- **Telaraña** con una arañita colgada en la esquina de arriba a la derecha de las pantallas de **envolvente y filtro** (ENV, FLT ENV, filtro de MUUG y de ANALOG). Va detrás de la curva y no mueve nada.
+- Los secuenciadores (pistas, batería, pasos) quedan con sus cuadrados de siempre, sin telarañas ni patitas.
+- Siguen los cinco colores del tema (SLIME, BONE, WITCH, BLOOD y PUMPKIN) y los temas propios del editor web: los adornos usan los dos tonos más tenues.
+- Las capturas del README y la imagen de la tarjeta del Hub se rehicieron con el aspecto nuevo.
+
 ## fix-22 · Plantillas de patrones de batería en el editor web
 
 - El editor web tiene ahora una barra **Pattern templates** en la grilla de batería (batería 1 y 2): **12 estilos con 2 variaciones cada uno** (drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues y jazz).

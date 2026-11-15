@@ -371,6 +371,8 @@ The LITE part is one more synth track, grey, chosen with ALGORITHM between track
 
 ## 13. HOME menu, colours and lights
 
+★ **Look:** behind the top bar there are rooftops with a little cat and the moon, and the envelope and filter screens carry a cobweb with a small spider in the corner. They use the theme's faintest colour, so they follow COLOR.
+
 Hold **HOME** to open the menu. SELECT moves between sections, KNOB 1–3 change the rows, PRESETS moves the cursor, OCT+ changes or opens, OCT− closes.
 
 | Item | Options |

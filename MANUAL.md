@@ -371,6 +371,8 @@ La parte LITE es una pista sintetizadora más, gris, que se elige con ALGORITHM 
 
 ## 13. Menú HOME, colores y luces
 
+★ **Estética:** detrás de la barra de arriba hay tejados con un gatito y la luna, y las pantallas de envolvente y filtro llevan una telaraña con una arañita en la esquina. Son del color más tenue del tema, así que cambian con COLOR.
+
 Mantené **HOME** para abrir el menú. SELECT pasa de sección, KNOB 1–3 cambian las filas, PRESETS mueve el cursor, OCT+ cambia o abre, OCT− cierra.
 
 | Ítem | Opciones |
