@@ -2,6 +2,16 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-24 · Noche de Brujas, segunda mano: el aspecto de las maquetas y más flash libre
+
+- **Cabecera**: el gatito (cara con ojos y nariz) se sienta sobre el tejado en todas las barras de arriba, incluida la del menú HOME. El resto de la cabecera queda como el original.
+- **Pantalla de pistas** como en la maqueta: una tarjeta redondeada por pista, el recuadro de la pista seleccionada en su color, el motor en el color de la pista y los pasos en ese color. Siguen a la vista REC, solo, mudo, el cabezal y los cuatro diales.
+- **Envolvente y filtro** como en la maqueta: marco redondeado, área rellena bajo la curva, la etiqueta "LP 24 dB/oct" (o BP/HP y la pendiente de cada filtro) y la telaraña con arañita.
+- **Presets**: la fila elegida va dentro de una caja.
+- **Batería y secuenciador de instrumentos** como el original, con la paleta de la maqueta (golpe fantasma violeta, normal naranja, fuerte claro; pista LITE cian, batería 2 rosa). Los secuenciadores no llevan telaraña ni el mosaico: no se agrega.
+- Paleta con seis colores de pista: violeta, verde, amarillo, cian, naranja y rosa.
+- **Flash**: el compilador pasa de `-Os` a `-Oz`, que libera unos **14,8 KB** sin quitar ninguna función (el código muerto ya lo eliminaba la compilación unificada). El costo de los lazos de audio sigue bajo el presupuesto que verifican las pruebas.
+
 ## fix-23 · Noche de Brujas: tejados y telaraña en las pantallas
 
 - **Tejados** detrás de la barra de arriba de todas las pantallas: la de páginas, la grande de HOME (pistas, secuenciadores, batería) y la del menú HOME. Son tejados bajos con un gatito sentado en uno y la luna; van en el color más tenue del tema y se dibujan primero, así que no tapan nada: el texto, los íconos y las luces siguen encima, como antes.
