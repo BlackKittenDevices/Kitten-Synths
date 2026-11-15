@@ -460,6 +460,25 @@ Se abre desde el instalador (`http://localhost:8766/site/webapp/editor/`, con `s
 
 Páginas principales: **Sound** (todos los parámetros de la pista y los motores; ★ incluye los parámetros de MUUG), **Sequencer** (pasos, piano roll, exportar e importar MIDI), **Tracks** (las ★ seis pistas), **Song**, **Library**, **Samples** (con CHOP), **Drum synth**, **Song & sections** (con copia de seguridad) y **Settings**.
 
+★ **Plantillas de patrones de batería**: en **Sequencer**, con una pista de batería elegida, aparece la barra **Pattern templates**. Elegí un estilo y una variación (los nombres están en inglés, como el resto del editor) y apretá **load template**. Hay 12 estilos con 2 variaciones cada uno:
+
+| Estilo | Variaciones | Tempo | Kit |
+|---|---|---|---|
+| Drum & Bass | Two-step, Roller | 174 | JUNGLE |
+| Jungle | Amen-style break, Chopped | 165 | JUNGLE |
+| Industrial | EBM drive, Machine | 130 | INDUSTR |
+| Acid House | Four on the floor, With toms and rim | 125 | 909 |
+| Techno House | House, Techno | 128 | HOUSE / TECHNO |
+| Psy Trance | Rolling, With fill | 145 | TECHNO |
+| Hard Techno | Rumble, Gallop | 155 | TECHNO |
+| Rock | Straight 8ths, With a fill | 120 | ACOUSTIC |
+| Heavy Metal | Gallop, Double kick | 168 | ACOUSTIC |
+| Doom Metal | Crawl, Sludge | 62 | DEEP |
+| Blues | Shuffle, Slow 12/8 | 92 | VINTAGE |
+| Jazz | Swing ride, Comping | 140 | JAZZ |
+
+La plantilla escribe los golpes (con sus niveles: fantasma, suave, normal y fuerte, los redobles y los micro-desplazamientos), el **largo**, la **división** (por ejemplo 8T para el blues y el jazz) y el **swing** de la pista. Dos casillas permiten además **poner el tempo** (el BPM es global: cambia el de todo el proyecto) y **poner el kit**; destildalas para conservar los tuyos. Antes de cargar pide confirmación, porque reemplaza el patrón de esa batería. Es solo un punto de partida: después se edita como cualquier patrón. Las plantillas están en el editor web (en inglés y japonés, como el resto de su texto); el firmware no cambia.
+
 ★ **Controlador MIDI**: el editor puede escuchar un controlador conectado a la computadora y tocar con él las pistas del FM-1.
 
 El protocolo está documentado en `web/EDITOR_PROTOCOL.md` del código fuente de SLOOP.

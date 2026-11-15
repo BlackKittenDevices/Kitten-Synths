@@ -2,6 +2,12 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-22 · Plantillas de patrones de batería en el editor web
+
+- El editor web tiene ahora una barra **Pattern templates** en la grilla de batería (batería 1 y 2): **12 estilos con 2 variaciones cada uno** (drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues y jazz).
+- Cada plantilla escribe los 16 sonidos con sus niveles (fantasma, suave, normal, fuerte), redobles y micro-desplazamientos, y ajusta el largo, la división (8T para el blues y el jazz) y el swing; opcionalmente pone el tempo y el kit típicos del estilo. Pide confirmación antes de reemplazar el patrón.
+- Solo cambia el editor web (`web/editor.html`); el firmware no cambia. Las pruebas del editor (`web/test_web.mjs`) validan las 24 plantillas, los tresillos sin swing y la carga completa en el dispositivo simulado.
+
 ## fix-21 · Compatibilidad con los FM-1 nuevos (flash UC25HQ80)
 
 - Los FM-1 que se vendieron desde fines de 2026 (sobre todo en AliExpress) traen otro chip de memoria, el **UC25HQ80** (identificador JEDEC `0xB36014`), en lugar del Puya P25Q80 original (`0x856014`). Los firmwares que solo conocen el chip original no guardan proyectos (quedan en RAM, "flash error") y el cargador de actualización se niega a instalar.

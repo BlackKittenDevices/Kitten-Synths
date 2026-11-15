@@ -108,6 +108,7 @@ Presupuesto compartido de 8 voces entre las pistas sintetizadoras; la batería t
 
 - ★ Instalación en un clic con `servir.py` (Chrome o Edge).
 - ★ Editor web con las seis pistas (las dos baterías), parámetros de MUUG y entrada de controlador MIDI.
+- ★ Plantillas de patrones de batería en el editor web: 12 estilos × 2 variaciones (drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz), con largo, división, swing, tempo y kit.
 - Simulador en el navegador (sin hardware).
 - Actualización segura: verificación SHA-256 y CRC, rescate USB (OCT− al encender).
 

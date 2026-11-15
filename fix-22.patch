@@ -1,0 +1,387 @@
+diff --git a/web/editor.html b/web/editor.html
+index 072cddc..93346a7 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -1021,6 +1021,7 @@
+           <input id="midifile" type="file" accept=".mid,.midi,audio/midi" hidden></p>
+         <div class="midiprev" id="midiprev" hidden></div>
+         <div class="bar" id="drumbar" hidden></div>
++        <div class="bar" id="tplbar" hidden></div>
+         <div class="dgrid" id="drumgrid" hidden></div>
+         <div class="grid" id="stepgrid"></div>
+         <div class="roll" id="roll" hidden>
+@@ -1372,6 +1373,204 @@ const LV_ORDER = [1, 2, 0, 3];                       /* by loudness: GHOST SOFT
+ /* an empty drum step: no lane on */
+ const emptyDrum = () => ({ on: 0, lvl: new Array(16).fill(0), rat: new Array(16).fill(0) });
+ 
++/* ---- pattern templates for the drum track (editor only: nothing here is in the firmware) ----
++   A template is a groove written as text, one lane per row, one character a step (spaces are ignored, they only group
++   the steps by four):  .  empty   x  normal   g  ghost   s  soft   X  hard   2 3 4  a roll of 2 / 3 / 4 hits (normal level).
++   Lanes: K KICK, K2 KICK 2, S SNARE, C CLAP, H HAT, O OPEN HAT, P PEDAL, R RIM, S2 SNARE 2, TL LOW TOM, TH HI TOM,
++   CR CRASH, RD RIDE, SH SHAKER, CG CONGA, CB COWBELL (drums.c LANE_*, DRUM_LANES order).
++   div: the DIV value (params.c N_SDIV: 1 = 1/8, 2 = 1/16, 4 = 8T); len: steps; swing: the track's SWG (0 on triplet grids);
++   bpm: the tempo it is meant for; kit: the drum kit that suits it (by name; ignored when the FM-1 has no such kit);
++   nudge: step -> 1/64 of a step (-32..31), the feel that the grid alone cannot write. */
++const TPL_LANE = { K: 0, K2: 1, S: 2, C: 3, H: 4, O: 5, P: 6, R: 7, S2: 8, TL: 9, TH: 10, CR: 11, RD: 12, SH: 13, CG: 14, CB: 15 };
++const TPL_HIT = { x: [0, 0], g: [1, 0], s: [2, 0], X: [3, 0], 2: [0, 1], 3: [0, 2], 4: [0, 3] };   /* [level, ratchet - 1] */
++const DRUM_TEMPLATES = [
++  { id: "dnb", en: "Drum & Bass", ja: "ドラムンベース", bpm: 174, div: 2, len: 32, swing: 0, kit: "JUNGLE", v: [
++    { en: "Two-step", ja: "ツーステップ", lanes: {
++      K: "X... .... ..X. .... X... ..x. ..X. ....",
++      S: ".... X... .... X... .... X..g .g.. X..g",
++      H: "x.s. x.s. x.s. x.s. x.s. x.s. x.s. x.s.",
++      O: ".... ..s. .... ..s. .... ..s. .... ..s.",
++      CR: "X..." } },
++    { en: "Roller", ja: "ローラー", lanes: {
++      K: "X... ..x. ..X. ...x X... ..x. ..X. ..x.",
++      S: ".... X..g .g.. X... .... X.g. g.g. X.23",
++      H: "xsxs xsxs xsxs xsxs xsxs xsxs xsxs xsxs",
++      O: ".... .... .... ..s. .... .... .... ..s.",
++      CR: "X..." } } ] },
++  { id: "jungle", en: "Jungle", ja: "ジャングル", bpm: 165, div: 2, len: 32, swing: 54, kit: "JUNGLE", v: [
++    { en: "Amen-style break", ja: "アーメン風ブレイク", lanes: {
++      K: "X.x. .... ..X. .... ..X. .... X.X. ....",
++      S: ".... X..g .g.. X..g .... X..g .g.. X.g.",
++      H: "x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.x.",
++      RD: ".... .... .... .... .... .... .... ..s.",
++      CR: "X..." },
++      nudge: { 7: -5, 9: 6, 15: -4, 23: -5, 25: 6, 30: -4 } },
++    { en: "Chopped", ja: "チョップ", lanes: {
++      K: "X.x. ..x. ..X. .... X... ..x. x.X. ....",
++      S: ".... X.gg ..g. X..g g... X.g. g.g. X.43",
++      K2: ".... .... .... ..x. .... .... .... ....",
++      H: "x.xx x.x. x.xx x.x. x.xx x.x. x.xx x.x.",
++      O: ".... .... .... ..s. .... .... .... ..s.",
++      CR: "X..." },
++      nudge: { 6: -6, 7: 5, 10: -5, 13: 6, 14: -4, 19: 5, 22: -6, 25: 5, 27: -4 } } ] },
++  { id: "industrial", en: "Industrial", ja: "インダストリアル", bpm: 130, div: 2, len: 16, swing: 0, kit: "INDUSTR", v: [
++    { en: "EBM drive", ja: "EBMドライブ", lanes: {
++      K: "X... X... X... X...",
++      K2: "..x. ..x. ..x. ..x.",
++      C: ".... X... .... X...",
++      H: "x.xx x.xx x.xx x.xx",
++      CB: ".... ..x. .... ..x.",
++      CR: "X..." } },
++    { en: "Machine", ja: "マシーン", lanes: {
++      K: "X..x ..X. ..x. X...",
++      S: ".... .... X... ....",
++      R: "x.g. x.g. x.g. x.gx",
++      CB: ".x.. ...x ..x. ....",
++      O: ".... ..s. .... ....",
++      CR: "X..." } } ] },
++  { id: "acid", en: "Acid House", ja: "アシッドハウス", bpm: 125, div: 2, len: 16, swing: 54, kit: "909", v: [
++    { en: "Four on the floor", ja: "四つ打ち", lanes: {
++      K: "X... X... X... X...",
++      C: ".... X... .... X...",
++      H: "x.s. x.s. x.s. x.s.",
++      O: "..x. ..x. ..x. ..x.",
++      SH: ".s.s .s.s .s.s .s.s" } },
++    { en: "With toms and rim", ja: "タムとリム", lanes: {
++      K: "X... X... X... X...",
++      C: ".... X... .... X...",
++      H: "x.s. x.s. x.s. x.s.",
++      O: "..x. ..x. ..x. ..x.",
++      R: "...x ..x. ...x ....",
++      TH: ".... .... .... ..xx",
++      TL: ".... .... .... ...x",
++      CB: ".... .... ..x. ...." } } ] },
++  { id: "technohouse", en: "Techno House", ja: "テクノハウス", bpm: 128, div: 2, len: 16, swing: 52, kit: "HOUSE", v: [
++    { en: "House", ja: "ハウス", lanes: {
++      K: "X... X... X... X...",
++      C: ".... X... .... X...",
++      H: "xsxs xsxs xsxs xsxs",
++      O: "..X. ..X. ..X. ..X.",
++      R: ".... ...x .... ...x" } },
++    { en: "Techno", ja: "テクノ", kit: "TECHNO", swing: 0, lanes: {
++      K: "X... X... X... X...",
++      C: ".... .... .... X...",
++      H: "..x. ..x. ..x. ..x.",
++      O: ".... .... .... ..s.",
++      R: "..x. .x.. ..x. .x.x",
++      SH: "ssss ssss ssss ssss" } } ] },
++  { id: "psy", en: "Psy Trance", ja: "サイトランス", bpm: 145, div: 2, len: 16, swing: 0, kit: "TECHNO", v: [
++    { en: "Rolling", ja: "ローリング", lanes: {
++      K: "X... X... X... X...",
++      C: ".... x... .... x...",
++      H: "ssxs ssxs ssxs ssxs",
++      O: "..X. ..X. ..X. ..X.",
++      CR: "X..." } },
++    { en: "With fill", ja: "フィル付き", lanes: {
++      K: "X... X... X... X...",
++      C: ".... x... .... x...",
++      H: "ssxs ssxs ssxs ssxs",
++      O: "..X. ..X. ..X. ..X.",
++      S: ".... .... .... ..23",
++      TH: ".... .... .... x...",
++      TL: ".... .... .... .x.." } } ] },
++  { id: "hardtechno", en: "Hard Techno", ja: "ハードテクノ", bpm: 155, div: 2, len: 16, swing: 0, kit: "TECHNO", v: [
++    { en: "Rumble", ja: "ランブル", lanes: {
++      K: "X... X... X... X...",
++      K2: "..x. ..x. ..x. ..x.",
++      C: ".... X... .... X...",
++      O: "..X. ..X. ..X. ..X.",
++      RD: "s.s. s.s. s.s. s.s." } },
++    { en: "Gallop", ja: "ギャロップ", lanes: {
++      K: "X..X X..X X..X X...",
++      K2: "..x. ..x. ..x. ..x.",
++      C: ".... X... .... X...",
++      O: "..X. ..X. ..X. ..X.",
++      H: "x.x. x.x. x.x. x.x.",
++      CR: "X..." } } ] },
++  { id: "rock", en: "Rock", ja: "ロック", bpm: 120, div: 2, len: 32, swing: 0, kit: "ACOUSTIC", v: [
++    { en: "Straight 8ths", ja: "8ビート", lanes: {
++      K: "X... .... X.x. .... X... ..x. X... ....",
++      S: ".... X... .... X... .... X... .... X...",
++      H: "x.s. x.s. x.s. x.s. x.s. x.s. x.s. x.s.",
++      CR: "X..." } },
++    { en: "With a fill", ja: "フィル付き", lanes: {
++      K: "X... .... X.x. .... X... .... X... ....",
++      S: ".... X... .... X... .... X... x.xx ....",
++      H: "x.s. x.s. x.s. x.s. x.s. x.s. .... ....",
++      TH: ".... .... .... .... .... .... .... xx..",
++      TL: ".... .... .... .... .... .... .... ..xx",
++      CR: "X... .... .... .... .... .... .... ...." } } ] },
++  { id: "metal", en: "Heavy Metal", ja: "ヘヴィメタル", bpm: 168, div: 2, len: 16, swing: 0, kit: "ACOUSTIC", v: [
++    { en: "Gallop", ja: "ギャロップ", lanes: {
++      K: "X.xx X.xx X.xx X.xx",
++      S: ".... X... .... X...",
++      RD: "x.x. x.x. x.x. x.x.",
++      CR: "X..." } },
++    { en: "Double kick", ja: "ツインペダル", lanes: {
++      K: "X.x. X.x. X.x. X.x.",
++      K2: ".x.x .x.x .x.x .x.x",
++      S: ".... X... .... X...",
++      H: "x.x. x.x. x.x. x.x.",
++      CR: "X..." } } ] },
++  { id: "doom", en: "Doom Metal", ja: "ドゥームメタル", bpm: 62, div: 1, len: 16, swing: 0, kit: "DEEP", v: [
++    { en: "Crawl", ja: "クロール", lanes: {
++      K: "X.....x. X..x..x.",
++      S: "....X... ....X...",
++      RD: "x.s.x.s. x.s.x.s.",
++      CR: "X..." } },
++    { en: "Sludge", ja: "スラッジ", lanes: {
++      K: "X..x..X. X.x...x.",
++      S: "....X... ....X...",
++      H: "x.x.x.x. x.x.x.x.",
++      TL: ".... .... .... .xx.",
++      TH: ".... .... .... ...x",
++      CR: "X..." } } ] },
++  { id: "blues", en: "Blues", ja: "ブルース", bpm: 92, div: 4, len: 24, swing: 0, kit: "VINTAGE", v: [
++    { en: "Shuffle", ja: "シャッフル", lanes: {
++      K: "X.. ... x.. ... X.. ... x.. ..g",
++      S: "... X.. ... X.. ... X.. ... X..",
++      H: "x.s x.s x.s x.s x.s x.s x.s x.s",
++      P: "... x.. ... x.. ... x.. ... x.." },
++      nudge: { 3: 2, 9: 2, 15: 2, 21: 2 } },
++    { en: "Slow 12/8", ja: "スロー12/8", lanes: {
++      K: "X.. ... x.. ... X.. ... x.. ...",
++      S: "... X.. ... X.. ... X.g ... X..",
++      RD: "xss xss xss xss xss xss xss xss",
++      R: ".g. ... ... ... .g. ... ... ..." },
++      nudge: { 3: 3, 9: 3, 15: 3, 21: 3 } } ] },
++  { id: "jazz", en: "Jazz", ja: "ジャズ", bpm: 140, div: 4, len: 24, swing: 0, kit: "JAZZ", v: [
++    { en: "Swing ride", ja: "スイングライド", lanes: {
++      RD: "x.. x.x x.. x.x x.. x.x x.. x.x",
++      P: "... x.. ... x.. ... x.. ... x..",
++      K: "s.. s.. s.. s.. s.. s.. s.. s..",
++      S: "... ... ... ... g.. ... ..g ..." },
++      nudge: { 5: 4, 11: 4, 17: 4, 23: 4 } },
++    { en: "Comping", ja: "コンピング", lanes: {
++      RD: "x.. x.x x.. x.x x.. x.x x.. x.x",
++      P: "... x.. ... x.. ... x.. ... x..",
++      K: "s.. s.. s.x s.. s.. s.. s.. s..",
++      S: "..g ... .g. ... ..x ... g.. .g.",
++      R: "... ... ... ..g ... ... ... ..." },
++      nudge: { 5: 4, 11: 4, 17: 4, 23: 4, 2: -3, 22: -3 } } ] },
++];
++/* a template variation as DRUM_STEP data: {len, div, swing, bpm, kit, dsteps[nstep], micro[nstep]} (steps past len stay empty) */
++function tplBuild(tpl, vi, nstep = 64) {
++  const v = tpl.v[vi] || tpl.v[0];
++  const dsteps = Array.from({ length: nstep }, () => emptyDrum()), micro = new Array(nstep).fill(0);
++  for (const [name, row] of Object.entries(v.lanes)) {
++    const l = TPL_LANE[name];
++    [...row.replace(/\s+/g, "")].forEach((c, i) => {
++      if (c === "." || i >= tpl.len || i >= nstep) return;
++      const [lv, rt] = TPL_HIT[c];
++      dsteps[i].on |= 1 << l;
++      dsteps[i].lvl[l] = lv;
++      dsteps[i].rat[l] = rt;
++    });
++  }
++  for (const [i, m] of Object.entries(v.nudge || {})) if (+i < tpl.len && +i < nstep) micro[+i] = Math.max(MICRO.MIN, Math.min(MICRO.MAX, m));
++  return { len: Math.min(tpl.len, nstep), div: tpl.div, swing: v.swing ?? tpl.swing, bpm: tpl.bpm, kit: v.kit || tpl.kit, dsteps, micro };
++}
++
+ const v14enc = (v) => { const u = Math.max(-8192, Math.min(8191, Math.round(v))) + 8192; return [u & 0x7F, (u >> 7) & 0x7F]; };
+ const v14dec = (lo, hi) => (lo | (hi << 7)) - 8192;
+ function strEnc(s) { const a = []; for (const c of String(s)) a.push(c.charCodeAt(0) & 0x7F); a.push(0); return a; }
+@@ -5059,7 +5258,10 @@ const TEXT = {
+     midiClean: "そのまま入ります。", midiHow: "音の長さはタイになり、各ステップの強さはその中でいちばん大きい velocity になります。",
+     midiHowDrum: "GM ドラムの音（36 キック、38 スネア、42 ハット…）がドラムのレーンに、強さが ghost〜hard のレベルに入ります。",
+     midiSetLen: "トラックの長さを {n} ステップにする", midiImport: "読み込む",
+-    midiConfirm: "このトラックのパターンを置き換えます。よろしいですか？", midiDone: "読み込みました。音の数: ", midiBad: "MIDI ファイルを読めません: ",
++    midiConfirm: "このトラックのパターンを置き換えます。よろしいですか？", midiDone: "読み込みました。音の数: ",
++    tplLabel: "パターンのテンプレート", tplStyle: "ジャンル", tplVariation: "バリエーション", tplTempo: "テンポも設定する（{n} BPM）", tplKit: "キットも設定する（{k}）",
++    tplLoad: "テンプレートを読み込む", tplConfirm: "ドラムのパターン（ステップ、ナッジ、長さ、ステップの幅、スウィング）を置き換えます。よろしいですか？", tplDone: "テンプレートを読み込みました: ",
++    tplHelp: "読み込んだあとは普通のパターンと同じように編集できます。あくまで出発点です。", midiBad: "MIDI ファイルを読めません: ",
+     tabSong: "ソング", songTitle: "ソング",
+     songHelp: "FM-1 の SONG 画面と同じもの: セクション A〜D（FM-1 の SAVE → SECTION）を並べ、それぞれ何小節鳴らすか。全部で 16 項目まで。PLAY はソングモード（SAVE + 13）で。",
+     songSection: "セクション", songBars: "小節", songTimes: "回数",
+@@ -5401,7 +5603,10 @@ const TEXT = {
+     midiClean: "Everything fits as it is.", midiHow: "Note lengths become ties; each step keeps the loudest velocity of its notes.",
+     midiHowDrum: "GM drum notes (36 kick, 38 snare, 42 hat…) go to the drum lanes, velocity to the levels ghost to hard.",
+     midiSetLen: "Set the track's length to {n} steps", midiImport: "Import",
+-    midiConfirm: "This replaces the track's pattern. Go on?", midiDone: "Imported. Notes: ", midiBad: "Not a readable MIDI file: ",
++    midiConfirm: "This replaces the track's pattern. Go on?", midiDone: "Imported. Notes: ",
++    tplLabel: "Pattern templates", tplStyle: "Style", tplVariation: "Variation", tplTempo: "Set the tempo ({n} BPM)", tplKit: "Set the kit ({k})",
++    tplLoad: "Load template", tplConfirm: "This replaces the drum pattern (steps, nudges, length, step size and swing). Go on?", tplDone: "Template loaded: ",
++    tplHelp: "Edit it afterwards like any pattern: it is only a start.", midiBad: "Not a readable MIDI file: ",
+     tabSong: "Song", songTitle: "Song",
+     songHelp: "The FM-1's SONG screen: the sections A–D (SAVE → SECTION on the FM-1) in order, each for so many bars. 16 entries at most. PLAY it in song mode (SAVE + key 13).",
+     songSection: "Section", songBars: "Bars", songTimes: "Times",
+@@ -7859,6 +8064,7 @@ function renderDrumBar() {
+ }
+ function renderDrums() {
+   renderDrumBar();
++  renderTplBar();
+   const box = $("drumgrid"), len = stepLen();
+   const shape = `${len}:${lang}:${hasFill() ? 1 : 0}`;
+   if (box.dataset.shape !== shape) {
+@@ -7890,6 +8096,79 @@ function renderDrums() {
+     b.title = `${i + 1} ${DRUM_LANES[l][1]}${on ? ` ${LV_NAMES[d.lvl[l]]} x${d.rat[l] + 1}` : ""}`;
+   }
+ }
++/* ---- pattern templates (editor only): a style and a variation of the DRUM_TEMPLATES, loaded as the drum pattern together
++   with its LEN, DIV and swing, and (when ticked) the tempo and the kit that suit it. One DRUM_STEP per step, as a MIDI import. */
++const tplState = { style: 0, v: 0, tempo: true, kit: true };
++const tplName = (o) => (lang === "ja" ? o.ja : o.en) || o.en;
++const tplKitIndex = (name) => {
++  const kd = dev.pdesc[dev.info.pe0];
++  const k = kd && kd.fmt === F.ENUM && kd.names ? kd.names.indexOf(name) : -1;
++  return k < 0 ? -1 : k + kd.min;
++};
++function renderTplBar() {
++  const box = $("tplbar");
++  const show = !!dev && drumGrid() && !!dev.dstepsOk;
++  box.hidden = !show;
++  if (!show) return;
++  const tpl = DRUM_TEMPLATES[tplState.style], shape = `${lang}:${tplState.style}`;
++  if (box.dataset.shape === shape) return;
++  box.dataset.shape = shape;
++  const style = el("select", { id: "tplstyle", title: t("tplStyle"), onchange: (e) => { tplState.style = +e.target.value; tplState.v = 0; renderTplBar(); } },
++    ...DRUM_TEMPLATES.map((x, i) => el("option", { value: i, text: tplName(x) })));
++  style.value = String(tplState.style);
++  const vari = el("select", { id: "tplvar", title: t("tplVariation"), onchange: (e) => { tplState.v = +e.target.value; } },
++    ...tpl.v.map((x, i) => el("option", { value: i, text: tplName(x) })));
++  vari.value = String(tplState.v);
++  const chk = (id, key, text) => {
++    const c = el("input", { type: "checkbox", id, onchange: (e) => { tplState[key] = e.target.checked; } });
++    c.checked = tplState[key];
++    return el("label", {}, c, " " + text);
++  };
++  box.replaceChildren(el("span", { class: "dim", text: t("tplLabel") }), style, vari,
++    chk("tpltempo", "tempo", t("tplTempo").replace("{n}", tpl.bpm)), chk("tplkit", "kit", t("tplKit").replace("{k}", tpl.kit)),
++    el("button", { type: "button", class: "pri", id: "tplload", onclick: tplLoad }, t("tplLoad")),
++    el("span", { class: "dim", text: t("tplHelp") }));
++}
++async function tplLoad() {
++  if (!dev || !dev.dstepsOk || !drumGrid()) return;
++  const tpl = DRUM_TEMPLATES[tplState.style], b = tplBuild(tpl, tplState.v, dev.info.nstep);
++  if (!confirm(t("tplConfirm"))) return;
++  const d = dev;
++  busy++;
++  try {
++    for (let i = 0; i < d.info.nstep; i++) {
++      if (i % 8 === 0) sayK("applying", `${i}/${d.info.nstep}`);
++      const r = parse[CMD.DRUM_STEP](await rq(req.drumStep(i, b.dsteps[i])));
++      if (d !== dev) return;
++      d.dsteps[i] = r;
++      d.steps[i] = drumAsStep(r);
++    }
++    if (hasLocks() && d.micro) {                         /* the nudges: the template's, and the old ones taken away */
++      for (let i = 0; i < d.info.nstep; i++) {
++        if ((d.micro[i] || 0) === b.micro[i]) continue;
++        const r = parse[CMD.MICRO_SET](await rq(req.microSet(d.sel, i, b.micro[i])));
++        if (d !== dev) return;
++        d.micro[i] = r.micro;
++      }
++    }
++    setLen(b.len);
++    userSet(0, pDiv(), b.div, true);
++    const sw = dev.pdesc[pDiv() + 1];
++    if (sw && sw.label === "SWG") userSet(0, pDiv() + 1, b.swing, true);
++    if (tplState.tempo) {
++      const g = dev.gdesc.findIndex((x) => x && x.label === "BPM");
++      if (g >= 0) userSet(1, g, b.bpm, true);
++    }
++    if (tplState.kit) {
++      const k = tplKitIndex(b.kit);
++      if (k >= 0) userSet(0, dev.info.pe0, k, true);
++    }
++    lenChanged();
++    renderDrums();
++    sayK("tplDone", `${tplName(tpl)} · ${tplName(tpl.v[tplState.v])}`);
++  } catch (err) { report(err); } finally { busy--; }
++}
++
+ function drumClick(i, l, shift) {
+   if (!dev || !dev.dsteps[i]) return;
+   selectStep(i);
+diff --git a/web/test_web.mjs b/web/test_web.mjs
+index 7d5cff8..654fa63 100644
+--- a/web/test_web.mjs
++++ b/web/test_web.mjs
+@@ -33,7 +33,7 @@ const E = vm.runInNewContext(proto + `
+ ;({ frame, unframe, parse, req, Link, parseWav, resample, normalize, rootFromName, buildSlot, makeMockDevice, CMD, SMP,
+    CHOP, chopNovelty, chopHits, chopSnap, chopGrid, chopEqual, chopList, chopPick, chopFit, chopZones, wavFile, zipStore, crc32,
+    UP, bank, capturePatch, auditionPatch, startWatch, libraryFile, readLibraryFile, paramKeys, patternFromSteps, stepsFromPattern, upName,
+-   mixer, GM_DRUM, drumName, parseNotes, fmtValue, F, DRUM_LANES, LV_NAMES, emptyDrum, lockable, MICRO, FC, fillGet, fillSet, pack7, unpack7,
++   mixer, GM_DRUM, drumName, parseNotes, fmtValue, F, DRUM_LANES, LV_NAMES, emptyDrum, DRUM_TEMPLATES, TPL_LANE, tplBuild, lockable, MICRO, FC, fillGet, fillSet, pack7, unpack7,
+    loudDb, matchGains, withGain, LEVEL_MIN, backupCapture, backupRestore, backupObjects, b64enc, b64dec, FM6, MUUG, KIT, kitPad, kitZones, kitLen, kitBytes, kitFit, kitSplit, kitLaneOf, kitPlace, zipRead, ROLL, SMF, ARR, mockSettings, fm6CartWrite, fm6CartPreset, fm6CartSlots, fm6CartPresets, DSYN, DSYN_MOCK_NAMES, DSYN_MOCK_KITS, SetGate, bkProjFormat, bkDevFormat, bkFwAtLeast, THEME, FM1_PORT_ED: FM1_PORT, fm1Ports, LOOP, LIVE, LVX, SONGF, songCapture, songLoad, songObjects })`,
+ { setTimeout, clearTimeout, setInterval, clearInterval, console, TextEncoder, TextDecoder, Blob, Response, DecompressionStream });
+ 
+@@ -779,6 +779,44 @@ async function editorV5() {
+   const fwKits = dsList == null ? null : dk.replace("DS_KIT_NAME_LIST", dsList).split(",").map((x) => x.trim().replace(/"/g, ""));
+   ok(kit.label === "KIT" && kit.names[5] === "808" && kit.names.length === kit.max + 1 && (!fwKits || fwKits.join() === kit.names.join()),
+     `v5: the drum track's KIT (${kit.names.length} kits${fwKits ? ", == drums.c" : ""})`);
++  /* pattern templates (editor only): 12 styles x 2 variations, valid text, built as DRUM_STEP data the mock device keeps */
++  {
++    const T = E.DRUM_TEMPLATES, laneNames = Object.keys(E.TPL_LANE);
++    let sound = T.map((x) => x.id).join() === "dnb,jungle,industrial,acid,technohouse,psy,hardtechno,rock,metal,doom,blues,jazz" && T.every((x) => x.v.length === 2);
++    let kitsOk = true, hits = 0;
++    for (const x of T) {
++      sound = sound && x.len >= 1 && x.len <= 64 && [1, 2, 4].includes(x.div) && x.bpm >= 40 && x.bpm <= 240 && x.swing >= 0 && x.swing <= 100 && !!x.ja;
++      if (x.div === 4 || x.div === 5) sound = sound && x.swing === 0;                       /* triplet grids are never swung */
++      x.v.forEach((v, vi) => {
++        kitsOk = kitsOk && kit.names.includes(v.kit || x.kit);
++        for (const [n, row] of Object.entries(v.lanes)) {
++          const r = row.replace(/\s+/g, "");
++          sound = sound && n in E.TPL_LANE && r.length <= x.len && /^[.xgsX234]*$/.test(r) && laneNames.includes(n);
++        }
++        const b = E.tplBuild(x, vi, info.nstep);
++        const n = b.dsteps.reduce((a, d) => a + d.on.toString(2).replace(/0/g, "").length, 0);
++        hits += n;
++        sound = sound && n >= 8 && b.len === x.len && b.dsteps.length === info.nstep && b.dsteps.slice(x.len).every((d) => d.on === 0) && !!v.ja;
++      });
++    }
++    ok(sound && kitsOk && hits > 400, `templates: ${T.length} styles x 2, rows valid, triplet grids unswung, kits exist (${hits} hits)`);
++    const j = T.find((x) => x.id === "jungle"), b = E.tplBuild(j, 0, info.nstep);
++    ok(b.len === 32 && b.div === 2 && b.swing === 54 && b.bpm === 165 && b.kit === "JUNGLE" && (b.dsteps[0].on & 1) && b.dsteps[0].lvl[0] === 3 && b.dsteps[7].lvl[E.TPL_LANE.S] === 1
++      && b.dsteps[4].lvl[E.TPL_LANE.S] === 3 && b.micro[7] === -5 && b.micro[0] === 0,
++      "templates: jungle builds LEN / DIV / swing / BPM / kit, a hard kick on 1, a ghost snare at 8 and a hard one at 5, nudges");
++    const ch = E.tplBuild(T.find((x) => x.id === "jungle"), 1, info.nstep);
++    ok(ch.dsteps[30].rat[E.TPL_LANE.S] === 3 && ch.dsteps[31].rat[E.TPL_LANE.S] === 2 && ch.dsteps[30].lvl[E.TPL_LANE.S] === 0,
++      "templates: 3 / 4 in a row are rolls of 3 and 4 hits at the normal level");
++    for (let i = 0; i < info.nstep; i++) await rq(E.req.drumStep(i, b.dsteps[i]));
++    for (let i = 0; i < info.nstep; i++) if (b.micro[i]) await rq(E.req.microSet(4, i, b.micro[i]));
++    let same = true;
++    for (let i = 0; i < info.nstep; i++) {
++      const g = E.parse[C.DRUM_STEP](await rq(E.req.drumStep(i)));
++      same = same && g.on === b.dsteps[i].on && g.lvl.join() === b.dsteps[i].lvl.join() && g.rat.join() === b.dsteps[i].rat.join();
++    }
++    const mg = E.parse[C.MICRO_GET](await rq(E.req.microGet(4)));
++    ok(same && mg.micro.join() === b.micro.join(), "templates: a template written step by step reads back as built (hits, levels, rolls, nudges)");
++  }
+   /* TRACK ends with the solo mask */
+   m.state.solo = 0b0101;
+   const tr = E.parse[C.TRACK](await rq(E.req.track()));

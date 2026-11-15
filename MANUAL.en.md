@@ -460,6 +460,25 @@ The tracks (3 to 8) are **mono and pre-master**: with their level, pan, mute, so
 
 Main pages: **Sound** (every parameter of the track and the engines; ★ includes MUUG's parameters), **Sequencer** (steps, piano roll, MIDI export and import), **Tracks** (the ★ six tracks), **Song**, **Library**, **Samples** (with CHOP), **Drum synth**, **Song & sections** (with backup) and **Settings**.
 
+★ **Drum pattern templates**: on **Sequencer**, with a drum track selected, the **Pattern templates** bar appears. Pick a style and a variation and press **load template**. There are 12 styles with 2 variations each:
+
+| Style | Variations | Tempo | Kit |
+|---|---|---|---|
+| Drum & Bass | Two-step, Roller | 174 | JUNGLE |
+| Jungle | Amen-style break, Chopped | 165 | JUNGLE |
+| Industrial | EBM drive, Machine | 130 | INDUSTR |
+| Acid House | Four on the floor, With toms and rim | 125 | 909 |
+| Techno House | House, Techno | 128 | HOUSE / TECHNO |
+| Psy Trance | Rolling, With fill | 145 | TECHNO |
+| Hard Techno | Rumble, Gallop | 155 | TECHNO |
+| Rock | Straight 8ths, With a fill | 120 | ACOUSTIC |
+| Heavy Metal | Gallop, Double kick | 168 | ACOUSTIC |
+| Doom Metal | Crawl, Sludge | 62 | DEEP |
+| Blues | Shuffle, Slow 12/8 | 92 | VINTAGE |
+| Jazz | Swing ride, Comping | 140 | JAZZ |
+
+A template writes the hits (with their levels: ghost, soft, normal and hard, the rolls and the micro-nudges), the track's **length**, **division** (for example 8T for blues and jazz) and **swing**. Two checkboxes also let it **set the tempo** (BPM is global: it changes the whole project's) and **set the kit**; untick them to keep yours. It asks for confirmation first, because it replaces that drum track's pattern. It is only a starting point: edit it afterwards like any pattern. Templates live in the web editor; the firmware does not change.
+
 ★ **MIDI controller**: the editor can listen to a controller connected to the computer and play the FM-1's tracks with it.
 
 The protocol is documented in `web/EDITOR_PROTOCOL.md` in SLOOP's source code.
