@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [base, oz, gc, data, gc-data, oz-gc-data, merge, nounwind]
+        variant: [oz]
     env:
       KITTEN_ART: ${{ github.workspace }}/splashes y logos
     steps:

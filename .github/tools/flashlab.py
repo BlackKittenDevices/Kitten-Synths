@@ -84,3 +84,15 @@ ns = syms()
 gone = [k for k in bs if k not in ns and bs[k][0] > 0]
 note("LAB-RESULT", f"{V}: {n} B, {n - base:+d} B against the base; symbols gone {len(gone)}")
 note("LAB-GONE", ";".join(f"{k} {bs[k][0]}" for k in sorted(gone, key=lambda k: -bs[k][0])[:60]))
+
+saved = sorted(((bs[k][0] - ns[k][0], k, bs[k][0], ns[k][0]) for k in bs if k in ns and bs[k][0] > ns[k][0]), reverse=True)
+note("LAB-DELTA1", ";".join(f"{k} {a}>{b}" for _, k, a, b in saved[:30]))
+note("LAB-DELTA2", ";".join(f"{k} {a}>{b}" for _, k, a, b in saved[30:60]))
+note("LAB-DELTA3", ";".join(f"{k} {a}>{b}" for _, k, a, b in saved[60:90]))
+grown = sorted(((ns[k][0] - bs[k][0], k) for k in bs if k in ns and ns[k][0] > bs[k][0]), reverse=True)[:15]
+note("LAB-GROWN", ";".join(f"{k} +{d}" for d, k in grown))
+# the render loops' cost against the budget (tests/target_budget.py), as the build does
+subprocess.run("python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt > /tmp/lab-budget.log 2>&1", shell=True)
+note("LAB-BUDGET", ";".join(l.strip() for l in open("/tmp/lab-budget.log") if re.search(r"OVER|FAIL|ok|[0-9]", l))[:1400])
+subprocess.run("cp tests/target_budget.txt /tmp/tb.txt && BUDGET_UPDATE=1 python3 tests/target_budget.py build/felucca.dis /tmp/tb.txt > /dev/null 2>&1", shell=True)
+note("LAB-BUDGET-NEW", ";".join(l.strip() for l in open("/tmp/tb.txt") if not l.startswith("#")))
