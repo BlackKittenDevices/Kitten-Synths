@@ -2,6 +2,13 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-21 · Compatibilidad con los FM-1 nuevos (flash UC25HQ80)
+
+- Los FM-1 que se vendieron desde fines de 2026 (sobre todo en AliExpress) traen otro chip de memoria, el **UC25HQ80** (identificador JEDEC `0xB36014`), en lugar del Puya P25Q80 original (`0x856014`). Los firmwares que solo conocen el chip original no guardan proyectos (quedan en RAM, "flash error") y el cargador de actualización se niega a instalar.
+- Ahora la aplicación, el rescate USB y el cargador de actualización reconocen **los dos chips** (`firmware/hal/fm1_flash_id.h`). Cualquier otro chip sigue rechazándose, como antes.
+- Los dos chips son del mismo tamaño y usan los mismos comandos: no cambia nada más (ni el formato de los proyectos ni la forma de escribir). Es el mismo cambio que hizo SLOOP 2.8.5; el test de recuperación ahora comprueba los dos chips y rechaza cualquier otro.
+- **No se pudo probar en una unidad con el chip nuevo.** Quien tenga un FM-1 de los nuevos: instalá, guardá un proyecto, apagá y volvé a encender; debería seguir ahí.
+
 ## fix-20 · Segunda pista de batería
 
 - **Una sexta pista: la batería 2.** Tiene su propio kit (arranca en ACOUSTIC), patrón, nivel, paneo, mute, solo y filtro, para combinar por ejemplo una batería acústica o sampleada con la 808. Va después de la batería 1: el orden es 1, 2, 3, LITE, batería, batería 2.

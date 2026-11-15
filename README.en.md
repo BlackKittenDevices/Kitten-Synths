@@ -34,6 +34,8 @@ Kitten Synths turns the FM-1 into a groovebox for playing live with **four synth
 
 > **Status:** beta. Tested on a real FM-1 by its author (editor, MIDI, CPU, saving). Installing custom firmware is still **at your own risk** and without warranty. Read [Before installing](#before-installing).
 
+> **Newer FM-1s (UC25HQ80 flash):** Kitten Synths also knows the FM-1s sold since late 2026, which carry a different flash chip; without it projects are not saved and the installer refuses to update. Not yet tested on such a unit: if you have one, let us know how it goes.
+
 ## Screenshots
 
 FM-1 screens made with the firmware's real code (the device shows the same, at 240 × 240 pixels).
@@ -67,7 +69,7 @@ Kitten Synths meets the requirements of [The FM-1 Firmware Hub](https://thefirmw
 
 | File | What it is for |
 | --- | --- |
-| `muug.patch` and `fix-01.patch` … `fix-20.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
+| `muug.patch` and `fix-01.patch` … `fix-21.patch` | Everything Kitten Synths adds to SLOOP 2.8, in order, applied to a pinned SLOOP commit. |
 | `.github/workflows/build.yml` | Fetches SLOOP, applies the patches, runs the tests, builds with JieLi's toolchain and publishes the site. |
 | `servir.py` | Serves the installer and the simulator on your computer. |
 | `splashes y logos/` | The kitten pictures (welcome, eyes open and closed). |

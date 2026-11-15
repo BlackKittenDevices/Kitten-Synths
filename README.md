@@ -37,6 +37,8 @@ La **compatibilidad MIDI es idéntica a la de SLOOP**: mismos canales, mismos me
 
 > **Estado:** beta. Probado en un FM-1 real por su autor (editor, MIDI, CPU, guardado). Aun así, instalar firmware propio es **bajo tu propio riesgo** y sin garantía. Leé [Antes de instalar](#antes-de-instalar).
 
+> **FM-1 nuevos (chip UC25HQ80):** Kitten Synths reconoce también los FM-1 vendidos desde fines de 2026, que traen otro chip de memoria; sin eso no se guardan los proyectos y el instalador se niega a actualizar. Todavía no se probó en una unidad de ese tipo: si tenés una, contanos cómo te va.
+
 ## Capturas
 
 Pantallas del FM-1 generadas con el código real del firmware (en el equipo se ven igual, a 240 × 240 píxeles).
@@ -81,7 +83,7 @@ Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| `muug.patch` y `fix-01.patch` … `fix-20.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
+| `muug.patch` y `fix-01.patch` … `fix-21.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |
