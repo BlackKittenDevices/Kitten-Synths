@@ -2,6 +2,12 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## Notas finales (documentación)
+
+- Probado por el autor con la v2.8-kitten.14: CPU entre 50 y 60 % con todo sonando, sin glitches en los auriculares ni en las 8 pistas grabadas por USB (issue #5).
+- MANUAL (capítulo 14): grabar con el FM-1 y reproducir con otro dispositivo de salida; el ruido de buffer del DAW al reproducir con el FM-1 como único dispositivo (por ejemplo ASIO4ALL) no está en lo grabado.
+- `fmhub.json`: el texto de la tarjeta del Hub suma la grabación limpia de 8 canales con las dos baterías repartidas entre los dos núcleos y la pestaña VISUAL.
+
 ## fix-27 · Las dos baterías, una en cada núcleo (issue #5)
 
 - Informe y prueba del usuario: con una sola pista de batería (cualquiera de las dos) no hay glitch aunque suba el tempo; con las dos sonando a la vez, en un fill de tresillos por encima de ~155 BPM, el audio se entrecorta, con o sin USB y en FULL o MASTER; con 2ND CORE apagado el equipo se traba. Apagando los demás sintes el glitch seguía.

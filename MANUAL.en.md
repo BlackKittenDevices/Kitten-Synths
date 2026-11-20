@@ -453,6 +453,8 @@ The tracks (3 to 8) are **mono and pre-master**: with their level, pan, mute, so
 - **Windows:** if an app only sees 2 channels, use WASAPI exclusive mode (or ASIO4ALL) in your DAW.
 - The master's level (1-2) is set by HOME → USB AUDIO (MASTER or FULL); the tracks' don't depend on the MASTER knob.
 - After installing, **unplug and plug in** the FM-1 once: the computer has to see it as a new 8-channel device.
+- **Record from it, play back on another device:** the FM-1 is an audio input (it records), not an output, and it runs on its own clock, not the computer's. If your DAW uses the FM-1 as its only device (for example through ASIO4ALL, which joins input and output into one buffer), **playing back** what you recorded can bring the DAW's buffer noise even though the recording is clean. Pick another output (the computer's sound card or your interface) to play back and mix; while recording, listen on the FM-1's headphones (its monitoring does not go through the DAW) and raise the buffer size if you need to. The recorded audio is fine: open it with another output device and it plays clean.
+- If, when recording many tracks with effects, the sound breaks up **on the device itself** (the headphones too), that was the render load with the two drum tracks sounding together; from v2.8-kitten.14 the two drum tracks are shared over the two cores and the CPU drops a lot. Keep **2ND CORE** ON (the default).
 
 ---
 

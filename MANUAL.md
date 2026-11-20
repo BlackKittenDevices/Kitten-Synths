@@ -453,6 +453,8 @@ Las pistas (3 a 8) van **en mono y pre-master**: con su nivel, paneo, mute, solo
 - **Windows:** si una app ve solo 2 canales, usá en el DAW el modo WASAPI exclusivo (o ASIO4ALL).
 - El nivel del master (1-2) lo define HOME → USB AUDIO (MASTER o FULL); el de las pistas no depende de la perilla MASTER.
 - Después de instalar, **desenchufá y enchufá** el FM-1 una vez: la computadora tiene que verlo como dispositivo nuevo de 8 canales.
+- **Grabar sí, reproducir con otro dispositivo:** el FM-1 es una entrada de audio (graba), no una salida, y su reloj es propio, no el de la computadora. Si en el DAW usás el FM-1 como único dispositivo (por ejemplo con ASIO4ALL, que une entrada y salida en un solo buffer), al **reproducir** lo grabado puede aparecer ruido de buffer del DAW aunque la grabación esté limpia. Elegí otra salida (la placa de la computadora o tu interfaz) para reproducir y mezclar; grabando, escuchá por los auriculares del FM-1 (su monitoreo no pasa por el DAW) y subí el tamaño del buffer si lo necesitás. Lo grabado está bien: abrilo con otro dispositivo de salida y se oye limpio.
+- Si al grabar muchas pistas con efectos el sonido se entrecorta **en el propio equipo** (también en los auriculares), era la carga del render con las dos baterías sonando a la vez; desde la v2.8-kitten.14 las dos baterías se reparten entre los dos núcleos y el CPU baja bastante. Que **2ND CORE** esté en ON (por defecto).
 
 ---
 

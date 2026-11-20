@@ -1,5 +1,5 @@
 {
-  "what": "NEW: six tracks and USB recording of all of them. Four synths (one a Minimoog-style MUUG with 100 sounds, plus a light LITE synth), two drum kits, 12 drum pattern templates in the web editor. Works on both FM-1 flash chips (old and new). A SLOOP 2.8 groovebox with songs, punch-in FX and USB MIDI.",
+  "what": "NEW: six tracks and 8-channel USB recording of all of them, clean with every track and effect running: the two drum tracks now share the two cores. Four synths (one a Minimoog-style MUUG with 100 sounds, plus a light LITE synth), two drum kits, 12 drum pattern templates and a high-contrast VISUAL tab for low-vision users in the web editor. Works on both FM-1 flash chips (old and new). A SLOOP 2.8 groovebox with songs, punch-in FX and USB MIDI.",
   "image": "docs/card.png",
   "kinds": [
     "groove"
