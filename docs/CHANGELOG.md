@@ -1,0 +1,150 @@
+# Historial de cambios
+
+Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
+
+## fix-27 · Las dos baterías, una en cada núcleo (issue #5)
+
+- Informe y prueba del usuario: con una sola pista de batería (cualquiera de las dos) no hay glitch aunque suba el tempo; con las dos sonando a la vez, en un fill de tresillos por encima de ~155 BPM, el audio se entrecorta, con o sin USB y en FULL o MASTER; con 2ND CORE apagado el equipo se traba. Apagando los demás sintes el glitch seguía.
+- Causa: las dos pistas de batería eran una sola unidad de render, y esa unidad (con la 4.ª parte) iba entera al núcleo 1, una batería detrás de la otra, mientras el núcleo 0 se quedaba con los otros sintes y esperaba. El tiempo de cada bloque es el del núcleo más lento: dos baterías con un fill denso pasaban el límite de la mitad de buffer (5,8 ms) y el DMA repetía la anterior.
+- Ahora la segunda batería es una unidad propia (`U_DRUMS2`). Cuando **las dos** suenan, la segunda se renderiza en el núcleo 0 mientras la primera va al núcleo 1; si suena una sola, todo queda como antes. Para poder correr a la vez, cada batería tiene su propio búfer de voces sintetizadas y de filtro, y la segunda ya no usa el puntero global `dcur`.
+- Tests: `mix_split_test` suma los repartos 16, 32, 48, 17, 33 y 63 (batería 1, batería 2, las dos en núcleos distintos), con la segunda batería sonando en todas las escenas y las dos con kits sintetizados en dos de ellas; el audio es idéntico bit a bit con cualquier reparto, con ThreadSanitizer sin carreras. Control negativo: compartiendo el búfer de voces entre las dos baterías, ThreadSanitizer detecta la carrera.
+
+## fix-26 · USB: copia del paquete más barata y diagnóstico del tirón (issue #5)
+
+- Informe: al grabar por USB con muchas pistas y efectos, el audio (y el del equipo) se entrecorta o se arrastra una fracción de segundo; el CPU sube a picos de 86 % conectado a la PC y no pasa de 76 % solo.
+- Qué se sabe por el código: con la PC grabando, el servicio de USB (un paquete de 736 bytes cada milisegundo) corre **dentro** del render de audio, y el control de sobrecarga cuenta ese tiempo; si dos mitades seguidas pasan del 85 % descarta voces (`voices_shed`), y si una mitad pasa del 100 % el DMA repite la anterior (`audio_late`). El medidor de CPU de la pantalla muestra solo el render, sin ese tiempo del USB.
+- La copia del anillo al paquete USB ya no calcula un índice por palabra (dos tramos de copia simple): menos ciclos por milisegundo dentro del render.
+- `status` de la consola serie suma: `audio_max_total_us` (render + USB anidado; el límite es 5805), `audio_late`, `usb_poll_max_us`, `uac_underruns`, `uac_overruns`, `uac_missed`, `uac_stalls`, `uac_fill_lo`, `uac_fill_hi`. Con una grabación que falle, esos números dicen si el problema es el tiempo del USB, un sondeo largo o el anillo.
+
+## fix-25 · Pestaña VISUAL del editor web (para ver mejor)
+
+- Nueva pestaña **VISUAL** en el editor web: la pantalla del FM-1 en grande y con alto contraste, para quien no ve bien la del equipo. Tres vistas: **Tracks** (las seis filas como la pantalla de pistas, con el cabezal, el nivel, rec / solo / mute y los cuatro diales), **Steps** (notas de un sinte o carriles de una batería por intensidad, con el cabezal) y **Sound** (todos los parámetros de la pista elegida, con valor y barra).
+- Se actualiza sola desde el FM-1 (estado en vivo, pistas, pasos y parámetros; unas 8 veces por segundo). Solo lectura; un clic en una fila elige esa pista.
+- Tamaño de 16 a 64 px (A− / A+, teclas + y −), pantalla completa (F), vistas con 1 2 3. Sin gatito ni espectro.
+- No cambia el firmware: no usa flash ni RAM del FM-1.
+
+## fix-24 · Noche de Brujas, segunda mano: el aspecto de las maquetas y más flash libre
+
+- **Cabecera**: el gatito (cara con ojos y nariz) se sienta sobre el tejado en todas las barras de arriba, incluida la del menú HOME. El resto de la cabecera queda como el original.
+- **Pantalla de pistas** como en la maqueta: una tarjeta redondeada por pista, el recuadro de la pista seleccionada en su color, el motor en el color de la pista y los pasos en ese color. Siguen a la vista REC, solo, mudo, el cabezal y los cuatro diales.
+- **Envolvente y filtro** como en la maqueta: marco redondeado, área rellena bajo la curva, la etiqueta "LP 24 dB/oct" (o BP/HP y la pendiente de cada filtro) y la telaraña con arañita.
+- **Presets**: la fila elegida va dentro de una caja.
+- **Batería y secuenciador de instrumentos** como el original, con la paleta de la maqueta (golpe fantasma violeta, normal naranja, fuerte claro; pista LITE cian, batería 2 rosa). Los secuenciadores no llevan telaraña ni el mosaico: no se agrega.
+- Paleta con seis colores de pista: violeta, verde, amarillo, cian, naranja y rosa.
+- **Flash**: las funciones de dibujo y las de arranque en frío (menús, OTA, MIDI CC) se compilan por tamaño (`minsize`), sin quitar ninguna función. Los lazos de audio no se tocan: se probó `-Oz` global, que libera 14,8 KB pero dispara el presupuesto de la interrupción de audio y del slicer, así que no se usa.
+- **Editor web**: las pistas 5 y 6 usan los mismos colores nuevos que el firmware (cian y rosa).
+
+## fix-23 · Noche de Brujas: tejados y telaraña en las pantallas
+
+- **Tejados** detrás de la barra de arriba de todas las pantallas: la de páginas, la grande de HOME (pistas, secuenciadores, batería) y la del menú HOME. Son tejados bajos con un gatito sentado en uno y la luna; van en el color más tenue del tema y se dibujan primero, así que no tapan nada: el texto, los íconos y las luces siguen encima, como antes.
+- **Telaraña** con una arañita colgada en la esquina de arriba a la derecha de las pantallas de **envolvente y filtro** (ENV, FLT ENV, filtro de MUUG y de ANALOG). Va detrás de la curva y no mueve nada.
+- Los secuenciadores (pistas, batería, pasos) quedan con sus cuadrados de siempre, sin telarañas ni patitas.
+- Siguen los cinco colores del tema (SLIME, BONE, WITCH, BLOOD y PUMPKIN) y los temas propios del editor web: los adornos usan los dos tonos más tenues.
+- Las capturas del README y la imagen de la tarjeta del Hub se rehicieron con el aspecto nuevo.
+
+## fix-22 · Plantillas de patrones de batería en el editor web
+
+- El editor web tiene ahora una barra **Pattern templates** en la grilla de batería (batería 1 y 2): **12 estilos con 2 variaciones cada uno** (drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues y jazz).
+- Cada plantilla escribe los 16 sonidos con sus niveles (fantasma, suave, normal, fuerte), redobles y micro-desplazamientos, y ajusta el largo, la división (8T para el blues y el jazz) y el swing; opcionalmente pone el tempo y el kit típicos del estilo. Pide confirmación antes de reemplazar el patrón.
+- Solo cambia el editor web (`web/editor.html`); el firmware no cambia. Las pruebas del editor (`web/test_web.mjs`) validan las 24 plantillas, los tresillos sin swing y la carga completa en el dispositivo simulado.
+
+## fix-21 · Compatibilidad con los FM-1 nuevos (flash UC25HQ80)
+
+- Los FM-1 que se vendieron desde fines de 2026 (sobre todo en AliExpress) traen otro chip de memoria, el **UC25HQ80** (identificador JEDEC `0xB36014`), en lugar del Puya P25Q80 original (`0x856014`). Los firmwares que solo conocen el chip original no guardan proyectos (quedan en RAM, "flash error") y el cargador de actualización se niega a instalar.
+- Ahora la aplicación, el rescate USB y el cargador de actualización reconocen **los dos chips** (`firmware/hal/fm1_flash_id.h`). Cualquier otro chip sigue rechazándose, como antes.
+- Los dos chips son del mismo tamaño y usan los mismos comandos: no cambia nada más (ni el formato de los proyectos ni la forma de escribir). Es el mismo cambio que hizo SLOOP 2.8.5; el test de recuperación ahora comprueba los dos chips y rechaza cualquier otro.
+- **No se pudo probar en una unidad con el chip nuevo.** Quien tenga un FM-1 de los nuevos: instalá, guardá un proyecto, apagá y volvé a encender; debería seguir ahí.
+
+## fix-20 · Segunda pista de batería
+
+- **Una sexta pista: la batería 2.** Tiene su propio kit (arranca en ACOUSTIC), patrón, nivel, paneo, mute, solo y filtro, para combinar por ejemplo una batería acústica o sampleada con la 808. Va después de la batería 1: el orden es 1, 2, 3, LITE, batería, batería 2.
+- **Cómo se elige:** con la perilla de pista, como las demás. La pantalla DRUMS, sus teclas, el kit, el SOUND (TUNE / DECAY de cada sonido) y la grabación son los de la batería elegida.
+- **MIDI:** la batería 2 escucha y envía por el **canal 11**; los demás canales quedan como en SLOOP. Si una pista de sinte está en el 11, el canal sigue siendo de esa pista.
+- **Audio USB:** la batería 2 sale sola por el **canal 8**, que antes iba en silencio.
+- **Pantallas:** la de pistas, el mezclador, la de REC y los vúmetros muestran seis pistas.
+- **GLO (mezcla):** las teclas 1–6 son mute, 7–12 solo, 13 fill y 14 la próxima barra de fill. El tap tempo sigue en la última tecla.
+- **Nivel:** la batería 1 sigue usando GLO > DRUMS (LVL, REV, DLY); la batería 2 usa su propio LEVEL, REV y DLY, como una pista de sinte.
+- **Guardado:** se guarda junto a cada proyecto (A–D y el autoguardado), como la parte LITE. Ocupa el último sector de USR4, que pasa de 80 a **76 KiB** (unos 0,2 s menos de muestras en esa ranura). El editor web ya conoce el tamaño nuevo.
+- **Editor web:** muestra las seis pistas. La batería 2 aparece como **D2** en el mezclador, en la página LIVE y en la grilla de batería, con su kit, nivel, REV y DLY propios; las teclas de GLO de la página LIVE siguen el orden nuevo.
+- **PRESETS en HOME** con la batería 2 elegida cambia su kit (en la versión de prueba cambiaba el de la batería 1).
+- La batería 2 no tiene SLICER ni INSERT propios y no cambia de patrón con las secciones del modo canción (como la parte LITE).
+- No cambia ningún sonido de las otras pistas. Memoria flash libre: alrededor de 1 KB.
+- Las pruebas automáticas ahora corren también en GitHub (buscaban el paquete con otro nombre y no se ejecutaban).
+
+## fix-19 · El gatito vuelve al arranque
+
+- Al encender aparece otra vez el dibujo del gatito, en vez de "=^.^=" en texto. Es el mismo gatito del visualizador: aparece con los ojos abiertos y parpadea una vez antes de entrar. Ya no se guarda una imagen aparte para el arranque (la de la calabaza).
+- Para hacerle lugar se quitaron cuatro visualizadores de SLOOP: SPECTRUM, TAPE, ORBIT y WIRES. Quedan seis: OSCILLOSCOPE, SPECTROGRAM, LISSAJOUS, VU METERS, CIRCLE y KITTEN. Un estilo guardado que ya no existe pasa a otro de los seis.
+- No cambia ningún sonido.
+
+## fix-18 · Arreglos de SLOOP 2.8.1 a 2.8.4 (secuenciador, audio, unísono)
+
+Kitten Synths sigue sobre SLOOP 2.8 (la versión 2.8.4 entera no entra en la memoria del FM-1 junto con MUUG y la parte LITE). Se traen solo sus arreglos:
+
+- **Secuenciador:** en una pista POLY, una nota sostenida mientras grabás otras encima ya no se corta ni se reinicia (en vivo, en la toma libre y en overdub). LEN de una nota sigue por debajo de las siguientes (SEQ > NOTES). En MONO / LEGATO avisa *MONO: SET VOICE POLY*. En REC READY cada perilla cambia solo su valor. La hoja del paso (OCT+) es una tira abajo y deja ver el roll.
+- **Audio:** sin distorsión al final de las notas: la mezcla redondea en vez de truncar, en la salida de 3,5 mm y en USB. El UNISON ya no apila sus voces en fase en ningún motor. En MUUG, cada voz lee el ruido desde su propio lugar del bloque, una de cada dos invertida. Un sample tocado otra vez arranca desde el silencio con su ATK, sin click.
+- **Estabilidad:** sin notas colgadas tras una ráfaga MIDI. En un ritmo cargado el bombo ya no se pierde. Un toque corto de un botón ya no hace parpadear su página.
+- No se traen la protección del segundo núcleo, la afinación de PHYS, GRAIN ni que NZ ARCADE siga las teclas agudas (no entran en la memoria).
+- Para hacer lugar, sin cambiar ningún sonido: la tabla de nivel de los presets va sin relleno y el visualizador se compila por tamaño.
+- Pruebas nuevas de SLOOP: notas sostenidas, LEN, batería, samples, fundidos, perillas y unísono. Las huellas de sonido (`tests/golden.txt`) se regeneraron.
+
+## fix-17 · Grabación multipista por USB (8 canales)
+
+- La entrada de audio USB pasa de 2 a **8 canales** (16 bits, 44,1 kHz, sin drivers): 1-2 el master estéreo (como antes), 3-6 los cuatro sintes (3 = pista 1, 4 = pista 2, 5 = pista 3, 6 = LITE), 7 la batería, 8 en silencio.
+- Cada pista va en mono y pre-master: con su nivel, paneo (sumado a mono), mute, solo, DIST, INSERT y filtro de pista; sin el chorus, el delay ni la reverb compartidos, sin DUST, FILT ni la perilla MASTER. El master (1-2) lleva todo.
+- 44,1 kHz solamente: el menú USB RATE muestra "8 CH 44.1" (el remuestreo a 48 kHz no alcanza para 8 canales). Se libera su tabla en la memoria de programa.
+- La computadora lo ve como un dispositivo nuevo (bcdDevice propio): al instalar, desenchufá y enchufá el FM-1.
+- Pruebas nuevas: `tests/uac8_test.c` (descriptores, anillo y paquetes de 8 canales) y `tests/stems_test.c` (cada pista sola, todas, la suma igual a la mezcla seca, la división entre los dos núcleos).
+
+## fix-16 · Identidad propia para el Firmware Hub
+
+- El paquete ya no usa la identidad `FM-1_928` (la tiene otro firmware en el Hub). Kitten Synths se identifica ahora como **`FM-1_969`**, tanto en el paquete como por USB (MIDI).
+- Se define en el workflow (`FM1_IDENTITY`) y `tools/build.py` la toma al compilar una versión.
+- Se agrega `fmhub.json` con el texto de la tarjeta.
+
+## fix-15 · Nombre del instalador y favicon
+- El enlace del editor web dice "Kitty installer" (antes "SLOOP installer").
+- El gato es el único ícono de pestaña de las páginas (se quita el ícono por archivo que podía elegirse en su lugar).
+
+## fix-14 · Gráficos de filtro, paleta Halloween, ícono del navegador
+- MUUG: la página FLT ENV dibuja el contorno del filtro como la envolvente principal, y EDIT 1 dibuja la curva del filtro con el corte y la resonancia.
+- ANALOG: la página FILTER dibuja la curva en LP, BP o HP.
+- Paleta de fábrica PUMPKIN (naranja sobre negro); pistas en violeta, verde ácido, amarillo, hueso y naranja. Paletas SLIME, BONE, WITCH y BLOOD. Editor e instalador con los mismos colores.
+- Ícono de la pestaña del navegador con el gato (embebido, también en el editor guardado como archivo).
+- El instalador dice 250 sonidos (decía 253).
+- La compilación deja la memoria libre como anotación de la ejecución.
+
+## fix-13 · Logo de inicio más largo
+- El logo del gatito se muestra 2,5 segundos (antes 0,9) para poder leerlo completo.
+
+## fix-12 · Pantalla ABOUT de Kitten Synths
+- HOME → ABOUT muestra KITTEN SYNTHS y Black Kitten Devices, con los créditos de SLOOP, Felucca, FMini-1 (MUUG) y las muestras.
+
+## fix-11 · MUUG a 8 voces
+- El tope de voces de MUUG sube de 4 a 8 (el presupuesto compartido del FM-1). Cada preset conserva su modo polifónico o monofónico. Sin costo de memoria de programa.
+
+## fix-10 · Menos sonidos, nombres en español
+- Se quitan siete sonidos de SLOOP para liberar memoria: DIGITAL STEEL DRUM, SAMPLE UP BASS, VOICE HARMONICA, WHEEL REGGAE ORG, PHYS HAND DRUM, MEMB TOMS y TABLA.
+- Los sonidos MUUG que evocan canciones o artistas pasan al español; los que evocan apellidos o marcas llevan una letra cambiada.
+- Las pruebas siguen a la parte LITE.
+
+## Mejora del flujo de compilación
+- `size.log` incluye cuántos bytes de memoria de programa quedan libres.
+
+## fix-09 · Ahorro de memoria de programa
+- Los parches de fábrica de MUUG se guardan en 18 bytes cada uno (−1,4 KB).
+- El logo de inicio cae a texto si la memoria se llena.
+
+## fix-08 · Guardado de LITE y de los parches propios de MUUG
+- La parte LITE y los parches propios de MUUG se guardan con las secciones A–D y con el autoguardado, en un objeto aparte de la memoria flash.
+
+## fix-07 · Páginas de MUUG en el panel
+- EDIT: OSC RNG, OSC WAV, OSC FRQ y MIXER. ENV: FLT ENV. LFO: MUUG MOD.
+
+## fix-01 … fix-06 y muug.patch
+- El motor MUUG con sus 100 sonidos y el filtro de escalera.
+- La cuarta parte sintetizadora LITE y las cinco pistas en pantalla, mezclador y secuenciador.
+- La estética de gatitos: logo de bienvenida, visualizador del gatito, colores.
+- Instalador y editor web de Kitten Synths con entrada MIDI de controlador y las cinco pistas.
+- Rueda de modulación (CC 1) para MUUG.
+- Pruebas nuevas para todo lo anterior.
