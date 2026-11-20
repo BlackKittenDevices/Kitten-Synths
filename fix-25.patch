@@ -1,0 +1,467 @@
+diff --git a/web/editor.html b/web/editor.html
+index 2ff9337..a997a09 100644
+--- a/web/editor.html
++++ b/web/editor.html
+@@ -860,6 +860,70 @@
+     .lvpad { height: 64px; }
+     .lvfxpads { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+   }
++  /* ---- VISUAL (2.8-kitten): the FM-1's screens, big. Terminus is sharp at 16 px and its whole multiples: the size is 1..4 x 16 px ---- */
++  #vs { --z: 32px; font-size: var(--z); line-height: 1.25; color: var(--fg); }
++  #vs:fullscreen { background: var(--bg); overflow: auto; padding: 16px; }
++  .vshead { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 12px; }
++  .vschip { display: grid; align-content: center; justify-items: start; min-width: 4em; padding: 0 .4em; border: 2px solid var(--s3); background: var(--bg); }
++  .vschip small { font-size: .5em; line-height: 1.2; color: var(--dim); text-transform: uppercase; }
++  .vschip b { font-weight: 400; line-height: 1.1; }
++  .vschip.play { border-color: var(--t2); } .vschip.play b { color: var(--t2); }
++  .vschip.on { border-color: var(--t3); } .vschip.on b { color: var(--t3); }
++  .vschip.rec { border-color: var(--red); } .vschip.rec b { color: var(--red); }
++  .vssec { display: flex; gap: 4px; }
++  .vssec span { display: grid; place-items: center; width: 1.4em; border: 2px solid var(--s3); color: var(--dim); }
++  .vssec span.cur { background: var(--t4); border-color: var(--t4); color: #000; }
++  .vssec span.next { border: 2px dashed var(--t3); color: var(--t3); }
++  .vsbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
++  .vsbar .grow { flex: 1; }
++  #vs button { font: inherit; font-size: .5em; padding: .3em .8em; text-transform: none; }
++  #vs button[aria-pressed="true"] { background: var(--trk); color: #000; border-color: var(--trk); }
++  .vsrows { display: grid; gap: 8px; }
++  .vsrow { --c: var(--t1); display: grid; grid-template-columns: 1.5em minmax(0, 1fr) 4em; grid-template-rows: auto auto; gap: 0 .4em; padding: .15em .3em;
++           border: 3px solid var(--s3); border-radius: 12px; background: var(--s1); cursor: pointer; }
++  .vsrow.sel { border-color: var(--c); background: var(--s2); }
++  .vstile { grid-row: 1 / 3; display: grid; place-items: center; background: var(--c); color: #000; border-radius: 8px; opacity: .5; }
++  .vsrow.sel .vstile { opacity: 1; }
++  .vsname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++  .vsname i { font-style: normal; color: var(--c); margin-left: .5em; font-size: .75em; }
++  .vsrow:not(.sel) .vsname { color: var(--fg2); }
++  .vsbadge { text-align: center; align-self: start; font-size: .75em; padding: 0 .3em; color: var(--dim); }
++  .vsbadge.rec { background: var(--red); color: #000; } .vsbadge.solo { background: var(--fg); color: #000; }
++  .vssteps { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 3px; padding-bottom: .3em; align-self: end; }
++  .vscell { height: .6em; background: var(--bg); border-radius: 2px; position: relative; }
++  .vscell.d1 { background: var(--s3); } .vscell.d2 { background: var(--c); }
++  .vsrow.silent .vscell.d2 { background: var(--dim); }
++  .vscell.ph::after { content: ""; position: absolute; left: 0; right: 0; bottom: -.28em; height: .2em; background: var(--fg); }
++  .vslvl { align-self: end; margin-bottom: .45em; height: .3em; background: var(--s3); border-radius: 2px; }
++  .vslvl i { display: block; height: 100%; background: var(--c); border-radius: 2px; }
++  .vsrow:not(.sel) .vslvl i { background: var(--dim); }
++  .vsdials { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
++  .vsdial { --c: var(--trk); border: 3px solid var(--s3); border-radius: 12px; padding: .1em .4em .3em; background: var(--s1); }
++  .vsdial small { display: block; font-size: .5em; color: var(--dim); text-transform: uppercase; }
++  .vsdial b { font-weight: 400; color: var(--c); }
++  .vsdial .vslvl { margin: .2em 0 0; }
++  .vsgrid { --c: var(--trk); display: grid; gap: 6px; }
++  .vsgr { display: grid; grid-template-columns: 2.6em repeat(16, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
++  .vsgr.drum { grid-template-columns: 4em repeat(16, minmax(0, 1fr)); }
++  .vsgl { color: var(--dim); font-size: .5em; align-self: center; white-space: nowrap; overflow: hidden; }
++  .vsgr:not(.drum) .vsgl { font-size: .5em; }
++  .vsgc { min-height: 1.3em; background: var(--s1); border: 2px solid var(--s3); border-radius: 4px; display: grid; place-items: center; color: #000; overflow: hidden; white-space: nowrap; }
++  .vsgr.drum .vsgc { min-height: .8em; border-width: 1px; font-size: .5em; }
++  .vsgc.beat { border-left-color: var(--dim); }
++  .vsgc.on { background: var(--c); border-color: var(--c); }
++  .vsgc.l0 { background: var(--t4); border-color: var(--t4); }
++  .vsgc.l1 { background: var(--t1); border-color: var(--t1); }
++  .vsgc.l2 { background: color-mix(in srgb, var(--t4) 55%, #000); border-color: var(--t4); }
++  .vsgc.l3 { background: color-mix(in srgb, var(--t4) 55%, white); border-color: var(--fg); }
++  .vsgc.out { opacity: .3; }
++  .vsgc.ph { outline: 4px solid var(--fg); outline-offset: -4px; z-index: 1; }
++  .vsparams { display: grid; grid-template-columns: repeat(auto-fill, minmax(9em, 1fr)); gap: 8px; }
++  .vsp { --c: var(--trk); border: 3px solid var(--s3); border-radius: 12px; padding: .1em .4em .3em; background: var(--s1); }
++  .vsp small { display: block; font-size: .5em; color: var(--dim); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++  .vsp b { font-weight: 400; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
++  .vsp .vslvl { margin: .2em 0 0; }
++  .vsnote { color: var(--dim); font-size: .5em; margin: 8px 0 0; }
++  #vs .vstitle { font-size: 1em; line-height: 1.25; margin: 0 0 8px; color: var(--c, var(--trk)); }
+ </style>
+ </head>
+ <body>
+@@ -872,6 +936,7 @@
+     <nav class="tabs" id="tabs" role="tablist" aria-orientation="vertical">
+       <div class="navh" data-t="navTrack"></div>
+       <button role="tab" data-tab="live" data-t="tabLive" data-ic="note_eight"></button>
++      <button role="tab" data-tab="visual" data-t="tabVisual" data-ic="symbol_keyboard"></button>
+       <button role="tab" data-tab="sound" data-t="sound" data-ic="symbol_audio"></button>
+       <button role="tab" data-tab="sequencer" data-t="tabSeq" data-ic="symbol_grid"></button>
+       <button role="tab" data-tab="tracks" data-t="tabTracks" data-ic="ui_slider_vertical"></button>
+@@ -952,6 +1017,11 @@
+       <div id="lv"></div>
+     </section>
+ 
++    <!-- 2.8-kitten: VISUAL, the FM-1's screens big and in high contrast (built by the script: vsBuild) -->
++    <section class="panel" id="p-visual" data-tab="visual" data-dev hidden>
++      <div id="vs"></div>
++    </section>
++
+     <section class="panel" id="p-sound" data-tab="sound" data-dev hidden>
+       <div class="card">
+         <div class="browser" id="browser">
+@@ -4936,6 +5006,13 @@ const TEXT = {
+     songBadFile: "SLOOP のソングファイルではありません", plTitle: "プレイリスト", plAdd: "ソングを追加", plSave: "リストを保存", plOpen: "リストを開く",
+     plNext: "次のソング", plAuto: "読み込んだら再生", plEmpty: "ソングを書き出して（ソングとセクション → このソングを書き出す）、ここに追加してください。",
+     plLoad: "読み込む", plUp: "上へ", plDown: "下へ", plRemove: "削除", plBadList: "SLOOP のプレイリストではありません",
++    /* 2.8-kitten: the VISUAL page */
++    tabVisual: "画面", vsTracks: "トラック", vsSteps: "ステップ", vsSound: "サウンド", vsSmaller: "A−", vsBigger: "A＋", vsFull: "全画面",
++    vsTrack: "トラック", vsRecB: "rec", vsSoloB: "solo", vsMuteB: "mute", vsSwing: "スウィング", vsLevel: "レベル", vsLen: "ステップ数", vsPan: "パン",
++    vsDrumNote: "g ゴースト、s ソフト、H ハード、色なしは通常。ドラムはFM-1で選んだトラックのレーンを表示します。", vsPage: "ページ", vsLoading: "読み込み中…",
++    vsHint: "読み取り専用です。FM-1の画面と同じ内容を大きく表示します。キー 1 2 3 で表示切替、+ と − で大きさ、F で全画面。行をクリックするとそのトラックを選びます。",
++    vsNoLive: "再生位置とトランスポートには FM-1 の SLOOP 2.7（プロトコル 12）が必要です。トラックとサウンドは表示されます。",
++    vsPlay: "再生", vsStop: "停止", vsBpm: "BPM", vsSec: "セクション", vsSong: "ソング", vsRec: "REC", vsFill: "フィル", vsCpu: "CPU",
+     tabLive: "LIVE", lvNeeds: "トランスポート・セクション・フィル・エフェクトには FM-1 の SLOOP 2.7 が必要です。ミキサーと鍵盤は使えます。",
+     lvPlay: "再生", lvStop: "停止", lvRec: "録音", lvRecArm: "録音待機", lvRecFree: "録音：ループ確定", lvUndo: "元に戻す", lvRedo: "やり直す", lvBpm: "BPM", lvTap: "タップ",
+     lvSwing: "スイング", lvBar: "小節", lvSong: "ソング", lvLoop: "ループ", lvSongRec: "ソング録音", lvFill: "フィル", lvFillHold: "押す間", lvFillBar: "次の小節フィル",
+@@ -5281,6 +5358,13 @@ const TEXT = {
+     songBadFile: "Not a SLOOP song file", plTitle: "playlist", plAdd: "add songs", plSave: "save the list", plOpen: "open a list",
+     plNext: "next song", plAuto: "play when loaded", plEmpty: "Export your songs (Song & sections → Export this song), then add them here.",
+     plLoad: "load", plUp: "up", plDown: "down", plRemove: "remove", plBadList: "Not a SLOOP playlist",
++    /* 2.8-kitten: the VISUAL page */
++    tabVisual: "VISUAL", vsTracks: "Tracks", vsSteps: "Steps", vsSound: "Sound", vsSmaller: "A−", vsBigger: "A+", vsFull: "Full screen",
++    vsTrack: "Track", vsRecB: "rec", vsSoloB: "solo", vsMuteB: "mute", vsSwing: "Swing", vsLevel: "Level", vsLen: "Steps", vsPan: "Pan",
++    vsDrumNote: "g ghost, s soft, H hard, no letter: normal. The drum grid shows the lanes of the track selected on the FM-1.", vsPage: "Page", vsLoading: "Reading…",
++    vsHint: "Read only: it shows what the FM-1's screen shows, big and in high contrast. Keys 1 2 3 change the view, + and − the size, F full screen. Click a row to select that track.",
++    vsNoLive: "The playhead and the transport need SLOOP 2.7 (protocol 12) on the FM-1. The tracks and their sounds show anyway.",
++    vsPlay: "PLAY", vsStop: "STOP", vsBpm: "BPM", vsSec: "Section", vsSong: "SONG", vsRec: "REC", vsFill: "FILL", vsCpu: "CPU",
+     tabLive: "LIVE", lvNeeds: "Transport, sections, fills and effects need SLOOP 2.7 on the FM-1. The mixer and the keys work.",
+     lvPlay: "play", lvStop: "stop", lvRec: "rec", lvRecArm: "rec armed", lvRecFree: "rec: close loop", lvUndo: "undo", lvRedo: "redo", lvBpm: "BPM", lvTap: "tap",
+     lvSwing: "swing", lvBar: "bar", lvSong: "song", lvLoop: "loop", lvSongRec: "song rec", lvFill: "fill", lvFillHold: "hold", lvFillBar: "fill bar",
+@@ -5648,7 +5732,7 @@ $("lang").addEventListener("click", () => { lang = lang === "ja" ? "en" : "ja";
+ 
+ /* ---------------------------------------------------------------- tabs --- */
+ /* one panel at a time; the last one is remembered (localStorage) and in the URL hash (#sound ...) */
+-const TABS = ["live", "sound", "sequencer", "tracks", "song", "library", "samples", "kits", "drumsynth", "projects", "settings", "theme"];
++const TABS = ["live", "visual", "sound", "sequencer", "tracks", "song", "library", "samples", "kits", "drumsynth", "projects", "settings", "theme"];
+ const TAB_KEY = "felucca-editor-tab";
+ const TRACK_TABS = new Set(["sound", "sequencer", "tracks"]);
+ let tab = (() => {
+@@ -5697,7 +5781,8 @@ function renderPanels() {
+   }
+   if (want === "theme") renderTheme();                  /* (2.7) works without a device too */
+   if (want === "live" && ready) lvShow(); else lvHide();   /* (2.7) the LIVE page reads the FM-1 while it shows */
+-  $("preview").hidden = !MOCK || want === "live";
++  if (want === "visual" && ready) vsShow(); else vsHide();   /* (2.8-kitten) so does the VISUAL page */
++  $("preview").hidden = !MOCK || want === "live" || want === "visual";
+   if (want === "song" && ready) {                      /* (2.5) read the song order once per connection */
+     if (SG.dev !== dev) { Object.assign(SG, { dev, rows: null, err: "", dirty: false }); op(readSong); } else renderSong();
+   }
+@@ -6319,7 +6404,7 @@ $("preview-keys").addEventListener("focusout", (e) => {
+ });
+ function previewEditing(e) { return e.target.closest("input, select, textarea, [contenteditable='true'], .preview-sequence button, #preview-note-dialog, #preview-disclosure"); }
+ window.addEventListener("keydown", (e) => {
+-  if (!MOCK || !dev?.dump || tab === "live" || e.repeat || e.ctrlKey || e.metaKey || e.altKey || previewEditing(e)) return;
++  if (!MOCK || !dev?.dump || tab === "live" || tab === "visual" || e.repeat || e.ctrlKey || e.metaKey || e.altKey || previewEditing(e)) return;
+   if (e.code === "Space") { e.preventDefault(); playPreview().catch(previewError); return; }
+   const i = PREVIEW_KEYS.indexOf(e.key.toLowerCase());
+   if (i < 0) return;
+@@ -9501,6 +9586,7 @@ function onPush(f) {
+   const d = dev;
+   if (!d || !d.dump || !d.info) return;
+   if (tab === "live") livePush(f);                   /* (2.7) the LIVE page follows the FM-1 too */
++  if (tab === "visual") vsPush(f);                   /* (2.8-kitten) and the VISUAL page */
+   try {
+     if (f.cmd === CMD.CHANGED) {
+       const c = parse[CMD.CHANGED](f.a);
+@@ -9563,7 +9649,7 @@ async function refreshStep(i) {
+   } catch (err) { report(err); }
+ }
+ function maybeReload() {
+-  if (!dev || busy || !needReload || !dev.dump || tab === "live") return;   /* (LIVE: when another page shows) */
++  if (!dev || busy || !needReload || !dev.dump || tab === "live" || tab === "visual") return;   /* (LIVE, VISUAL: when another page shows) */
+   op(() => afterSoundChange("reloaded"));
+ }
+ /* one multi-request operation; polling waits for it */
+@@ -12187,6 +12273,280 @@ function lvLetGo() { for (const up of lvDown.values()) up(); lvDown.clear(); lvA
+ window.addEventListener("blur", lvLetGo);
+ document.addEventListener("visibilitychange", () => { if (document.hidden) lvLetGo(); });
+ 
++/* ================================================================ VISUAL (2.8-kitten) === */
++/* The VISUAL page: the FM-1's own screens, big and in high contrast, for eyes that cannot read a 240 x 240 LCD: the TRACKS
++   screen (the six rows of ui_studio.c studio_tracks_draw: name, engine, the 16 steps in view, the playhead, the level,
++   rec / solo / mute, the four dials), a track's STEPS (a synth track's notes, a drum track's lanes by hit level) and its
++   SOUND (every parameter, as a number and a bar). Read only (a row picks the track, as the TRACK buttons do): it asks what the
++   LIVE page asks (the LIVE state, TRACK, TRACK_DUMP, the steps), about 8 times a second while it shows. No kitten, no
++   spectrum. The size (A- / A+) is 1 .. 4 x 16 px: Terminus is sharp at the multiples of 16. */
++const VS = { on: false, run: 0, s: null, trk: null, trkAt: 0, dump: [], dumpAt: [], pat: [], dpat: [], view: "tracks", zoom: 2, page: -1,
++  sec: -9, stale: false, kit: 0, eng: "", sig: "", node: null, ui: null };
++const VS_KEY = "felucca-editor-visual";
++const vsLive = () => !!dev && !!dev.info && dev.info.proto >= 12;
++const vsN = () => (dev && dev.info && dev.info.ntrk) || 4;
++const vsLen = (i) => { const x = VS.s && VS.s.tracks[i]; return Math.max(1, Math.min(64, (x && x.len) || 16)); };
++const vsPos = (i) => { const x = VS.s && VS.s.tracks[i]; return x ? x.step % vsLen(i) : 0; };
++try { const o = JSON.parse(localStorage.getItem(VS_KEY) || "{}"); if (o.zoom >= 1 && o.zoom <= 4) VS.zoom = o.zoom | 0; if (["tracks", "steps", "sound"].includes(o.view)) VS.view = o.view; } catch (e) { /* no storage */ }
++const vsSave = () => { try { localStorage.setItem(VS_KEY, JSON.stringify({ zoom: VS.zoom, view: VS.view })); } catch (e) { /* no storage */ } };
++
++/* ---- what is read */
++async function vsReadState(d) {
++  if (!vsLive()) return;
++  const s = parse[CMD.LIVE](await rq(req.live(LIVE.STATE), { key: "vs:state", retries: 0, quiet: true }), d.info);
++  if (d !== dev) return;
++  VS.s = s;
++  if (s.sel !== d.sel) { d.sel = s.sel; VS.stale = true; VS.page = -1; }
++  if (s.sec !== VS.sec) { VS.sec = s.sec; VS.pat = []; VS.dpat = []; }   /* another section: other patterns */
++}
++async function vsReadSlow(d, alive) {
++  const now = Date.now(), n = vsN();
++  if (now - VS.trkAt > 1200) {
++    VS.trkAt = now;
++    const tr = parse[CMD.TRACK](await rq(req.track(), { key: "vs:track", retries: 0, quiet: true }));
++    if (d !== dev) return;
++    VS.trk = tr;
++    if (!vsLive() && tr.sel !== d.sel) { d.sel = tr.sel; VS.stale = true; VS.page = -1; }
++  }
++  const sel = d.sel ?? 0, eng = VS.trk && VS.trk.tracks[sel] ? `${sel}:${VS.trk.tracks[sel].engine}` : "";
++  if (eng && eng !== VS.eng) { VS.eng = eng; await rereadEngineDesc().catch(() => {}); VS.dumpAt[sel] = 0; }   /* (the parameters' labels follow the track's engine) */
++  const order = [sel, ...Array.from({ length: n }, (_, i) => i).filter((i) => i !== sel && isDrumIdx(i, n))];
++  for (const i of order) {
++    if (!alive()) return;
++    if (now - (VS.dumpAt[i] || 0) < (i === sel ? 1500 : 8000)) continue;
++    VS.dumpAt[i] = now;
++    const r = parse[CMD.TRACK_DUMP](await rq(req.trackDump(i), { key: "vs:dump:" + i, retries: 0, quiet: true }), d.info);
++    if (d === dev) VS.dump[i] = r;
++    break;                                            /* one a turn */
++  }
++  if (!VS.kit && !(dev.kitNames && dev.kitNames.length)) { VS.kit = 1; await lvKits().catch(() => {}); }
++}
++/* the steps: the window in view first, then the rest; the drum track's lanes (DRUM_STEP: the selected track's) for the STEPS view */
++async function vsReadSteps(d, alive) {
++  const n = vsN(), sel = d.sel ?? 0;
++  let budget = 6;
++  for (const i of [sel, ...Array.from({ length: n }, (_, k) => k).filter((k) => k !== sel)]) {
++    const L = vsLen(i), p = VS.pat[i] || (VS.pat[i] = { on: [], note: [], cnt: [] }), b0 = Math.floor(vsPos(i) / 16) * 16, idx = [];
++    for (let k = b0; k < Math.min(L, b0 + 16); k++) idx.push(k);
++    for (let k = 0; k < L; k++) idx.push(k);
++    for (const k of idx) {
++      if (p.on[k] !== undefined) continue;
++      if (!alive() || budget-- <= 0) return;
++      const r = parse[CMD.TRACK_STEP](await rq(req.trackStep(i, k), { key: `vs:s:${i}:${k}`, retries: 0, quiet: true }));
++      if (d !== dev || VS.pat[i] !== p) return;
++      p.on[k] = r.n > 0 ? 1 : 0; p.note[k] = r.notes[0]; p.cnt[k] = r.n;
++    }
++  }
++  if (VS.view === "steps" && isDrumIdx(sel, n)) {
++    const L = vsLen(sel), p = VS.dpat[sel] || (VS.dpat[sel] = []);
++    for (let k = 0; k < L; k++) {
++      if (p[k] !== undefined) continue;
++      if (!alive() || budget-- <= 0) return;
++      const r = parse[CMD.DRUM_STEP](await rq(req.drumStep(k), { key: "vs:d:" + k, retries: 0, quiet: true }));
++      if (d !== dev || d.sel !== sel || VS.dpat[sel] !== p) return;
++      p[k] = r;
++    }
++  }
++}
++async function vsLoop() {
++  const d = dev, me = ++VS.run, alive = () => VS.on && dev === d && VS.run === me;
++  while (alive()) {
++    try {
++      if (!document.hidden && !LV.polling) {
++        await vsReadState(d);
++        if (alive()) await vsReadSlow(d, alive);
++        if (alive()) await vsReadSteps(d, alive);
++        if (alive()) vsRender();
++      }
++    } catch (e) { if (e.message !== "closed" && !/^timeout/.test(e.message)) report(e); }
++    await sleep(90);
++  }
++}
++/* the FM-1 changed a step or a value (a push): read it again */
++function vsPush(f) {
++  if (!VS.on || !dev) return;
++  try {
++    if (f.cmd === CMD.STEP_CHANGED) {
++      const c = parse[CMD.STEP_CHANGED](f.a), t = f.a.length > 1 ? c.track : dev.sel;
++      if (VS.pat[t]) VS.pat[t].on[c.index] = undefined;
++      if (VS.dpat[t]) VS.dpat[t][c.index] = undefined;
++    } else if (f.cmd === CMD.TRACK_CHANGED) {
++      const c = parse[CMD.TRACK_CHANGED](f.a);
++      if (VS.dump[c.track]) VS.dump[c.track].p[c.id] = c.value;
++    } else if (f.cmd === CMD.CHANGED) {
++      const c = parse[CMD.CHANGED](f.a);
++      if (!c.scope && VS.dump[dev.sel]) VS.dump[dev.sel].p[c.id] = c.value;
++    }
++  } catch (e) { /* a push that does not parse */ }
++}
++
++/* ---- what it shows */
++const vsCol = (i) => tcol(i);
++function vsName(i) {                                  /* the row's name and engine, as the FM-1's TRACKS screen */
++  const tr = VS.trk && VS.trk.tracks[i], d = dev;
++  if (!tr) return ["", ""];
++  if (isDrumIdx(i)) {
++    const kit = VS.dump[i] ? (d.kitNames || LV.kitNames || [])[VS.dump[i].p[d.info.pe0]] : "";
++    return [kit || "DRUMS", i === drum1() ? "drums" : "drums 2"];
++  }
++  const eng = d.info.engines[tr.engine] || "";
++  return [(d.names[tr.engine] || [])[tr.preset] || eng, eng.toLowerCase()];
++}
++function vsRowCells(i, silent) {                      /* the 16 steps in view (studio_tracks_draw) */
++  const L = vsLen(i), p = VS.pat[i] || { on: [] }, playing = !!(VS.s && VS.s.playing), pos = vsPos(i), bank = playing ? Math.floor(pos / 16) : 0;
++  const out = [];
++  for (let j = 0; j < 16; j++) {
++    const q = bank * 16 + j;
++    let on = 0;
++    if (L <= 16 || playing) { if (q < L) on = p.on[q] ? 2 : 1; }
++    else { const a = Math.floor(j * L / 16), z = Math.floor((j + 1) * L / 16); on = 1; for (let k = a; k < z; k++) if (p.on[k]) on = 2; }
++    out.push(el("span", { class: `vscell${on ? " d" + on : ""}${playing && q === pos ? " ph" : ""}` }));
++  }
++  return out;
++}
++function vsTracksView() {
++  const n = vsN(), sel = dev.sel ?? 0, s = VS.s, tr = VS.trk, rows = [];
++  for (let i = 0; i < n; i++) {
++    const x = tr && tr.tracks[i], [nm, en] = vsName(i), level = x ? x.level : 0, solo = tr ? (tr.solo >> i) & 1 : 0;
++    const rec = s ? (s.rec >> i) & 1 : 0, silent = !x || !!x.mute || !level || (tr && tr.solo && !solo);
++    const badge = rec ? "rec" : solo ? "solo" : silent ? "mute" : "";
++    const lbl = `${t("vsTrack")} ${i + 1}: ${nm} ${en}${badge ? ", " + t(badge === "rec" ? "vsRecB" : badge === "solo" ? "vsSoloB" : "vsMuteB") : ""}`;
++    rows.push(el("div", { class: `vsrow${i === sel ? " sel" : ""}${silent ? " silent" : ""}`, style: `--c:${vsCol(i)}`, role: "group", "aria-label": lbl,
++      onclick: () => vsPick(i) },
++      el("span", { class: "vstile", text: String(i + 1) }),
++      el("span", { class: "vsname" }, nm, el("i", { text: en })),
++      el("span", { class: `vsbadge ${badge}`, text: badge ? t(badge === "rec" ? "vsRecB" : badge === "solo" ? "vsSoloB" : "vsMuteB") : "" }),
++      el("span", { class: "vssteps" }, ...vsRowCells(i, silent)),
++      el("span", { class: "vslvl" }, el("i", { style: `width:${silent ? 0 : Math.round(level * 100 / 127)}%` }))));
++  }
++  const d = VS.dump[sel], g = dev.dump && dev.dump.g, gi = LVG().swing, pan = d ? d.p[lvP("PAN", 39)] : null;
++  const lvl = tr && tr.tracks[sel] ? (tr.tracks[sel].mute ? 0 : tr.tracks[sel].level) : 0;
++  const dial = (lab, txt, ratio) => el("div", { class: "vsdial" }, el("small", { text: t(lab) }), el("b", { text: txt }),
++    el("div", { class: "vslvl" }, el("i", { style: `width:${Math.max(0, Math.min(100, Math.round(ratio * 100)))}%` })));
++  const sw = g && dev.gdesc[gi] ? fmtValue(dev.gdesc[gi], g[gi]).join("") : "";
++  return [el("div", { class: "vsrows" }, ...rows),
++    el("div", { class: "vsdials" }, dial("vsSwing", sw, g ? (g[gi] || 0) / 100 : 0), dial("vsLevel", Math.round(lvl * 100 / 127) + "%", lvl / 127),
++      dial("vsLen", String(vsLen(sel)), (vsLen(sel) - 1) / 63), dial("vsPan", pan == null ? "" : String(pan), pan == null ? 0 : (pan + 64) / 127))];
++}
++function vsStepsView() {
++  const sel = dev.sel ?? 0, L = vsLen(sel), pos = vsPos(sel), playing = !!(VS.s && VS.s.playing), pages = Math.ceil(L / 16);
++  const rows = [], head = el("h2", { class: "vstitle", style: `--c:${vsCol(sel)}`, text: `${t("vsTrack")} ${sel + 1}: ${vsName(sel).join(" ")}` });
++  if (isDrumIdx(sel)) {
++    if (VS.page < 0 || VS.page >= pages) VS.page = Math.floor(pos / 16);
++    if (playing) VS.page = Math.floor(pos / 16);
++    const p = VS.dpat[sel] || [], b0 = VS.page * 16;
++    for (let l = 0; l < 16; l++) {
++      const cells = [];
++      for (let j = 0; j < 16; j++) {
++        const q = b0 + j, r = p[q], on = r && ((r.on >> l) & 1);
++        cells.push(el("span", { class: `vsgc${j % 4 === 0 ? " beat" : ""}${on ? " l" + (r.lvl[l] & 3) : ""}${q >= L ? " out" : ""}${playing && q === pos ? " ph" : ""}`,
++          text: on ? ["", "g", "s", "H"][r.lvl[l] & 3] : "" }));
++      }
++      rows.push(el("div", { class: "vsgr drum" }, el("span", { class: "vsgl", text: DRUM_LANES[l][1] }), ...cells));
++    }
++    return [head, pageBar(pages), el("div", { class: "vsgrid", style: `--c:${vsCol(sel)}` }, ...rows), el("p", { class: "vsnote", text: t("vsDrumNote") })];
++  }
++  const p = VS.pat[sel] || { on: [], note: [], cnt: [] };
++  for (let g = 0; g < pages; g++) {
++    const cells = [];
++    for (let j = 0; j < 16; j++) {
++      const q = g * 16 + j, on = q < L && p.on[q];
++      cells.push(el("span", { class: `vsgc${j % 4 === 0 ? " beat" : ""}${on ? " on" : ""}${q >= L ? " out" : ""}${playing && q === pos ? " ph" : ""}`,
++        text: on ? noteName(p.note[q]) + (p.cnt[q] > 1 ? "+" : "") : q < L ? String(q + 1) : "" }));
++    }
++    rows.push(el("div", { class: "vsgr" }, el("span", { class: "vsgl", text: `${g * 16 + 1}` }), ...cells));
++  }
++  return [head, el("div", { class: "vsgrid", style: `--c:${vsCol(sel)}` }, ...rows)];
++  function pageBar(np) {
++    return el("div", { class: "vsbar" }, el("span", { class: "vsnote", text: t("vsPage") }),
++      ...Array.from({ length: np }, (_, k) => el("button", { type: "button", "aria-pressed": String(k === VS.page), text: `${k * 16 + 1}–${Math.min(L, k * 16 + 16)}`,
++        onclick: () => { VS.page = k; vsRender(true); } })));
++  }
++}
++function vsSoundView() {
++  const sel = dev.sel ?? 0, d = VS.dump[sel], pe0 = dev.info.pe0, out = [];
++  const head = el("h2", { class: "vstitle", style: `--c:${vsCol(sel)}`, text: `${t("vsTrack")} ${sel + 1}: ${vsName(sel).join(" ")}` });
++  if (!d) return [head, el("p", { class: "vsnote", text: t("vsLoading") })];
++  const card = (k) => {
++    const ds = dev.pdesc[k];
++    if (!ds || !ds.label) return null;
++    const v = d.p[k], r = ds.max > ds.min ? (v - ds.min) / (ds.max - ds.min) : 0;
++    let txt;
++    try { txt = fmtValue(ds, v).join(""); } catch (e) { txt = String(v); }
++    return el("div", { class: "vsp" }, el("small", { text: ds.label }), el("b", { text: txt }),
++      el("div", { class: "vslvl" }, el("i", { style: `width:${Math.max(0, Math.min(100, Math.round(r * 100)))}%` })));
++  };
++  for (let k = pe0; k < dev.info.pcount; k++) { const c = card(k); if (c) out.push(c); }   /* the engine's own first */
++  for (let k = 0; k < pe0; k++) { const c = card(k); if (c) out.push(c); }
++  return [head, el("div", { class: "vsparams", style: `--c:${vsCol(sel)}` }, ...out)];
++}
++function vsHeader() {
++  const s = VS.s, chip = (cls, lab, val) => el("div", { class: `vschip ${cls}` }, el("small", { text: lab }), el("b", { text: val }));
++  if (!s) return el("div", { class: "vshead" });
++  const secs = ["A", "B", "C", "D"].map((c, k) => el("span", { class: k === s.sec ? "cur" : k === s.next && s.next !== s.sec ? "next" : "", text: c }));
++  const rec = s.songRec ? t("vsSong") + " " + t("vsRec") : s.freeTake ? t("vsRec") : s.recWait ? t("vsRec") + "…" : "";
++  return el("div", { class: "vshead", role: "status" },
++    chip(s.playing ? "play" : "", t("vsPlay") + " / " + t("vsStop"), s.playing ? t("vsPlay") : t("vsStop")),
++    chip("", t("vsBpm"), String(s.bpm)),
++    el("div", { class: "vschip" }, el("small", { text: t("vsSec") }), el("div", { class: "vssec" }, ...secs)),
++    ...(s.songMode ? [chip("on", t("vsSong"), s.songRuns ? `${s.songAt + 1}/${s.songLen}` : t("vsSong"))] : []),
++    ...(rec ? [chip("rec", t("vsRec"), rec)] : []),
++    ...(s.fillNow || s.fillBar ? [chip("on", t("vsFill"), t("vsFill"))] : []),
++    chip("", t("vsCpu"), s.cpu + "%"));
++}
++async function vsPick(i) {                            /* a row: the TRACK button's selection */
++  if (!dev || i === dev.sel) return;
++  try { dev.sel = parse[CMD.TRACK](await rq(req.track(i), { front: true })).sel; VS.stale = true; VS.page = -1; VS.eng = ""; vsRender(true); } catch (e) { report(e); }
++}
++function vsBuild() {
++  const root = $("vs");
++  const view = (k, lab) => el("button", { type: "button", "data-vsv": k, "data-t": lab, onclick: () => { VS.view = k; vsSave(); vsRender(true); } });
++  root.replaceChildren(
++    el("div", { class: "vsbar" }, view("tracks", "vsTracks"), view("steps", "vsSteps"), view("sound", "vsSound"), el("span", { class: "grow" }),
++      el("button", { type: "button", id: "vsm", "data-t": "vsSmaller", onclick: () => vsZoom(-1) }), el("button", { type: "button", id: "vsp", "data-t": "vsBigger", onclick: () => vsZoom(1) }),
++      el("button", { type: "button", id: "vsf", "data-t": "vsFull", onclick: () => { if (document.fullscreenElement) document.exitFullscreen(); else root.requestFullscreen && root.requestFullscreen().catch(() => {}); } })),
++    el("div", { id: "vshead" }), el("div", { id: "vsbody" }), el("p", { class: "vsnote", id: "vsnote" }));
++  root.querySelectorAll("[data-t]").forEach((e) => setLabel(e, t(e.dataset.t)));
++}
++function vsZoom(dz) { VS.zoom = Math.max(1, Math.min(4, VS.zoom + dz)); vsSave(); vsRender(true); }
++function vsRender(force) {
++  if (!VS.on || !dev || !dev.dump || !dev.info) return;
++  const root = $("vs");
++  if (!$("vsbody")) vsBuild();
++  root.style.setProperty("--z", `${16 * VS.zoom}px`);
++  const sig = [VS.view, VS.zoom, lang, dev.sel, VS.page, JSON.stringify(VS.s && [VS.s.playing, VS.s.bpm, VS.s.sec, VS.s.next, VS.s.songMode, VS.s.songRuns, VS.s.songAt, VS.s.songLen,
++    VS.s.songRec, VS.s.freeTake, VS.s.recWait, VS.s.fillNow, VS.s.fillBar, VS.s.cpu, VS.s.rec, VS.s.tracks.map((x) => x.step)]),
++    JSON.stringify(VS.trk), JSON.stringify(VS.pat), JSON.stringify(VS.dpat), JSON.stringify(VS.dump[dev.sel])].join("|");
++  if (!force && sig === VS.sig) return;
++  VS.sig = sig;
++  root.querySelectorAll("button[data-vsv]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.vsv === VS.view)));
++  $("vshead").replaceChildren(vsHeader());
++  $("vsbody").replaceChildren(...(VS.view === "steps" ? vsStepsView() : VS.view === "sound" ? vsSoundView() : vsTracksView()));
++  $("vsnote").textContent = t(vsLive() ? "vsHint" : "vsNoLive");
++  $("vsm").disabled = VS.zoom <= 1;
++  $("vsp").disabled = VS.zoom >= 4;
++}
++function vsShow() {
++  if (!dev || !dev.dump) return;
++  if (!VS.on) { VS.on = true; VS.sig = ""; VS.sec = -9; VS.trkAt = 0; VS.dumpAt = []; VS.eng = ""; VS.kit = 0; vsLoop(); }
++  vsRender(true);
++}
++function vsHide() {
++  if (!VS.on) return;
++  VS.on = false;
++  if (VS.stale && dev && dev.dump) { VS.stale = false; needReload = true; maybeReload(); }   /* the other pages see the selection changed here */
++}
++window.addEventListener("keydown", (e) => {
++  if (tab !== "visual" || !dev || !dev.dump || e.ctrlKey || e.metaKey || e.altKey || lvEditing(e)) return;
++  const k = e.key;
++  if (k === "1" || k === "2" || k === "3") { VS.view = ["tracks", "steps", "sound"][+k - 1]; vsSave(); vsRender(true); }
++  else if (k === "+" || k === "=") vsZoom(1);
++  else if (k === "-" || k === "_") vsZoom(-1);
++  else if (k.toLowerCase() === "f") $("vsf").click();
++  else return;
++  e.preventDefault();
++});
++
+ $("connect").addEventListener("click", () => {
+   if (dev) { wantConnected = false; disconnect(); } else connect();
+ });
+diff --git a/web/test_web.mjs b/web/test_web.mjs
+index 5b4f918..b05b20f 100644
+--- a/web/test_web.mjs
++++ b/web/test_web.mjs
+@@ -1570,8 +1570,12 @@ function editorTabs() {
+   const tabs = [...html.matchAll(/<button role="tab" data-tab="(\w+)"/g)].map((x) => x[1]);
+   const panels = [...html.matchAll(/<section class="panel" id="p-(\w+)" data-tab="(\w+)"/g)].map((x) => [x[1], x[2]]);
+   const TABS = JSON.parse((/const TABS = (\[[^\]]*\]);/.exec(html) || [])[1] || "[]");
+-  ok(tabs.length === 12 && js(tabs) === js(TABS) && js(panels.map((x) => x[1])) === js(TABS) && panels.every(([a, b]) => a === b),
++  ok(tabs.length === 13 && js(tabs) === js(TABS) && js(panels.map((x) => x[1])) === js(TABS) && panels.every(([a, b]) => a === b),
+     `editor: ${tabs.length} tabs, one panel each (${tabs.join(" ")})`);
++  ok(tabs[1] === "visual" && /<section class="panel" id="p-visual" data-tab="visual" data-dev hidden>\s*<div id="vs">/.test(html)
++    && /if \(want === "visual" && ready\) vsShow\(\); else vsHide\(\);/.test(html) && /if \(tab === "visual"\) vsPush\(f\);/.test(html)
++    && /const vsLive = \(\) => !!dev && !!dev\.info && dev\.info\.proto >= 12;/.test(html) && /\$\("vs"\)\.style|root\.style\.setProperty\("--z", `\$\{16 \* VS\.zoom\}px`\)/.test(html),
++    "editor: the VISUAL page (the FM-1's screens big: tracks, steps, sound; reads the LIVE state; sizes in multiples of 16 px)");
+   ok(/localStorage\.setItem\(TAB_KEY/.test(html) && /try \{ localStorage/.test(html) && /history\.replaceState\([^)]*"#" \+ name\)/.test(html)
+     && /addEventListener\("hashchange"/.test(html), "editor: last tab in localStorage (try/catch) and in the URL hash");
+   /* every string key in both languages */

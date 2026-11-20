@@ -53,6 +53,8 @@ Pantallas del FM-1 generadas con el código real del firmware (en el equipo se v
 
 <p align="center"><img src="capturas/editor_web.png" alt="Editor web de Kitten Synths" width="640"></p>
 <p align="center"><sub>El editor web (se abre desde el instalador).</sub></p>
+<p align="center"><img src="capturas/editor_visual.png" alt="Pestaña VISUAL del editor web" width="640"></p>
+<p align="center"><sub>La pestaña VISUAL (para ver mejor): la pantalla del FM-1 en grande.</sub></p>
 
 ## Instalar (resumen)
 
@@ -83,7 +85,7 @@ Online, sin instalar nada: [el FM-1 en el navegador](https://blackkittendevices.
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| `muug.patch` y `fix-01.patch` … `fix-24.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
+| `muug.patch` y `fix-01.patch` … `fix-25.patch` | Todo lo que Kitten Synths agrega a SLOOP 2.8, en orden. Se aplican sobre un commit fijo de SLOOP. |
 | `.github/workflows/build.yml` | Baja SLOOP, aplica los parches, corre los tests y compila con la cadena de herramientas de JieLi. |
 | `servir.py` | Sirve el instalador y el simulador en tu computadora. |
 | `splashes y logos/` | Las imágenes del gatito (bienvenida, ojos abiertos y cerrados). |

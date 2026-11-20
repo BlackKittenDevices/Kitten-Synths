@@ -2,6 +2,13 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-25 · Pestaña VISUAL del editor web (para ver mejor)
+
+- Nueva pestaña **VISUAL** en el editor web: la pantalla del FM-1 en grande y con alto contraste, para quien no ve bien la del equipo. Tres vistas: **Tracks** (las seis filas como la pantalla de pistas, con el cabezal, el nivel, rec / solo / mute y los cuatro diales), **Steps** (notas de un sinte o carriles de una batería por intensidad, con el cabezal) y **Sound** (todos los parámetros de la pista elegida, con valor y barra).
+- Se actualiza sola desde el FM-1 (estado en vivo, pistas, pasos y parámetros; unas 8 veces por segundo). Solo lectura; un clic en una fila elige esa pista.
+- Tamaño de 16 a 64 px (A− / A+, teclas + y −), pantalla completa (F), vistas con 1 2 3. Sin gatito ni espectro.
+- No cambia el firmware: no usa flash ni RAM del FM-1.
+
 ## fix-24 · Noche de Brujas, segunda mano: el aspecto de las maquetas y más flash libre
 
 - **Cabecera**: el gatito (cara con ojos y nariz) se sienta sobre el tejado en todas las barras de arriba, incluida la del menú HOME. El resto de la cabecera queda como el original.

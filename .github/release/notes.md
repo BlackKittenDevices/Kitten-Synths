@@ -23,6 +23,7 @@
 - **Los FM-1 nuevos (chip de flash UC25HQ80) funcionan:** la aplicación, el rescate USB y el actualizador conocen los dos chips; se guardan los proyectos y el instalador acepta las unidades nuevas. Sin probar en una unidad nueva: contanos cómo te va.
 - **Editor web:** plantillas de patrones de batería (12 estilos x 2 variaciones: drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz).
 - **Pantallas nuevas (Noche de Brujas):** gatito en la cabecera, pistas en tarjetas de colores, filtro y envolvente con marco y área rellena, presets con caja. El editor web usa los mismos colores de pista.
+- **Editor web, pestaña VISUAL (para ver mejor):** la pantalla del FM-1 en grande y con alto contraste (pistas, pasos y sonido), en tiempo real. Sin cambios en el firmware.
 - Además: los arreglos de SLOOP 2.8.1-2.8.4 (notas sostenidas al grabar, finales de nota limpios, UNISON abierto) y el gatito que parpadea al encender.
 
 **Instalar:** bajá `Kitten-Synths-instalador-2.8-kitten.zip`, descomprimilo, abrí `servir.py` (Python 3, Chrome o Edge) y apretá Instalar. Hacé backup antes. Manual: https://github.com/BlackKittenDevices/Kitten-Synths/blob/main/MANUAL.md
