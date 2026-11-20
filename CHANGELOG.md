@@ -2,6 +2,13 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-27 · Las dos baterías, una en cada núcleo (issue #5)
+
+- Informe y prueba del usuario: con una sola pista de batería (cualquiera de las dos) no hay glitch aunque suba el tempo; con las dos sonando a la vez, en un fill de tresillos por encima de ~155 BPM, el audio se entrecorta, con o sin USB y en FULL o MASTER; con 2ND CORE apagado el equipo se traba. Apagando los demás sintes el glitch seguía.
+- Causa: las dos pistas de batería eran una sola unidad de render, y esa unidad (con la 4.ª parte) iba entera al núcleo 1, una batería detrás de la otra, mientras el núcleo 0 se quedaba con los otros sintes y esperaba. El tiempo de cada bloque es el del núcleo más lento: dos baterías con un fill denso pasaban el límite de la mitad de buffer (5,8 ms) y el DMA repetía la anterior.
+- Ahora la segunda batería es una unidad propia (`U_DRUMS2`). Cuando **las dos** suenan, la segunda se renderiza en el núcleo 0 mientras la primera va al núcleo 1; si suena una sola, todo queda como antes. Para poder correr a la vez, cada batería tiene su propio búfer de voces sintetizadas y de filtro, y la segunda ya no usa el puntero global `dcur`.
+- Tests: `mix_split_test` suma los repartos 16, 32, 48, 17, 33 y 63 (batería 1, batería 2, las dos en núcleos distintos), con la segunda batería sonando en todas las escenas y las dos con kits sintetizados en dos de ellas; el audio es idéntico bit a bit con cualquier reparto, con ThreadSanitizer sin carreras. Control negativo: compartiendo el búfer de voces entre las dos baterías, ThreadSanitizer detecta la carrera.
+
 ## fix-26 · USB: copia del paquete más barata y diagnóstico del tirón (issue #5)
 
 - Informe: al grabar por USB con muchas pistas y efectos, el audio (y el del equipo) se entrecorta o se arrastra una fracción de segundo; el CPU sube a picos de 86 % conectado a la PC y no pasa de 76 % solo.

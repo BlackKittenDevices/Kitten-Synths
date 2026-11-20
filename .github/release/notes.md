@@ -8,6 +8,7 @@
 - Saved with each project. The USR4 sample slot holds 76 KiB now (its last 4 KiB keep drums 2).
 - **New FM-1 units (flash chip UC25HQ80) work now:** the app, USB rescue and the updater know both flash chips, so projects save and the installer accepts the new units too. Untested on a new unit: please tell us how it goes.
 - **Web editor:** drum pattern templates (12 styles x 2 variations: drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz).
+- Two drum tracks playing together no longer glitch in dense fills (issue #5): the second drum track now renders on the other core when both sound, instead of both one after the other on core 1.
 - USB audio under load (issue #5): the copy into each 1 ms USB packet is cheaper, and the serial console `status` now reports `audio_max_total_us`, `audio_late`, `usb_poll_max_us` and the `uac_*` counters, to pin down a crackle while recording.
 - Also: the fixes of SLOOP 2.8.1-2.8.4 (held notes while recording, clean note ends, UNISON spread) and the blinking kitten at power-on.
 
@@ -25,6 +26,7 @@
 - **Editor web:** plantillas de patrones de batería (12 estilos x 2 variaciones: drum & bass, jungle, industrial, acid house, techno house, psy trance, hard techno, rock, heavy metal, doom metal, blues, jazz).
 - **Pantallas nuevas (Noche de Brujas):** gatito en la cabecera, pistas en tarjetas de colores, filtro y envolvente con marco y área rellena, presets con caja. El editor web usa los mismos colores de pista.
 - **Editor web, pestaña VISUAL (para ver mejor):** la pantalla del FM-1 en grande y con alto contraste (pistas, pasos y sonido), en tiempo real. Sin cambios en el firmware.
+- Dos pistas de batería sonando juntas ya no glitchean en fills densos (issue #5): la segunda batería se renderiza en el otro núcleo cuando suenan las dos, en vez de las dos una detrás de otra en el núcleo 1.
 - Audio USB bajo carga (issue #5): la copia de cada paquete USB de 1 ms es más barata, y `status` de la consola serie ahora informa `audio_max_total_us`, `audio_late`, `usb_poll_max_us` y los contadores `uac_*`, para ubicar un entrecortado al grabar.
 - Además: los arreglos de SLOOP 2.8.1-2.8.4 (notas sostenidas al grabar, finales de nota limpios, UNISON abierto) y el gatito que parpadea al encender.
 

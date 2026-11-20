@@ -1,0 +1,224 @@
+diff --git a/firmware/src/drums.c b/firmware/src/drums.c
+index b08495d..18a4647 100644
+--- a/firmware/src/drums.c
++++ b/firmware/src/drums.c
+@@ -56,7 +56,7 @@ typedef struct {
+ /* (2.8-kitten) the two drum tracks' voices and state: drums is the one being played or rendered (dcur). The code that
+  * sounds a drum track sets dcur for it and puts the old one back (voice.c trk_note_on, fx.c mix_drums); the audio
+  * interrupt starts from the first (fx.c mix_block), so whatever it reaches unasked is the first drum track as before.
+- * Both drum tracks render in the one drums unit (fx.c), on one core at a time */
++ * The two drum tracks are two render units (fx.c U_DRUMS, U_DRUMS2): on one core, one after the other, or one on each */
+ static drum_st_t drum_sts[2];                     /* (zeroed, not in the flash image: set 0 = not looked up yet) */
+ static drum_st_t *dcur = &drum_sts[0];
+ #define drums (*dcur)
+@@ -69,7 +69,7 @@ static uint32_t drum_kit(void) { return (uint32_t)clamp(DTRK->p[P_E0], 0, DRUM_K
+ #define TDS (song.sel == TRK_DRUM2 ? TDRUM2 : TDRUM)   /* the drum track the DRUMS screen shows: the selected one */
+ static uint32_t drum_kit_of(uint32_t k) { return (uint32_t)clamp(trk[k].p[P_E0], 0, DRUM_KITS - 1); }   /* (2.8-kitten) a drum track's kit */
+ 
+-static int32_t ds_buf[CTL];
++static int32_t ds_buf[2][CTL];                   /* (2.8-kitten) a drum track's synthesised voice, one block: one each, they may render on two cores at once */
+ 
+ /* (2.7) LEVEL and PAN glide: a knob's detent (or a new sound's trim) moves a quarter of the way each block of CTL
+  * samples (0.73 ms), ~3 ms in all, instead of a step a detent (after JIANT FM 0.6.8, github.com/juanjiant-bit/JIANT:
+@@ -389,8 +389,9 @@ static void drum_on(uint32_t note, uint32_t vel)
+ 
+ /* adds the drums into the dry mix and the reverb and delay sends; mono != 0: into mono instead, before
+  * the pan and the sends (the SLICER, slicer.c slicer_drums, does those after it) */
+-static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, int32_t *mono, uint32_t n)
+-{
++static inline void drums_mix(drum_st_t *dcur, int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, int32_t *mono, uint32_t n)
++{   /* (dcur: the drum track it renders, a parameter: the two tracks may render on the two cores at once) */
++    int32_t *dsb = ds_buf[dcur == &drum_sts[1]];
+     uint32_t k, i;
+     const track_t *dt = DTRK;                       /* (2.8-kitten) the first drum track: GLO > DRUMS LVL REV DLY; the second:
+                                                      * its own LEVEL, REV and DLY, as a synth track */
+@@ -418,10 +419,10 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
+         uint32_t m = n < CTL ? n : CTL;             /* (the mix runs in blocks of CTL) */
+         if (!v->active || !drums.synth[k])
+             continue;
+-        if (!ds_render(&drums.ds[k], ds_buf, m))
++        if (!ds_render(&drums.ds[k], dsb, m))
+             v->active = 0;
+         for (i = 0; i < m; i++) {
+-            int32_t s = mulq15(ds_buf[i], mulq15(lvl, 32767 - drums.a0 - (((drums.a1 - drums.a0) * (int32_t)i) >> CTL_LOG2)));
++            int32_t s = mulq15(dsb[i], mulq15(lvl, 32767 - drums.a0 - (((drums.a1 - drums.a0) * (int32_t)i) >> CTL_LOG2)));
+             s = DRUM_VOICE_FX(k, s);
+             v->s[7] = s;
+             if (s > pk || -s > pk)
+@@ -503,5 +504,16 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
+     }
+     drums.peak = pk;
+ }
+-static void drums_render(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_mix(ml, mr, rev, dly, 0, n); }
+-static void drums_render_mono(int32_t *mono, uint32_t n) { drums_mix(0, 0, 0, 0, mono, n); }
++static void drums_render(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_mix(dcur, ml, mr, rev, dly, 0, n); }
++static void drums_render_mono(int32_t *mono, uint32_t n) { drums_mix(dcur, 0, 0, 0, 0, mono, n); }
++/* a given drum track's (fx.c mix_drums2, on core 1 while the first renders on core 0: it never touches dcur) */
++static void drums_render_st(drum_st_t *st, int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_mix(st, ml, mr, rev, dly, 0, n); }
++/* is a drum track sounding (a voice running or a declick tail left): fx.c units_split shares the two tracks over the cores */
++static int drums_busy(uint32_t k)
++{
++    uint32_t i;
++    for (i = 0; i < NDRUM; i++)
++        if (drum_sts[k].v[i].active)
++            return 1;
++    return drum_sts[k].tail != 0;
++}
+diff --git a/firmware/src/fx.c b/firmware/src/fx.c
+index 6f569e1..2bdbab6 100644
+--- a/firmware/src/fx.c
++++ b/firmware/src/fx.c
+@@ -316,8 +316,8 @@ typedef struct { int32_t l[CTL], r[CTL], sc[CTL], sd[CTL], sr[CTL]; } mixacc_t;
+ static mixacc_t acc[2] __attribute__((section(".lowram")));          /* core 0's, core 1's (.lowram: app.ld, main.c) */
+ static int32_t wet_l[CTL], wet_r[CTL];
+ static int32_t part_buf[2][CTL] __attribute__((section(".lowram")));   /* a part's scratch, one per core */
+-static int32_t drum_buf[4][CTL] __attribute__((section(".lowram")));   /* the drums through the drum track's FILTER: L, R,
+-                                                                        * reverb, delay */
++static int32_t drum_buf[2][4][CTL] __attribute__((section(".lowram")));   /* the drums through a drum track's FILTER: L, R,
++                                                                        * reverb, delay; a set for each track (they may render on two cores at once) */
+ 
+ /* ---- mute / solo: a track that goes silent fades out over ~6 ms (and back in) */
+ #define MUTE_STEP 4096                                  /* Q15 per block: 8 blocks */
+@@ -818,8 +818,9 @@ static void djf_process(int32_t *l, int32_t *r, uint32_t n)
+  * SLOOP 2.6 added two things a part keeps for its block, now per part or per core: the ENV SYNC steps (voice.c
+  * esync_k) and the preset fade's sound set aside (mix_part pnew); its INSERT state is per part (ins[]), the drum
+  * track's its own; TEXTURE, the THROWs' glide, FREEZE and the look-ahead limiter run on core 0 outside the units. */
+-#define U_DRUMS (1u << NPART)
+-#define U_ALL ((2u << NPART) - 1u)
++#define U_DRUMS (1u << NPART)                   /* the first drum track, with the metronome, the SLICER and its INSERT */
++#define U_DRUMS2 (2u << NPART)                  /* (2.8-kitten) the second drum track */
++#define U_ALL ((4u << NPART) - 1u)
+ 
+ /* the drum track's INSERT (2.6): its left, right and the two sends, each through its own state, the same settings */
+ static void drum_insert(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n)
+@@ -847,7 +848,7 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
+     drums.a1 = 32767 - gain_next(TDRUM);
+     flt = n <= CTL && djf_block(f, TDRUM->p[P_TFLT], &fc, tflt_reso());   /* the drum track's FILTER */
+     if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run))) {   /* .. or its INSERT: left, right, the sends */
+-        int32_t *dl = drum_buf[0], *dr = drum_buf[1], *dv = drum_buf[2], *dd = drum_buf[3];
++        int32_t *dl = drum_buf[0][0], *dr = drum_buf[0][1], *dv = drum_buf[0][2], *dd = drum_buf[0][3];
+         for (i = 0; i < n; i++)
+             dl[i] = dr[i] = dv[i] = dd[i] = 0;
+         slicer_drums(dl, dr, dv, dd, n);
+@@ -869,20 +870,22 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
+     }
+     click_render(mx->l, mx->r, n);                        /* the metronome: its own voice (drums.c), any kit, any mute */
+ }
+-/* (2.8-kitten) the second drum track: its drums through its FILTER (no SLICER or INSERT of its own) */
++/* (2.8-kitten) the second drum track: its drums through its FILTER (no SLICER or INSERT of its own). It may render on
++ * core 1 while the first drum track renders on core 0: it takes its drum track as a parameter (drums.c drums_render_st,
++ * the global dcur is the first track's and stays so) and has its own buffers (drum_buf[1], ds_buf[1]) */
+ static void mix_drums2(uint32_t n, mixacc_t *mx)
+ {
+     uint32_t i;
+     tsvf_t fc;
+     djf_t *f = &tflt[TRK_DRUM2];
+-    dcur = &drum_sts[1];
+-    drums.a0 = TDRUM2->att;
+-    drums.a1 = 32767 - gain_next(TDRUM2);
++    drum_st_t *st = &drum_sts[1];
++    st->a0 = TDRUM2->att;
++    st->a1 = 32767 - gain_next(TDRUM2);
+     if (n <= CTL && djf_block(f, TDRUM2->p[P_TFLT], &fc, tflt_reso())) {
+-        int32_t *dl = drum_buf[0], *dr = drum_buf[1], *dv = drum_buf[2], *dd = drum_buf[3];
++        int32_t *dl = drum_buf[1][0], *dr = drum_buf[1][1], *dv = drum_buf[1][2], *dd = drum_buf[1][3];
+         for (i = 0; i < n; i++)
+             dl[i] = dr[i] = dv[i] = dd[i] = 0;
+-        drums_render(dl, dr, dv, dd, n);
++        drums_render_st(st, dl, dr, dv, dd, n);
+         tflt_run(f, &fc, dl, n, 0);
+         tflt_run(f, &fc, dr, n, 1);
+         tflt_run(f, &fc, dv, n, 2);
+@@ -894,9 +897,8 @@ static void mix_drums2(uint32_t n, mixacc_t *mx)
+             mx->sd[i] += dd[i];
+         }
+     } else {
+-        drums_render(mx->l, mx->r, mx->sr, mx->sd, n);
++        drums_render_st(st, mx->l, mx->r, mx->sr, mx->sd, n);
+     }
+-    dcur = &drum_sts[0];
+ }
+ 
+ /* the units of mask into the set mx, in their order */
+@@ -920,10 +922,12 @@ static void mix_units(uint32_t mask, uint32_t n, mixacc_t *mx, int32_t *scratch)
+             mix_part(&trk[k], n, mx, scratch);
+             STEM_POST(k);
+         }
+-    if (mask & U_DRUMS) {                           /* (2.8-kitten: both drum tracks, one after the other) */
++    if (mask & U_DRUMS) {
+         STEM_PRE(NPART);
+         mix_drums(n, mx);
+         STEM_POST(NPART);
++    }
++    if (mask & U_DRUMS2) {                          /* (2.8-kitten: a unit of its own, on either core) */
+         STEM_PRE(NPART + 1u);
+         mix_drums2(n, mx);
+         STEM_POST(NPART + 1u);
+@@ -952,10 +956,14 @@ static void cpu1_units_job(uint32_t arg)                /* core 1's job: the uni
+ }
+ 
+ /* the units core 1 renders this block: the last part and the drums (cpu1_units when set: the menu, the tests),
+- * less the parts that must stay here (above) */
++ * less the parts that must stay here (above). The two drum tracks are the heaviest units there are: when both sound
++ * the second goes to core 0, which has the other parts and was left waiting for core 1 (a fill on both tracks, two
++ * heavy drum units one after the other on one core, was the glitch); one sounding alone stays as it was */
+ static uint32_t units_split(void)
+ {
+-    uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) | U_DRUMS : (uint32_t)cpu1_units & U_ALL, k, nform = 0;
++    uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) | U_DRUMS | (drums_busy(0) && drums_busy(1) ? 0u : U_DRUMS2)
++                                    : (uint32_t)cpu1_units & U_ALL,
++             k, nform = 0;
+     if (!mask)
+         return 0;
+     for (k = 0; k < NPART; k++)
+diff --git a/tests/mix_split_test.c b/tests/mix_split_test.c
+index 1a31dbe..9fea9f9 100644
+--- a/tests/mix_split_test.c
++++ b/tests/mix_split_test.c
+@@ -27,8 +27,9 @@
+ #undef main
+ 
+ #define BLOCKS 1500u                                     /* ~2.2 s at 44.1 kHz */
+-static const int32_t MASKS[] = {0, -1, 1, 2, 4, 8, 3, 5, 12, 7, 15};
+-static const int32_t MASKS_QUICK[] = {0, 15, -1};
++/* (2.8-kitten: bit 4 the first drum track, bit 5 the second: 32 and 48 put them on the two cores at once) */
++static const int32_t MASKS[] = {0, -1, 1, 2, 4, 8, 3, 5, 12, 7, 15, 16, 32, 48, 17, 33, 63};
++static const int32_t MASKS_QUICK[] = {0, 15, -1, 32, 48};
+ static const char *const SCENE_NAME[] = {"formant3", "fm6x3", "phys_lfo", "mix", "fx26"};
+ #define NSCENE 5u
+ 
+@@ -69,6 +70,13 @@ static void scene_setup(uint32_t s)
+     song.g[G_DRREV] = 40;
+     song.g[G_DRDLY] = 30;
+     drums_pattern();
++    TDRUM2->p[P_LEVEL] = 100;                            /* (2.8-kitten) the second drum track, played by hand (scene_block): a sampled
++                                                          * kit in the scenes 0, 2, 4, a synthesised one in 1, 3, and its FILTER in 0 */
++    TDRUM->p[P_E0] = (int16_t)(s == 1u || s == 3u ? 6 : 0);   /* (the first one's too: two synthesised kits at once, the voices' buffer) */
++    TDRUM2->p[P_E0] = (int16_t)(s & 1u ? 5 : 0);
++    TDRUM2->p[P_REV] = 30;
++    TDRUM2->p[P_DLY] = 20;
++    TDRUM2->p[P_TFLT] = (int16_t)(s == 0u ? 35 : 0);
+     switch (s) {
+     case 0:
+         for (k = 0; k < NPART; k++) {
+@@ -160,6 +168,11 @@ static void scene_setup(uint32_t s)
+ static void scene_block(uint32_t s, uint32_t b)          /* what the UI would do between blocks */
+ {
+     uint32_t k;
++    if (b % 64u == 0u || b % 64u == 20u || b % 64u == 40u || b % 64u == 52u) {   /* the second drum track: kick, snare, hats, a fill */
++        dcur = &drum_sts[1];
++        drum_on(b % 64u == 0u ? 36u : b % 64u == 20u ? 38u : b % 64u == 40u ? 42u : 46u, 100u);
++        dcur = &drum_sts[0];
++    }
+     if (s == 2u && (b == 400u || b == 900u))
+         for (k = 0; k < NHEAVY; k++)                     /* MODEL under the sounding notes: phys_render resets, with a draw */
+             trk[k].p[P_E0] = (int16_t)((trk[k].p[P_E0] + 1) % PM_COUNT);
+@@ -280,7 +293,7 @@ int main(int argc, char **argv)
+                 why = "crashed";
+             else if (r.hash != ref.hash)
+                 why = "the output differs from the unsplit render";
+-            else if (mask && !r.jobs && (s != 0u || mask < 0 || (mask & (1 << NPART))))
++            else if (mask && !r.jobs && (s != 0u || mask < 0 || (mask & (3 << NPART))))
+                 why = "no job was handed to core 1";          /* (formant3: its parts never go; the drums do) */
+             else if (!mask && r.jobs)
+                 why = "jobs handed to core 1 with no unit for it";
