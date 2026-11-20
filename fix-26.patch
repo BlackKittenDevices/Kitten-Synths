@@ -1,0 +1,108 @@
+diff --git a/firmware/src/audio.c b/firmware/src/audio.c
+index d0c3286..a8d34c2 100644
+--- a/firmware/src/audio.c
++++ b/firmware/src/audio.c
+@@ -19,7 +19,7 @@ struct felucca_dbg {
+     uint32_t stage, page, home;           /* where the main loop is (breadcrumbs) */
+     uint32_t prev_stage, prev_page, prev_home, prev_rst, prev_frames;   /* as found at boot */
+ } felucca_dbg __attribute__((section(".noinit")));
+-static volatile uint32_t audio_halves, audio_max_us;
++static volatile uint32_t audio_halves, audio_max_us, audio_max_all_us;   /* (all: the render with the TIMER5 ticks nested in it) */
+ static volatile uint32_t t5_nested_ticks;              /* TIMER4 ticks TIMER5 spent nested in this ISR (main.c) */
+ #define SCOPE_N 512u
+ static int16_t scope_buf[SCOPE_N], scope_bufr[SCOPE_N];   /* left, right (the visualiser): the mix at full level */
+@@ -79,6 +79,8 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S)
+             uint32_t all = fm1_ticks() - t0;
+             us = (all - t5_nested_ticks) / FM1_TICKS_PER_US;
+             shed_over = (uint8_t)(shed_over << 1 | (all / FM1_TICKS_PER_US * 100u > (HALF_FRAMES * 1000000u / FS) * 85u));
++            if (all / FM1_TICKS_PER_US > audio_max_all_us)
++                audio_max_all_us = all / FM1_TICKS_PER_US;
+         }
+         if (us > audio_max_us)
+             audio_max_us = us;
+diff --git a/firmware/src/console.c b/firmware/src/console.c
+index dacdec4..227c2c2 100644
+--- a/firmware/src/console.c
++++ b/firmware/src/console.c
+@@ -169,7 +169,7 @@ static void con_flr(const char *p)                  /* flash read over SPI (no X
+ }
+ #endif
+ 
+-static void con_status(void)
++UI_SMALL static void con_status(void)
+ {
+     const engine_t *e = ENGINES[TSEL->eng_req % NENGINES];
+     con_puts("felucca ");
+@@ -191,6 +191,17 @@ static void con_status(void)
+     con_kv("sstack_free", (int32_t)stack_free_sup());    /* its supervisor stack (8 KB) */
+     con_kx("sp", stack_sp());                           /* where the main loop runs now: which of the two regions */
+     con_kv("audio_max_us", (int32_t)felucca_dbg.max_us);
++    con_kv("audio_max_total_us", (int32_t)audio_max_all_us);   /* the render + the TIMER5 ticks nested in it: the deadline is 5805 */
++    con_kv("audio_late", (int32_t)felucca_dbg.late);            /* halves the DMA left behind: each one is a glitch */
++    con_kv("usb_poll_max_us", (int32_t)usb_poll_max_us);        /* the longest usb_poll: it outranks the render */
++#if FELUCCA_UAC
++    con_kv("uac_underruns", (int32_t)uac.underruns);            /* the USB audio ring ran dry (a repeated frame) */
++    con_kv("uac_overruns", (int32_t)uac.overruns);              /* ... or full (a dropped block) */
++    con_kv("uac_missed", (int32_t)uac.missed);                  /* an IN token found no packet queued */
++    con_kv("uac_stalls", (int32_t)uac.stalls);
++    con_kv("uac_fill_lo", (int32_t)uac.fill_lo);
++    con_kv("uac_fill_hi", (int32_t)uac.fill_hi);
++#endif
+     con_kv("voices_shed", (int32_t)shed_count);
+     con_kv("voices_given_up", (int32_t)voice_kills);
+     con_kv("track", (int32_t)song.sel + 1);
+diff --git a/firmware/src/main.c b/firmware/src/main.c
+index f1a8336..2292f16 100644
+--- a/firmware/src/main.c
++++ b/firmware/src/main.c
+@@ -99,8 +99,13 @@ void fm1_timer5_irq(void)
+         t5_nested_ticks += fm1_ticks() - t0;
+         return;
+     }
+-    if (owed & 1u)
++    if (owed & 1u) {
++        uint32_t p0 = fm1_ticks();
+         usb_poll();
++        p0 = (fm1_ticks() - p0) / FM1_TICKS_PER_US;
++        if (p0 > usb_poll_max_us)
++            usb_poll_max_us = p0;
++    }
+ #if FELUCCA_UART
+     if (owed & 2u)
+         uart_midi_poll();
+diff --git a/firmware/src/usb.c b/firmware/src/usb.c
+index 80e64a0..efae436 100644
+--- a/firmware/src/usb.c
++++ b/firmware/src/usb.c
+@@ -1206,8 +1206,20 @@ static uint32_t uac_packet(uint32_t *d)
+     fill = ua_w - r;
+     RING_PUBLISH();                                     /* the slots after the index */
+     k = fill < n ? fill : n;
+-    for (i = 0; i < k * UA_W; i++)
+-        d[i] = ua_ring[UA_AT(r + i / UA_W) + i % UA_W];
++    {   /* the frames: one run to the end of the ring and one from its start, plain word copies (this runs
++         * 1000 times a second, nested in the render: the old per-word index arithmetic was most of its cost) */
++        uint32_t s = r & (UA_N - 1u), a = UA_N - s;
++        const uint32_t *p = &ua_ring[s * UA_W];
++        uint32_t *q = d;
++        if (a > k)
++            a = k;
++        for (i = a * UA_W; i; i--)
++            *q++ = *p++;
++        p = ua_ring;
++        for (i = (k - a) * UA_W; i; i--)
++            *q++ = *p++;
++        i = k * UA_W;
++    }
+     if (k < n) {
+         const uint32_t *last = k ? &d[(k - 1u) * UA_W] : uac.last;
+         uac.underruns++;
+@@ -1253,6 +1265,8 @@ static void uac_service(void)
+ }
+ #endif
+ 
++/* the longest usb_poll, us (main.c measures it; console status): it outranks the audio ISR, so a long one delays a render's start */
++static uint32_t usb_poll_max_us __attribute__((unused));
+ static void usb_poll(void)                              /* TIMER5 ISR, 2 kHz */
+ {
+     uint32_t iu, it, ir;

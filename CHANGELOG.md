@@ -2,6 +2,13 @@
 
 Versión **2.8-kitten** (sobre SLOOP 2.8). Cada parche (`fix-NN.patch`) se aplica después de `muug.patch`.
 
+## fix-26 · USB: copia del paquete más barata y diagnóstico del tirón (issue #5)
+
+- Informe: al grabar por USB con muchas pistas y efectos, el audio (y el del equipo) se entrecorta o se arrastra una fracción de segundo; el CPU sube a picos de 86 % conectado a la PC y no pasa de 76 % solo.
+- Qué se sabe por el código: con la PC grabando, el servicio de USB (un paquete de 736 bytes cada milisegundo) corre **dentro** del render de audio, y el control de sobrecarga cuenta ese tiempo; si dos mitades seguidas pasan del 85 % descarta voces (`voices_shed`), y si una mitad pasa del 100 % el DMA repite la anterior (`audio_late`). El medidor de CPU de la pantalla muestra solo el render, sin ese tiempo del USB.
+- La copia del anillo al paquete USB ya no calcula un índice por palabra (dos tramos de copia simple): menos ciclos por milisegundo dentro del render.
+- `status` de la consola serie suma: `audio_max_total_us` (render + USB anidado; el límite es 5805), `audio_late`, `usb_poll_max_us`, `uac_underruns`, `uac_overruns`, `uac_missed`, `uac_stalls`, `uac_fill_lo`, `uac_fill_hi`. Con una grabación que falle, esos números dicen si el problema es el tiempo del USB, un sondeo largo o el anillo.
+
 ## fix-25 · Pestaña VISUAL del editor web (para ver mejor)
 
 - Nueva pestaña **VISUAL** en el editor web: la pantalla del FM-1 en grande y con alto contraste, para quien no ve bien la del equipo. Tres vistas: **Tracks** (las seis filas como la pantalla de pistas, con el cabezal, el nivel, rec / solo / mute y los cuatro diales), **Steps** (notas de un sinte o carriles de una batería por intensidad, con el cabezal) y **Sound** (todos los parámetros de la pista elegida, con valor y barra).
